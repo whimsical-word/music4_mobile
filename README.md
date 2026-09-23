@@ -20,7 +20,7 @@
 
 ## 🤖 Bảng Nhật Ký Sử Dụng AI (AI Assistance Log)
 
-- 🔗 **Google Sheets Live Log**: [Bấm vào đây để xem Google Sheet AI Log](https://docs.google.com/) *(Leader cập nhật link sau)*
+- 🔗 **Google Sheets Live Log**: https://docs.google.com/spreadsheets/d/1gfuj-Q10eHTEdaLELEnz1Urb_14PyrhNmgS899TVymM/edit?usp=sharing
 - 📂 **Lịch sử Git AI Log**: Xem tại thư mục `docs/ai-log/`
 
 ---
