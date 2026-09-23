@@ -26,7 +26,7 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: RouteNames.home,
   routes: [
-    // ─── T3: Home & Discovery ────────────────────────────────────────────
+    // ─── T3: Home, Discovery & Favorites (CE190284 - Nguyễn Hữu Tài) ────
     GoRoute(
       path: RouteNames.home,
       name: 'home',
@@ -43,8 +43,13 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) =>
           ArtistProfileScreen(artistId: state.pathParameters['id']),
     ),
+    GoRoute(
+      path: RouteNames.favorites,
+      name: 'favorites',
+      builder: (context, state) => const FavoritesScreen(),
+    ),
 
-    // ─── T2: Auth & Profile ──────────────────────────────────────────────
+    // ─── T2: Auth & Security (CE190737 - Lê Minh Nhựt) ─────────────────
     GoRoute(
       path: RouteNames.login,
       name: 'login',
@@ -61,7 +66,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const UserProfileScreen(),
     ),
 
-    // ─── T1: Player & Upload ─────────────────────────────────────────────
+    // ─── T1: Player & Upload (CE190036 - Nguyễn Trung Kiên) ────────────
     GoRoute(
       path: RouteNames.player,
       name: 'player',
@@ -73,7 +78,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const UploadTrackScreen(),
     ),
 
-    // ─── T5: Content & Engagement ────────────────────────────────────────
+    // ─── T5: Content & Engagement (CE191634 - Nguyễn Việt Đan Quỳnh) ─────
     GoRoute(
       path: RouteNames.trackDetail,
       name: 'trackDetail',
@@ -97,13 +102,8 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) =>
           PlaylistDetailScreen(playlistId: state.pathParameters['id']),
     ),
-    GoRoute(
-      path: RouteNames.favorites,
-      name: 'favorites',
-      builder: (context, state) => const FavoritesScreen(),
-    ),
 
-    // ─── T6: Search, Admin & Core ────────────────────────────────────────
+    // ─── T6: Search, Admin & Core (CE190614 - Nguyễn Tấn Quốc) ───────────
     GoRoute(
       path: RouteNames.search,
       name: 'search',

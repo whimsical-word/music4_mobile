@@ -12,8 +12,8 @@
 |---|---|---|---|---|---|
 | **T1** | `CE190036` | Nguyễn Trung Kiên | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache audio với `flutter_cache_manager` |
 | **T2** | `CE190737` | Lê Minh Nhựt | Auth & Security | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **OAuth2 Deep Link**: Google callback |
-| **T3** | `CE190284` | Nguyễn Hữu Tài | AI & Analytics | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen` | **Real-time Data**: Auto-refresh gợi ý AI |
-| **T5** | `CE191634` | Nguyễn Việt Đan Quỳnh | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen`, `FavoritesScreen` | **Share Deep Link**: Share bài hát qua Zalo/FB |
+| **T3** | `CE190284` | Nguyễn Hữu Tài | AI & Analytics | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen`, `FavoritesScreen` | **Real-time Data**: Auto-refresh gợi ý AI |
+| **T5** | `CE191634` | Nguyễn Việt Đan Quỳnh | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Share Deep Link**: Share bài hát qua Zalo/FB |
 | **T6 (Leader)** | `CE190614` | Nguyễn Tấn Quốc | Search & Admin & Core | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD**: GitHub Actions tự build APK |
 
 ---
@@ -30,17 +30,17 @@ T2 — Auth & Security (JWT + Spring Security)
  └── RegisterScreen (Listener / Artist roles)
  └── UserProfileScreen (PATCH avatar + profile)
 
-T3 — AI & Analytics (Recommendation + History)
+T3 — AI & Analytics (Recommendation + History + Favorites)
  └── HomeScreen (AI gợi ý nhạc, Top trending)
  └── HistoryScreen (Lịch sử nghe)
  └── ArtistProfileScreen (Follow artist - nhận từ T4)
+ └── FavoritesScreen (Bài hát yêu thích - nhận từ T4)
 
-T5 — Content Manager + Engagement (nhận Playlist/Favorite từ T4)
+T5 — Content Manager + Engagement (nhận Playlist từ T4)
  └── AlbumDetailScreen (Album + danh sách tracks)
  └── TrackDetailScreen (Like, Add to playlist, Comment)
  └── PlaylistScreen (Danh sách playlists)
  └── PlaylistDetailScreen (CRUD tracks trong playlist)
- └── FavoritesScreen (Bài hát yêu thích)
 
 T6 — Search & Admin & Core Infrastructure
  └── SearchScreen (Debounce 300ms, multi-type)

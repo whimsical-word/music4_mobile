@@ -50,12 +50,12 @@ develop                       ← Branch tích hợp chung (PR vào đây)
 - `chore`: Cấu hình build, cài thêm package pubspec
 
 **Ví dụ Hợp Lệ (Ăn trọn điểm C6, C8):**
-- `[SE170001] feat(player): implement background audio service with just_audio`
-- `[SE170002] feat(auth): add auto-refresh token interceptor for Dio`
-- `[SE170003] feat(home): integrate AI recommendations API and render horizontal list`
-- `[SE170005] feat(playlist): add create and delete playlist with optimistic UI`
-- `[SE170006] feat(search): implement search with 300ms debounce`
-- `[SE170001] test(player): add unit test for PlayerNotifier state transitions`
+- `[CE190036] feat(player): implement background audio service with just_audio`
+- `[CE190737] feat(auth): add auto-refresh token interceptor for Dio`
+- `[CE190284] feat(home): integrate AI recommendations API and render horizontal list`
+- `[CE191634] feat(playlist): add create and delete playlist with optimistic UI`
+- `[CE190614] feat(search): implement search with 300ms debounce`
+- `[CE190036] test(player): add unit test for PlayerNotifier state transitions`
 
 **Ví dụ BỊ TRỪ ĐIỂM (Cấm tuyệt đối):**
 - ❌ `update`
@@ -72,11 +72,11 @@ develop                       ← Branch tích hợp chung (PR vào đây)
 
 | Thành viên | Domain phụ trách | Màn hình sở hữu (Vertical Slice) | Bonus Target (+0.5đ) |
 |---|---|---|---|
-| **T1** | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache nhạc cục bộ với `flutter_cache_manager` |
-| **T2** | Auth & User Profile | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **Deep Link**: Google OAuth2 callback |
-| **T3** | Discovery & AI | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen` | **Real-time Data**: Tự động refresh gợi ý nhạc sau khi nghe |
-| **T5** | Playlist & Engagement | `PlaylistScreen`, `PlaylistDetailScreen`, `FavoritesScreen`, `TrackDetailScreen` | **Device / Share**: Tạo shareable link nhạc `share_plus` |
-| **T6** | Core & Infrastructure | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, App Core | **CI/CD**: Tự động test & build APK bằng GitHub Actions |
+| **T1 (CE190036)** | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache nhạc cục bộ với `flutter_cache_manager` |
+| **T2 (CE190737)** | Auth & User Profile | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **Deep Link**: Google OAuth2 callback |
+| **T3 (CE190284)** | Discovery & AI | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen`, `FavoritesScreen` | **Real-time Data**: Tự động refresh gợi ý nhạc sau khi nghe |
+| **T5 (CE191634)** | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Device / Share**: Tạo shareable link nhạc `share_plus` |
+| **T6 (CE190614)** | Core & Infrastructure | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD**: Tự động test & build APK bằng GitHub Actions |
 
 ---
 
@@ -109,8 +109,8 @@ develop                       ← Branch tích hợp chung (PR vào đây)
 
 | Ngày | Người thực hiện (MSSV) | Feature / Module | Prompt chi tiết đã gửi cho AI | Kết quả AI sinh ra | Bạn đã chỉnh sửa, tối ưu & test lại như thế nào? | Trạng thái (Passed / Failed) |
 |---|---|---|---|---|---|---|
-| 24/09 | SE170002 | Auth / Interceptor | "Viết Dio Interceptor tự động refresh JWT token khi gặp lỗi 401 trong Flutter" | Sinh ra class DioInterceptor có hàm onError | Sửa lại logic Queue để hứng các request đồng thời, tích hợp `FlutterSecureStorage` và viết Unit Test mock 401 | Passed (Unit Test 100%) |
-| 25/09 | SE170001 | Player / Cache | "Cách cache file audio mp3 bằng flutter_cache_manager và just_audio" | Đoạn code setAudioSource từ CacheManager | Tùy biến hàm fallback: nếu không có mạng thì lấy từ cache, có mạng thì vừa play vừa tải vào cache | Passed (Chạy offline mượt) |
+| 24/09 | CE190737 | Auth / Interceptor | "Viết Dio Interceptor tự động refresh JWT token khi gặp lỗi 401 trong Flutter" | Sinh ra class DioInterceptor có hàm onError | Sửa lại logic Queue để hứng các request đồng thời, tích hợp `FlutterSecureStorage` và viết Unit Test mock 401 | Passed (Unit Test 100%) |
+| 25/09 | CE190036 | Player / Cache | "Cách cache file audio mp3 bằng flutter_cache_manager và just_audio" | Đoạn code setAudioSource từ CacheManager | Tùy biến hàm fallback: nếu không có mạng thì lấy từ cache, có mạng thì vừa play vừa tải vào cache | Passed (Chạy offline mượt) |
 
 ---
 
