@@ -14,9 +14,11 @@ import '../../features/playlist/presentation/screens/playlist_screen.dart';
 import '../../features/playlist/presentation/screens/playlist_detail_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
 import '../../features/track_detail/presentation/screens/track_detail_screen.dart';
+import '../../features/album/presentation/screens/album_detail_screen.dart';
 import '../../features/search/presentation/screens/search_screen.dart';
 import '../../features/notifications/presentation/screens/notification_screen.dart';
 import '../../features/categories/presentation/screens/category_detail_screen.dart';
+import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
@@ -24,11 +26,25 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: RouteNames.home,
   routes: [
+    // ─── T3: Home & Discovery ────────────────────────────────────────────
     GoRoute(
       path: RouteNames.home,
       name: 'home',
       builder: (context, state) => const HomeScreen(),
     ),
+    GoRoute(
+      path: RouteNames.history,
+      name: 'history',
+      builder: (context, state) => const HistoryScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.artistProfile,
+      name: 'artistProfile',
+      builder: (context, state) =>
+          ArtistProfileScreen(artistId: state.pathParameters['id']),
+    ),
+
+    // ─── T2: Auth & Profile ──────────────────────────────────────────────
     GoRoute(
       path: RouteNames.login,
       name: 'login',
@@ -44,6 +60,8 @@ final GoRouter appRouter = GoRouter(
       name: 'profile',
       builder: (context, state) => const UserProfileScreen(),
     ),
+
+    // ─── T1: Player & Upload ─────────────────────────────────────────────
     GoRoute(
       path: RouteNames.player,
       name: 'player',
@@ -54,18 +72,19 @@ final GoRouter appRouter = GoRouter(
       name: 'upload',
       builder: (context, state) => const UploadTrackScreen(),
     ),
+
+    // ─── T5: Content & Engagement ────────────────────────────────────────
     GoRoute(
-      path: RouteNames.history,
-      name: 'history',
-      builder: (context, state) => const HistoryScreen(),
+      path: RouteNames.trackDetail,
+      name: 'trackDetail',
+      builder: (context, state) =>
+          TrackDetailScreen(trackId: state.pathParameters['id']),
     ),
     GoRoute(
-      path: RouteNames.artistProfile,
-      name: 'artistProfile',
-      builder: (context, state) {
-        final id = state.pathParameters['id'];
-        return ArtistProfileScreen(artistId: id);
-      },
+      path: RouteNames.albumDetail,
+      name: 'albumDetail',
+      builder: (context, state) =>
+          AlbumDetailScreen(albumId: state.pathParameters['id']),
     ),
     GoRoute(
       path: RouteNames.playlist,
@@ -75,24 +94,16 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.playlistDetail,
       name: 'playlistDetail',
-      builder: (context, state) {
-        final id = state.pathParameters['id'];
-        return PlaylistDetailScreen(playlistId: id);
-      },
+      builder: (context, state) =>
+          PlaylistDetailScreen(playlistId: state.pathParameters['id']),
     ),
     GoRoute(
       path: RouteNames.favorites,
       name: 'favorites',
       builder: (context, state) => const FavoritesScreen(),
     ),
-    GoRoute(
-      path: RouteNames.trackDetail,
-      name: 'trackDetail',
-      builder: (context, state) {
-        final id = state.pathParameters['id'];
-        return TrackDetailScreen(trackId: id);
-      },
-    ),
+
+    // ─── T6: Search, Admin & Core ────────────────────────────────────────
     GoRoute(
       path: RouteNames.search,
       name: 'search',
@@ -106,10 +117,13 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.categoryDetail,
       name: 'categoryDetail',
-      builder: (context, state) {
-        final id = state.pathParameters['id'];
-        return CategoryDetailScreen(categoryId: id);
-      },
+      builder: (context, state) =>
+          CategoryDetailScreen(categoryId: state.pathParameters['id']),
+    ),
+    GoRoute(
+      path: RouteNames.admin,
+      name: 'admin',
+      builder: (context, state) => const AdminDashboardScreen(),
     ),
   ],
 );

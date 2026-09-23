@@ -11,9 +11,11 @@ class RouteNames {
   static const String favorites = '/favorites';
   static const String player = '/player';
   static const String trackDetail = '/track/:id';
+  static const String albumDetail = '/album/:id';
   static const String upload = '/upload';
   static const String history = '/history';
   static const String artistProfile = '/artist/:id';
   static const String notifications = '/notifications';
   static const String categoryDetail = '/category/:id';
+  static const String admin = '/admin';
 }
