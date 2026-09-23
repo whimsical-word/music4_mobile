@@ -1,8 +1,8 @@
 # 📋 TEAM_RULES.md — Quy định Làm việc Nhóm & Chuẩn Môn học PRM393
 ## 🎵 Music Streaming App — PRM393 (Flutter & Spring Boot Microservices)
 
-> **Phiên bản**: 2.0.0 (Cập nhật sau khi T4 rời nhóm)  
-> **Áp dụng cho**: 5 thành viên (T1, T2, T3, T5, T6)  
+> **Phiên bản**: 2.0.0 (Tái cấu trúc 5 thành viên T1 → T5)  
+> **Áp dụng cho**: 5 thành viên (T1, T2, T3, T4, T5)  
 > **Mục tiêu**: Tối ưu điểm **C6 (1.5đ Git/Process/AI Log)**, **C8 (0.5đ Ownership)**, **C10 (2.5đ Defense)** và **+0.5đ Bonus**.
 
 ---
@@ -20,15 +20,15 @@ develop                       ← Branch tích hợp chung (PR vào đây)
 ├── feature/[MSSV]-player-screen        ← T1 làm
 ├── feature/[MSSV]-auth-flow            ← T2 làm
 ├── feature/[MSSV]-home-recommendation  ← T3 làm
-├── feature/[MSSV]-playlist-crud        ← T5 làm
-├── feature/[MSSV]-search-notif         ← T6 làm
+├── feature/[MSSV]-playlist-crud        ← T4 làm
+├── feature/[MSSV]-search-notif         ← T5 làm (Leader)
 ├── bugfix/[MSSV]-fix-token-refresh     ← Sửa lỗi
 └── release/v1.0.0                      ← Chuẩn bị nộp bài
 ```
 
 **Cú pháp đặt tên nhánh bắt buộc:**
-- Feature mới: `feature/[MSSV]-[TenFeature]` (VD: `feature/SE123456-player-audio`)
-- Sửa lỗi: `bugfix/[MSSV]-[TenLoi]` (VD: `bugfix/SE123456-fix-audio-stream`)
+- Feature mới: `feature/[MSSV]-[TenFeature]` (VD: `feature/CE190036-player-audio`)
+- Sửa lỗi: `bugfix/[MSSV]-[TenLoi]` (VD: `bugfix/CE190737-fix-token-refresh`)
 
 ---
 
@@ -70,13 +70,13 @@ develop                       ← Branch tích hợp chung (PR vào đây)
 
 ## 👥 PHẦN 2: CODE OWNERSHIP & MA TRẬN PHÂN CÔNG (5 THÀNH VIÊN)
 
-| Thành viên | Domain phụ trách | Màn hình sở hữu (Vertical Slice) | Bonus Target (+0.5đ) |
-|---|---|---|---|
-| **T1 (CE190036)** | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache nhạc cục bộ với `flutter_cache_manager` |
-| **T2 (CE190737)** | Auth & User Profile | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **Deep Link**: Google OAuth2 callback |
-| **T3 (CE190284)** | Discovery & AI | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen`, `FavoritesScreen` | **Real-time Data**: Tự động refresh gợi ý nhạc sau khi nghe |
-| **T5 (CE191634)** | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Device / Share**: Tạo shareable link nhạc `share_plus` |
-| **T6 (CE190614)** | Core & Infrastructure | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD**: Tự động test & build APK bằng GitHub Actions |
+| Thành viên | MSSV & Họ tên | Domain phụ trách | Màn hình sở hữu (Vertical Slice) | Bonus Target (+0.5đ) |
+|---|---|---|---|---|
+| **T1** | `CE190036` — Nguyễn Trung Kiên | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache nhạc cục bộ với `flutter_cache_manager` |
+| **T2** | `CE190737` — Lê Minh Nhựt | Auth & User Profile | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **Deep Link**: Google OAuth2 callback |
+| **T3** | `CE190284` — Nguyễn Hữu Tài | Discovery & AI | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen`, `FavoritesScreen` | **Real-time Data**: Tự động refresh gợi ý nhạc sau khi nghe |
+| **T4** | `CE191634` — Nguyễn Việt Đan Quỳnh | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Device / Share**: Tạo shareable link nhạc `share_plus` |
+| **T5 (Leader)** | `CE190614` — Nguyễn Tấn Quốc | Core & Infrastructure | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD**: Tự động test & build APK bằng GitHub Actions |
 
 ---
 
@@ -88,11 +88,11 @@ develop                       ← Branch tích hợp chung (PR vào đây)
    - Rebase với branch `develop` mới nhất.
 
 2. **Quy tắc Review chéo (Peer Review):**
-   - **T1** review code của **T3, T5**
-   - **T2** review code của **T1, T6**
-   - **T3** review code của **T2, T5**
-   - **T5** review code của **T1, T3**
-   - **T6** review code của **T2, T5**
+   - **T1** review code của **T3, T4**
+   - **T2** review code của **T1, T5**
+   - **T3** review code của **T2, T4**
+   - **T4** review code của **T1, T3**
+   - **T5 (Leader)** review code của **T2, T4**
    - *Bắt buộc phải có ít nhất 1 thành viên Approve và comment nhận xét mới được merge vào `develop`.*
    - *Tuyệt đối không tự Approve và tự Merge PR của chính mình (Self-merge).*
 

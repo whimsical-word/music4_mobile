@@ -13,12 +13,12 @@
 | **T1** | `CE190036` | Nguyễn Trung Kiên | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache audio với `flutter_cache_manager` |
 | **T2** | `CE190737` | Lê Minh Nhựt | Auth & Security | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **OAuth2 Deep Link**: Google callback |
 | **T3** | `CE190284` | Nguyễn Hữu Tài | AI & Analytics | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen`, `FavoritesScreen` | **Real-time Data**: Auto-refresh gợi ý AI |
-| **T5** | `CE191634` | Nguyễn Việt Đan Quỳnh | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Share Deep Link**: Share bài hát qua Zalo/FB |
-| **T6 (Leader)** | `CE190614` | Nguyễn Tấn Quốc | Search & Admin & Core | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD**: GitHub Actions tự build APK |
+| **T4** | `CE191634` | Nguyễn Việt Đan Quỳnh | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Share Deep Link**: Share bài hát qua Zalo/FB |
+| **T5 (Leader)** | `CE190614` | Nguyễn Tấn Quốc | Search & Admin & Core | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD**: GitHub Actions tự build APK |
 
 ---
 
-## 🗺️ Sơ đồ phân công theo Domain gốc
+## 🗺️ Sơ đồ phân công theo Domain
 
 ```
 T1 — Media Core (S3 & Streaming)
@@ -33,18 +33,18 @@ T2 — Auth & Security (JWT + Spring Security)
 T3 — AI & Analytics (Recommendation + History + Favorites)
  └── HomeScreen (AI gợi ý nhạc, Top trending)
  └── HistoryScreen (Lịch sử nghe)
- └── ArtistProfileScreen (Follow artist - nhận từ T4)
- └── FavoritesScreen (Bài hát yêu thích - nhận từ T4)
+ └── ArtistProfileScreen (Follow artist)
+ └── FavoritesScreen (Bài hát yêu thích)
 
-T5 — Content Manager + Engagement (nhận Playlist từ T4)
+T4 — Content Manager & Playlist Engagement
  └── AlbumDetailScreen (Album + danh sách tracks)
  └── TrackDetailScreen (Like, Add to playlist, Comment)
  └── PlaylistScreen (Danh sách playlists)
  └── PlaylistDetailScreen (CRUD tracks trong playlist)
 
-T6 — Search & Admin & Core Infrastructure
+T5 — Search & Admin & Core Infrastructure (Leader)
  └── SearchScreen (Debounce 300ms, multi-type)
- └── NotificationScreen (SSE real-time - nhận từ T4)
+ └── NotificationScreen (SSE real-time)
  └── CategoryDetailScreen (Duyệt theo thể loại)
  └── AdminDashboardScreen (Quản lý User/Artist)
  └── App Core (GoRouter, Dio, Theme, Constants)
@@ -72,8 +72,8 @@ Xem chi tiết tại: [TEAM_RULES.md](./TEAM_RULES.md)
 | T1 — CE190036 | `[CE190036] feat(player): implement audio streaming with just_audio` |
 | T2 — CE190737 | `[CE190737] feat(auth): add JWT auto-refresh interceptor` |
 | T3 — CE190284 | `[CE190284] feat(home): integrate AI recommendations API` |
-| T5 — CE191634 | `[CE191634] feat(playlist): implement create and delete playlist` |
-| T6 — CE190614 | `[CE190614] feat(search): implement debounce search with GoRouter` |
+| T4 — CE191634 | `[CE191634] feat(playlist): implement create and delete playlist` |
+| T5 — CE190614 | `[CE190614] feat(search): implement debounce search with GoRouter` |
 
 ---
 

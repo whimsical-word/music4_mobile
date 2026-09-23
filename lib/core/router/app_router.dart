@@ -26,7 +26,7 @@ final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
   initialLocation: RouteNames.home,
   routes: [
-    // ─── T3: Home, Discovery & Favorites (CE190284 - Nguyễn Hữu Tài) ────
+    // ─── T3: Discovery & AI (CE190284 - Nguyễn Hữu Tài) ────────────────
     GoRoute(
       path: RouteNames.home,
       name: 'home',
@@ -66,7 +66,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const UserProfileScreen(),
     ),
 
-    // ─── T1: Player & Upload (CE190036 - Nguyễn Trung Kiên) ────────────
+    // ─── T1: Media & Streaming (CE190036 - Nguyễn Trung Kiên) ─────────
     GoRoute(
       path: RouteNames.player,
       name: 'player',
@@ -78,7 +78,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const UploadTrackScreen(),
     ),
 
-    // ─── T5: Content & Engagement (CE191634 - Nguyễn Việt Đan Quỳnh) ─────
+    // ─── T4: Content & Engagement (CE191634 - Nguyễn Việt Đan Quỳnh) ───
     GoRoute(
       path: RouteNames.trackDetail,
       name: 'trackDetail',
@@ -103,7 +103,7 @@ final GoRouter appRouter = GoRouter(
           PlaylistDetailScreen(playlistId: state.pathParameters['id']),
     ),
 
-    // ─── T6: Search, Admin & Core (CE190614 - Nguyễn Tấn Quốc) ───────────
+    // ─── T5: Core, Search & Admin (CE190614 - Nguyễn Tấn Quốc - Leader) ─
     GoRoute(
       path: RouteNames.search,
       name: 'search',

@@ -18,9 +18,9 @@
 
 ---
 
-## 📁 Danh sách file AI Log của 5 thành viên:
-- 📄 `CE190614_ai_log.md` — Thành viên 6 (Leader - Core & Search)
-- 📄 `T1_MSSV_ai_log.md` — Thành viên 1 (Media & Player)
-- 📄 `T2_MSSV_ai_log.md` — Thành viên 2 (Auth & User Profile)
-- 📄 `T3_MSSV_ai_log.md` — Thành viên 3 (Home & Discovery AI)
-- 📄 `T5_MSSV_ai_log.md` — Thành viên 5 (Playlist & Engagement)
+## 📁 Danh sách file AI Log của 5 thành viên (T1 → T5):
+- 📄 `CE190036_ai_log.md` — Thành viên 1 (Nguyễn Trung Kiên — Media & Player)
+- 📄 `CE190737_ai_log.md` — Thành viên 2 (Lê Minh Nhựt — Auth & Security)
+- 📄 `CE190284_ai_log.md` — Thành viên 3 (Nguyễn Hữu Tài — Discovery & AI)
+- 📄 `CE191634_ai_log.md` — Thành viên 4 (Nguyễn Việt Đan Quỳnh — Content & Engagement)
+- 📄 `CE190614_ai_log.md` — Thành viên 5 (Nguyễn Tấn Quốc — Leader, Core & Search)
