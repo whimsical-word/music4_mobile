@@ -1,10 +1,18 @@
-# 🤖 AI Assistance Log — [T6 - Leader]
-- **Họ và tên**: ...
+# 🤖 AI Assistance Log — Leader (T5)
+- **Họ và tên**: Nguyễn Tấn Quốc
 - **Mã sinh viên**: `CE190614`
-- **Domain phụ trách**: Core, Routing, Dio Client, Theme, Search, Notifications
+- **Vai trò**: Team Leader (Thành viên 5)
+- **Domain phụ trách**: Core Architecture, Routing (GoRouter), Network (Dio Client), App Theme, Search, Notifications, Admin Dashboard, CI/CD Pipeline
 
 ---
 
+## 📋 Bảng Nhật ký Sử dụng AI Chi tiết (Tuần 1 — Sprint 1)
+
 | Ngày | Feature / Module | Prompt chi tiết gửi AI | Kết quả AI sinh ra | Bạn đã chỉnh sửa, tối ưu & test lại như thế nào? | Kết quả & Commit SHA |
 |---|---|---|---|---|---|
-| 23/09/2026 | Core / Base Setup | "Thiết kế kiến trúc Lean Architecture (Feature-First) cho Flutter, tích hợp GoRouter và Dio Interceptor auto-refresh JWT" | Cấu trúc thư mục features/ và class AuthInterceptor cơ bản | Thêm queue request xử lý lỗi 401 đồng thời, sửa CardThemeData, chạy `flutter analyze` 0 errors | Passed (Commit `1f6e89a`) |
+| **23/09/2026** | **Core / Base Architecture Setup** | "Thiết kế kiến trúc Lean Architecture (Feature-First) cho Flutter, tích hợp GoRouter và Dio Interceptor auto-refresh JWT khi gặp lỗi 401" | Khung thư mục `features/` và cấu trúc class `AuthInterceptor` cơ bản có `onRequest` và `onError`. | - Bổ sung cơ chế Request Queue hứng các request đồng thời khi token hết hạn để tránh gọi refresh nhiều lần.<br>- Thay thế `CardTheme` cũ bị deprecated bằng `CardThemeData`.<br>- Tích hợp `PrettyDioLogger` và chạy `flutter analyze` đạt 0 issues. | **Passed**<br>(Commit `1f6e89a`) |
+| **23/09/2026** | **Project Governance / AI Log Framework** | "Tạo cấu trúc quản lý nhật ký sử dụng AI (AI Assistance Log) theo chuẩn FPT University, kết hợp Google Sheets hàng ngày và Markdown Git hàng tuần" | Khung tài liệu hướng dẫn `docs/ai-log/README.md` và mẫu template markdown. | - Tạo Google Sheet nhóm với 5 tabs tương ứng 5 MSSV.<br>- Gắn link Google Sheet live vào `README.md`.<br>- Khởi tạo file log cá nhân `CE190614_ai_log.md` và kiểm tra quyền truy cập. | **Passed**<br>(Commit `44110ad`, `6549f23`) |
+| **23/09/2026** | **Domain Re-architecture / Screens Gap Analysis** | "Phân tích lại phân công công việc từ 6 người (sau khi T4 rời nhóm) thành 5 người, kiểm tra sự tương thích giữa các màn hình Flutter với 18 controllers của Backend Spring Boot" | Phân tích phát hiện nhóm đang thiếu màn hình quản lý Album và Dashboard Admin, đồng thời bạn T5 (Quỳnh) đang bị quá tải chức năng. | - Viết mã tạo mới 2 màn hình: `AlbumDetailScreen` (cho Quỳnh) và `AdminDashboardScreen` (cho Quốc).<br>- Đăng ký 2 routes mới vào `RouteNames` và `app_router.dart`.<br>- Chạy `flutter analyze` xác nhận không có lỗi cú pháp. | **Passed**<br>(Commit `790922e`) |
+| **23/09/2026** | **Domain Balancing / Reassign Favorites** | "Chuyển FavoritesScreen sang T3 (Nguyễn Hữu Tài) để cân bằng khối lượng màn hình và tối ưu luồng dữ liệu AI Recommendation" | Cập nhật bảng phân công và sơ đồ liên kết giữa Favorites và AI History. | - Tái cấu trúc lại comment phân nhóm route trong `app_router.dart`, chuyển `FavoritesScreen` về nhóm T3.<br>- Cập nhật bảng phân công trong `README.md` và `TEAM_RULES.md`.<br>- Chạy `flutter analyze` xác nhận sạch lỗi. | **Passed**<br>(Commit `05d0fff`) |
+| **24/09/2026** | **Master Plan / PRM393 Rubric Alignment** | "Tích hợp bản Master Plan 6 tuần theo chuẩn Rubric PRM393 (C1-C10 + Bonus), gắn các mốc Checkpoint CP0 -> CP4 và Final Defense vào từng tuần" | Lộ trình 6 tuần chi tiết có gắn nhãn các tiêu chí điểm Rubric (C1-C10) và tiêu chuẩn nghiệm thu (Exit Criteria). | - Rà soát khối lượng công việc của từng người, đối chiếu 10 tiêu chí rubric để đảm bảo mỗi thành viên có đủ minh chứng C8 Ownership.<br>- Lưu trữ và chuẩn hóa tài liệu Master Plan (Source of Truth v2.1). | **Passed**<br>(Artifact `PRM393_MasterPlan.md`) |
+| **24/09/2026** | **Documentation / Minimum README Specification** | "Nâng cấp toàn diện README.md đáp ứng tiêu chí 5.2 Minimum README Content & C7 Rubric (Target users, .env.example, Backend setup, Test/Build commands, Demo accounts, Known limitations)" | Khung tài liệu README chi tiết đầy đủ 10 phần theo chuẩn đặc tả PRM393 Final Project Specification. | - Tạo file mẫu `.env.example` cấu hình biến môi trường không lộ secrets.<br>- Viết chi tiết 4 nhóm Target Users, hướng dẫn kết nối Spring Boot & SQL Server.<br>- Bổ sung đầy đủ lệnh test/build release, bảng tài khoản demo 4 roles và 4 hạn chế kỹ thuật trung thực cho C9/C10. | **Passed**<br>(Commit `073b5df`) |
