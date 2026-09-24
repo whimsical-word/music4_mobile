@@ -10,11 +10,11 @@
 
 | TV | MSSV | Họ và tên | Domain | Màn hình sở hữu (Vertical Slice) | Bonus Feature (+0.5đ) |
 |---|---|---|---|---|---|
-| **T1** | `CE190036` | Nguyễn Trung Kiên | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache audio với `flutter_cache_manager` |
-| **T2** | `CE190737` | Lê Minh Nhựt | Auth & Security | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **OAuth2 Deep Link**: Google callback |
+| **T1** | `CE190036` | Nguyễn Trung Kiên | Media & Streaming | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first**: Cache audio với `LockCachingAudioSource` (`just_audio`) |
+| **T2** | `CE190737` | Lê Minh Nhựt | Auth & Security | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **OAuth2 Deep Link**: Google callback (`app_links`) |
 | **T3** | `CE190284` | Nguyễn Hữu Tài | AI & Analytics | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen`, `FavoritesScreen` | **Real-time Data**: Auto-refresh gợi ý AI |
-| **T4** | `CE191634` | Nguyễn Việt Đan Quỳnh | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Share Deep Link**: Share bài hát qua Zalo/FB |
-| **T5 (Leader)** | `CE190614` | Nguyễn Tấn Quốc | Search & Admin & Core | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD**: GitHub Actions tự build APK |
+| **T4** | `CE191634` | Nguyễn Việt Đan Quỳnh | Content & Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Share Deep Link**: Share bài hát qua Zalo/FB (`share_plus`) |
+| **T5 (Leader)** | `CE190614` | Nguyễn Tấn Quốc | Search & Admin & Core | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD Pipeline**: GitHub Actions auto-test PR `develop` & build APK `main` |
 
 ---
 
@@ -69,7 +69,7 @@ Xem chi tiết tại: [TEAM_RULES.md](./TEAM_RULES.md)
 
 | Thành viên | Ví dụ commit chuẩn |
 |---|---|
-| T1 — CE190036 | `[CE190036] feat(player): implement audio streaming with just_audio` |
+| T1 — CE190036 | `[CE190036] feat(player): implement background audio service with LockCachingAudioSource` |
 | T2 — CE190737 | `[CE190737] feat(auth): add JWT auto-refresh interceptor` |
 | T3 — CE190284 | `[CE190284] feat(home): integrate AI recommendations API` |
 | T4 — CE191634 | `[CE191634] feat(playlist): implement create and delete playlist` |
