@@ -118,7 +118,7 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.categoryDetail,
       name: 'categoryDetail',
       builder: (context, state) =>
-          CategoryDetailScreen(categoryId: state.pathParameters['id']),
+          CategoryDetailScreen(categoryId: state.pathParameters['id'] ?? '1'),
     ),
     GoRoute(
       path: RouteNames.admin,
