@@ -33,7 +33,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.notifications_off_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withOpacity(0.5)),
+                Icon(Icons.notifications_off_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
                 const SizedBox(height: 16),
                 const Text('Bạn không có thông báo nào.'),
               ],
