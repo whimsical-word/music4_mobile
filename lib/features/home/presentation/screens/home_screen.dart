@@ -1,16 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../controllers/home_feed_controller.dart';
+import '../widgets/ai_recommendation_banner.dart';
+import '../widgets/ai_recommendation_section.dart';
+import '../widgets/home_empty_state.dart';
+import '../widgets/home_error_state.dart';
+import '../widgets/home_header_greeting.dart';
+import '../widgets/home_shimmer_skeleton.dart';
+import '../widgets/trending_section.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final homeFeedAsync = ref.watch(homeFeedControllerProvider);
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Music4', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24)),
+        title: const Text(
+          'Music4',
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_none),
@@ -22,90 +35,37 @@ class HomeScreen extends StatelessWidget {
           ),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16.0),
-        children: [
-          // Section 1: AI Recommendations
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: const [
-              Text(
-                '✨ Gợi ý cho bạn (AI)',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              Icon(Icons.auto_awesome, color: AppColors.primary, size: 20),
-            ],
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 160,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: 5,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () => context.push(RouteNames.player),
-                  child: Container(
-                    width: 130,
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Container(
-                          height: 100,
-                          decoration: const BoxDecoration(
-                            color: AppColors.surface,
-                            borderRadius: BorderRadius.vertical(top: Radius.circular(12)),
-                          ),
-                          child: const Center(
-                            child: Icon(Icons.music_note, color: AppColors.primary, size: 40),
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Text(
-                            'Bài hát #${index + 1}',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
+      body: homeFeedAsync.when(
+        loading: () => const HomeShimmerSkeleton(),
+        error: (error, _) => HomeErrorState(
+          message: error.toString(),
+          onRetry: () => ref.read(homeFeedControllerProvider.notifier).refresh(),
+        ),
+        data: (state) {
+          if (state.isEmpty) {
+            return HomeEmptyState(
+              onRefresh: () =>
+                  ref.read(homeFeedControllerProvider.notifier).refresh(),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () =>
+                ref.read(homeFeedControllerProvider.notifier).refresh(),
+            child: ListView(
+              padding: const EdgeInsets.only(bottom: 24.0),
+              children: [
+                const HomeHeaderGreeting(),
+                const SizedBox(height: 8),
+                AiRecommendationBanner(track: state.featuredAiTrack),
+                const SizedBox(height: 16),
+                AiRecommendationSection(tracks: state.aiRecommendations),
+                const SizedBox(height: 16),
+                TrendingSection(tracks: state.trendingTracks),
+              ],
             ),
-          ),
-          const SizedBox(height: 24),
-          // Section 2: Trending / Top 5
-          const Text(
-            '🔥 Bảng xếp hạng Hot',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          ListView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return ListTile(
-                leading: Text('${index + 1}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primary)),
-                title: Text('Top bài hát trending #${index + 1}'),
-                subtitle: const Text('Ca sĩ hàng đầu'),
-                trailing: IconButton(
-                  icon: const Icon(Icons.play_circle_fill, color: AppColors.primary),
-                  onPressed: () => context.push(RouteNames.player),
-                ),
-                onTap: () => context.push(RouteNames.player),
-              );
-            },
-          ),
-        ],
+          );
+        },
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
