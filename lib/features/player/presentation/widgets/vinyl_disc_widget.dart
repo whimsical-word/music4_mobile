@@ -20,10 +20,6 @@ class VinylDiscWidget extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.black,
-          image: DecorationImage(
-            image: NetworkImage(imageUrl),
-            fit: BoxFit.cover,
-          ),
           boxShadow: const [
             BoxShadow(
               color: Colors.black54,

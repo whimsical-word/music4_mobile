@@ -33,10 +33,10 @@ class MiniPlayerWidget extends StatelessWidget {
               margin: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(4),
-                image: const DecorationImage(
-                  image: NetworkImage('https://picsum.photos/100'),
-                  fit: BoxFit.cover,
-                ),
+                color: AppColors.surface, // Thay NetworkImage bằng màu nền
+              ),
+              child: const Center(
+                child: Icon(Icons.music_note, color: AppColors.primary),
               ),
             ),
             // Track Info
