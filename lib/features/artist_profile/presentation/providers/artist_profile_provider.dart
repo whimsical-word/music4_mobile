@@ -53,12 +53,28 @@ class ArtistProfileNotifier extends AutoDisposeAsyncNotifier<ArtistProfileData> 
         artworkUrl: 'https://example.com/art4.jpg',
         durationSeconds: 240,
       ),
+      Track(
+        id: 't5',
+        title: 'Khắp Xung Quanh',
+        artistName: 'Ngọt',
+        artworkUrl: 'https://example.com/art5.jpg',
+        durationSeconds: 210,
+      ),
     ];
+
+    final mockDashboardStats = ArtistDashboardStats(
+      totalViews: 1250400,
+      totalLikes: 84300,
+      totalFollowers: 154000,
+      totalComments: 5200,
+      chartViews: [12000, 15000, 11000, 18000, 22000, 25000, 21000],
+    );
 
     return ArtistProfileData(
       artist: mockArtist,
       popularTracks: mockTracks,
       isFollowing: false,
+      dashboardStats: mockDashboardStats,
     );
   }
 
@@ -71,12 +87,9 @@ class ArtistProfileNotifier extends AutoDisposeAsyncNotifier<ArtistProfileData> 
     final currentState = state.valueOrNull;
     if (currentState == null) return;
 
-    // Cập nhật UI ngay lập tức (Optimistic Update cho bài này)
     state = AsyncValue.data(
       currentState.copyWith(isFollowing: !currentState.isFollowing),
     );
-    
-    // Nếu có API thật, sẽ gọi API ở đây.
   }
 }
 

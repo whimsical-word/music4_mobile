@@ -26,7 +26,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: RouteNames.login,
+  initialLocation: '/artist/123',
   routes: [
     // ─── T3: Discovery & AI (CE190284 - Nguyễn Hữu Tài) ────────────────
     GoRoute(
@@ -42,8 +42,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.artistProfile,
       name: 'artistProfile',
-      builder: (context, state) =>
-          ArtistProfileScreen(artistId: state.pathParameters['id']),
+      builder: (context, state) => ArtistProfileScreen(
+        artistId: state.pathParameters['id'],
+        mode: ArtistProfileMode.listener,
+      ),
     ),
     GoRoute(
       path: RouteNames.favorites,
@@ -80,7 +82,10 @@ final GoRouter appRouter = GoRouter(
             const begin = Offset(0.0, 1.0);
             const end = Offset.zero;
             const curve = Curves.easeInOutCubic;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
             return SlideTransition(
               position: animation.drive(tween),
               child: child,
