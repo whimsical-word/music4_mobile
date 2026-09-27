@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+
 import 'route_names.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
@@ -24,7 +25,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: RouteNames.home,
+  initialLocation: RouteNames.login,
   routes: [
     // ─── T3: Discovery & AI (CE190284 - Nguyễn Hữu Tài) ────────────────
     GoRoute(
