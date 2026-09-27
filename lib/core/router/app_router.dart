@@ -11,6 +11,7 @@ import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/artist_profile/presentation/screens/artist_profile_screen.dart';
 import '../../features/player/presentation/screens/music_player_screen.dart';
 import '../../features/upload/presentation/screens/upload_track_screen.dart';
+import '../../features/album/presentation/screens/album_management_screen.dart';
 import '../../features/playlist/presentation/screens/playlist_screen.dart';
 import '../../features/playlist/presentation/screens/playlist_detail_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
@@ -77,6 +78,11 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.upload,
       name: 'upload',
       builder: (context, state) => const UploadTrackScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.albumManagement,
+      name: 'albumManagement',
+      builder: (context, state) => const AlbumManagementScreen(),
     ),
 
     // ─── T4: Content & Engagement (CE191634 - Nguyễn Việt Đan Quỳnh) ───
