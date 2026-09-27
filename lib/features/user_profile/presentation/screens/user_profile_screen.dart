@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:music4_mobile/features/user_profile/presentation/widgets/settings_section.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/user_profile.dart';
