@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
 import '../../../../core/router/route_names.dart';
 import '../../../player/presentation/widgets/mini_player_widget.dart';
 import '../controllers/home_feed_controller.dart';
@@ -32,7 +33,7 @@ class HomeScreen extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push(RouteNames.profile),
+            onPressed: () => context.push(RouteNames.userProfile),
           ),
         ],
       ),
@@ -43,7 +44,8 @@ class HomeScreen extends ConsumerWidget {
               loading: () => const HomeShimmerSkeleton(),
               error: (error, _) => HomeErrorState(
                 message: error.toString(),
-                onRetry: () => ref.read(homeFeedControllerProvider.notifier).refresh(),
+                onRetry: () =>
+                    ref.read(homeFeedControllerProvider.notifier).refresh(),
               ),
               data: (state) {
                 if (state.isEmpty) {
@@ -80,7 +82,10 @@ class HomeScreen extends ConsumerWidget {
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Trang chủ'),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: 'Tìm kiếm'),
-          BottomNavigationBarItem(icon: Icon(Icons.queue_music), label: 'Thư viện'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.queue_music),
+            label: 'Thư viện',
+          ),
         ],
         onTap: (index) {
           if (index == 1) context.push(RouteNames.search);
