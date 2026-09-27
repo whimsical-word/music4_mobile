@@ -1,11 +1,59 @@
 import 'package:flutter/material.dart';
+import 'dart:math' as math;
 import '../../../../core/theme/app_colors.dart';
 
-class MusicPlayerScreen extends StatelessWidget {
+class MusicPlayerScreen extends StatefulWidget {
   const MusicPlayerScreen({super.key});
 
   @override
+  State<MusicPlayerScreen> createState() => _MusicPlayerScreenState();
+}
+
+class _MusicPlayerScreenState extends State<MusicPlayerScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _rotationController;
+  double _currentSliderValue = 30.0;
+  bool _isPlaying = true;
+
+  @override
+  void initState() {
+    super.initState();
+    // Khởi tạo AnimationController cho đĩa vinyl xoay
+    _rotationController = AnimationController(
+      duration: const Duration(seconds: 10),
+      vsync: this,
+    )..repeat(); // Lặp lại liên tục
+  }
+
+  @override
+  void dispose() {
+    _rotationController.dispose();
+    super.dispose();
+  }
+
+  void _togglePlayPause() {
+    setState(() {
+      _isPlaying = !_isPlaying;
+      if (_isPlaying) {
+        _rotationController.repeat();
+      } else {
+        _rotationController.stop();
+      }
+    });
+  }
+
+  // Hàm format thời gian từ giây sang mm:ss
+  String _formatDuration(double seconds) {
+    final duration = Duration(seconds: seconds.toInt());
+    final minutes = duration.inMinutes;
+    final remainingSeconds = duration.inSeconds % 60;
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final maxDuration = 200.0; // 3 phút 20 giây
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Đang phát'),
@@ -22,23 +70,49 @@ class MusicPlayerScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // Artwork
-            Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: AppColors.card,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black54,
-                    blurRadius: 20,
-                    offset: Offset(0, 10),
+            // Artwork (Vinyl disk animation)
+            AnimatedBuilder(
+              animation: _rotationController,
+              builder: (context, child) {
+                return Transform.rotate(
+                  angle: _rotationController.value * 2.0 * math.pi,
+                  child: child,
+                );
+              },
+              child: Container(
+                width: 280,
+                height: 280,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.card,
+                  border: Border.all(color: Colors.grey.shade800, width: 8),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black54,
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                  image: const DecorationImage(
+                    image: NetworkImage(
+                        'https://picsum.photos/400'), // Ảnh bìa giả lập
+                    fit: BoxFit.cover,
                   ),
-                ],
+                ),
+                child: Center(
+                  child: Container(
+                    width: 60,
+                    height: 60,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black87,
+                      border: Border.all(color: Colors.grey.shade600, width: 2),
+                    ),
+                  ),
+                ),
               ),
-              child: const Icon(Icons.music_note, size: 100, color: AppColors.primary),
             ),
+            
             // Track Info
             const Column(
               children: [
@@ -53,28 +127,38 @@ class MusicPlayerScreen extends StatelessWidget {
                 ),
               ],
             ),
+            
             // Progress Bar
             Column(
               children: [
                 Slider(
-                  value: 30,
-                  max: 200,
+                  value: _currentSliderValue,
+                  max: maxDuration,
                   activeColor: AppColors.primary,
                   inactiveColor: AppColors.divider,
-                  onChanged: (val) {},
+                  onChanged: (val) {
+                    setState(() {
+                      _currentSliderValue = val;
+                    });
+                  },
                 ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('0:30', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                      Text('3:20', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+                      Text(_formatDuration(_currentSliderValue),
+                          style: const TextStyle(
+                              color: AppColors.textMuted, fontSize: 12)),
+                      Text(_formatDuration(maxDuration),
+                          style: const TextStyle(
+                              color: AppColors.textMuted, fontSize: 12)),
                     ],
                   ),
                 ),
               ],
             ),
+            
             // Controls
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -88,8 +172,12 @@ class MusicPlayerScreen extends StatelessWidget {
                   radius: 36,
                   backgroundColor: AppColors.primary,
                   child: IconButton(
-                    icon: const Icon(Icons.play_arrow, size: 36, color: Colors.black),
-                    onPressed: () {},
+                    icon: Icon(
+                      _isPlaying ? Icons.pause : Icons.play_arrow,
+                      size: 36,
+                      color: Colors.black,
+                    ),
+                    onPressed: _togglePlayPause,
                   ),
                 ),
                 const SizedBox(width: 24),
