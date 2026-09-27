@@ -72,7 +72,22 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.player,
       name: 'player',
-      builder: (context, state) => const MusicPlayerScreen(),
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: const MusicPlayerScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOutCubic;
+            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+        );
+      },
     ),
     GoRoute(
       path: RouteNames.upload,

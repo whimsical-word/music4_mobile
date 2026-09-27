@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../player/presentation/widgets/mini_player_widget.dart';
 import '../controllers/home_feed_controller.dart';
 import '../widgets/ai_recommendation_banner.dart';
 import '../widgets/ai_recommendation_section.dart';
@@ -35,37 +36,44 @@ class HomeScreen extends ConsumerWidget {
           ),
         ],
       ),
-      body: homeFeedAsync.when(
-        loading: () => const HomeShimmerSkeleton(),
-        error: (error, _) => HomeErrorState(
-          message: error.toString(),
-          onRetry: () => ref.read(homeFeedControllerProvider.notifier).refresh(),
-        ),
-        data: (state) {
-          if (state.isEmpty) {
-            return HomeEmptyState(
-              onRefresh: () =>
-                  ref.read(homeFeedControllerProvider.notifier).refresh(),
-            );
-          }
+      body: Column(
+        children: [
+          Expanded(
+            child: homeFeedAsync.when(
+              loading: () => const HomeShimmerSkeleton(),
+              error: (error, _) => HomeErrorState(
+                message: error.toString(),
+                onRetry: () => ref.read(homeFeedControllerProvider.notifier).refresh(),
+              ),
+              data: (state) {
+                if (state.isEmpty) {
+                  return HomeEmptyState(
+                    onRefresh: () =>
+                        ref.read(homeFeedControllerProvider.notifier).refresh(),
+                  );
+                }
 
-          return RefreshIndicator(
-            onRefresh: () =>
-                ref.read(homeFeedControllerProvider.notifier).refresh(),
-            child: ListView(
-              padding: const EdgeInsets.only(bottom: 24.0),
-              children: [
-                const HomeHeaderGreeting(),
-                const SizedBox(height: 8),
-                AiRecommendationBanner(track: state.featuredAiTrack),
-                const SizedBox(height: 16),
-                AiRecommendationSection(tracks: state.aiRecommendations),
-                const SizedBox(height: 16),
-                TrendingSection(tracks: state.trendingTracks),
-              ],
+                return RefreshIndicator(
+                  onRefresh: () =>
+                      ref.read(homeFeedControllerProvider.notifier).refresh(),
+                  child: ListView(
+                    padding: const EdgeInsets.only(bottom: 24.0),
+                    children: [
+                      const HomeHeaderGreeting(),
+                      const SizedBox(height: 8),
+                      AiRecommendationBanner(track: state.featuredAiTrack),
+                      const SizedBox(height: 16),
+                      AiRecommendationSection(tracks: state.aiRecommendations),
+                      const SizedBox(height: 16),
+                      TrendingSection(tracks: state.trendingTracks),
+                    ],
+                  ),
+                );
+              },
             ),
-          );
-        },
+          ),
+          const MiniPlayerWidget(),
+        ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
