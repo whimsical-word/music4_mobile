@@ -42,6 +42,10 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> with SingleTicker
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.keyboard_arrow_down, size: 32),
+          onPressed: () => context.pop(), // Thu nhỏ player
+        ),
         title: const Text('Đang phát'),
         centerTitle: true,
         actions: [
