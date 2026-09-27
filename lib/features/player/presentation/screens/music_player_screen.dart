@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 
 class MusicPlayerScreen extends StatelessWidget {
@@ -11,6 +12,11 @@ class MusicPlayerScreen extends StatelessWidget {
         title: const Text('Đang phát'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Xem chi tiết bài hát',
+            onPressed: () => context.push('/track/1'),
+          ),
           IconButton(
             icon: const Icon(Icons.favorite_border),
             onPressed: () {},
