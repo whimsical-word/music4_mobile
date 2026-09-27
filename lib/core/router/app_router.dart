@@ -26,7 +26,7 @@ final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: '/artist/123',
+  initialLocation: RouteNames.login,
   routes: [
     // ─── T3: Discovery & AI (CE190284 - Nguyễn Hữu Tài) ────────────────
     GoRoute(
@@ -42,10 +42,8 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.artistProfile,
       name: 'artistProfile',
-      builder: (context, state) => ArtistProfileScreen(
-        artistId: state.pathParameters['id'],
-        mode: ArtistProfileMode.listener,
-      ),
+      builder: (context, state) =>
+          ArtistProfileScreen(artistId: state.pathParameters['id']),
     ),
     GoRoute(
       path: RouteNames.favorites,
