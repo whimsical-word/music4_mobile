@@ -29,13 +29,19 @@ class ProgressBarWidget extends StatelessWidget {
             onChanged: onChanged,
           ),
         ),
-        const Padding(
-          padding: EdgeInsets.symmetric(horizontal: 16.0),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text('0:30', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-              Text('3:20', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
+              Text(
+                '${(currentValue ~/ 60)}:${(currentValue.toInt() % 60).toString().padLeft(2, '0')}',
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
+              const Text(
+                '3:20', // Total is 200 seconds (3:20)
+                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              ),
             ],
           ),
         ),

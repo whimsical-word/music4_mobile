@@ -21,7 +21,7 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> with SingleTicker
   @override
   void initState() {
     super.initState();
-    _spinController = AnimationController(vsync: this, duration: const Duration(seconds: 10))..repeat();
+    _spinController = AnimationController(vsync: this, duration: const Duration(seconds: 10));
   }
 
   @override
