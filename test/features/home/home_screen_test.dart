@@ -34,7 +34,7 @@ void main() {
       // Verify AI recommendation banner and sections
       expect(find.byType(AiRecommendationBanner), findsOneWidget);
       expect(find.byType(AiRecommendationSection), findsOneWidget);
-      expect(find.byType(TrendingSection), findsOneWidget);
+      expect(find.byType(TrendingSection, skipOffstage: false), findsOneWidget);
 
       // Verify specific data items from HomeMockData
       expect(find.text('Gió Cuốn Hoa Rơi'), findsOneWidget);
@@ -96,7 +96,7 @@ void main() {
 
       // State restored
       expect(find.byType(HomeErrorState), findsNothing);
-      expect(find.byType(TrendingSection), findsOneWidget);
+      expect(find.byType(TrendingSection, skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('renders Empty State when data has no tracks', (tester) async {
@@ -125,7 +125,7 @@ void main() {
       await tester.pump();
 
       expect(find.byType(HomeEmptyState), findsNothing);
-      expect(find.byType(TrendingSection), findsOneWidget);
+      expect(find.byType(TrendingSection, skipOffstage: false), findsOneWidget);
     });
 
     testWidgets('responsive layout renders on 360dp width without overflow',

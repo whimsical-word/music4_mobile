@@ -1,20 +1,55 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
+import '../widgets/vinyl_disc_widget.dart';
+import '../widgets/player_controls_widget.dart';
+import '../widgets/track_info_widget.dart';
+import '../widgets/progress_bar_widget.dart';
 
-class MusicPlayerScreen extends StatelessWidget {
+class MusicPlayerScreen extends StatefulWidget {
   const MusicPlayerScreen({super.key});
+
+  @override
+  State<MusicPlayerScreen> createState() => _MusicPlayerScreenState();
+}
+
+class _MusicPlayerScreenState extends State<MusicPlayerScreen> with SingleTickerProviderStateMixin {
+  late AnimationController _spinController;
+  bool _isPlaying = false, _isShuffle = false, _isRepeat = false;
+  double _currentValue = 30.0;
+
+  @override
+  void initState() {
+    super.initState();
+    _spinController = AnimationController(vsync: this, duration: const Duration(seconds: 10));
+  }
+
+  @override
+  void dispose() {
+    _spinController.dispose();
+    super.dispose();
+  }
+
+  void _togglePlayPause() {
+    HapticFeedback.lightImpact();
+    setState(() {
+      _isPlaying = !_isPlaying;
+      _isPlaying ? _spinController.repeat() : _spinController.stop();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.keyboard_arrow_down, size: 32),
+          onPressed: () => context.pop(), // Thu nhỏ player
+        ),
         title: const Text('Đang phát'),
         centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.favorite_border),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.more_vert), onPressed: () => context.push('/track/1')),
         ],
       ),
       body: Padding(
@@ -22,82 +57,14 @@ class MusicPlayerScreen extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            // Artwork
-            Container(
-              width: 280,
-              height: 280,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: AppColors.card,
-                boxShadow: const [
-                  BoxShadow(
-                    color: Colors.black54,
-                    blurRadius: 20,
-                    offset: Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: const Icon(Icons.music_note, size: 100, color: AppColors.primary),
-            ),
-            // Track Info
-            const Column(
-              children: [
-                Text(
-                  'Tên bài hát mẫu',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 8),
-                Text(
-                  'Tên Ca Sĩ / Nghệ sĩ',
-                  style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-            // Progress Bar
-            Column(
-              children: [
-                Slider(
-                  value: 30,
-                  max: 200,
-                  activeColor: AppColors.primary,
-                  inactiveColor: AppColors.divider,
-                  onChanged: (val) {},
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 16.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('0:30', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                      Text('3:20', style: TextStyle(color: AppColors.textMuted, fontSize: 12)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            // Controls
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.skip_previous, size: 36),
-                  onPressed: () {},
-                ),
-                const SizedBox(width: 24),
-                CircleAvatar(
-                  radius: 36,
-                  backgroundColor: AppColors.primary,
-                  child: IconButton(
-                    icon: const Icon(Icons.play_arrow, size: 36, color: Colors.black),
-                    onPressed: () {},
-                  ),
-                ),
-                const SizedBox(width: 24),
-                IconButton(
-                  icon: const Icon(Icons.skip_next, size: 36),
-                  onPressed: () {},
-                ),
-              ],
+            VinylDiscWidget(animation: _spinController, imageUrl: 'https://picsum.photos/300'),
+            const TrackInfoWidget(),
+            ProgressBarWidget(currentValue: _currentValue, onChanged: (val) => setState(() => _currentValue = val)),
+            PlayerControlsWidget(
+              isPlaying: _isPlaying, isShuffle: _isShuffle, isRepeat: _isRepeat,
+              onPlayPause: _togglePlayPause,
+              onShuffle: () => setState(() => _isShuffle = !_isShuffle),
+              onRepeat: () => setState(() => _isRepeat = !_isRepeat),
             ),
           ],
         ),
