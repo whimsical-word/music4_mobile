@@ -11,6 +11,7 @@ void main() {
     // Verify that the title 'Music4' is present in the app bar
     await tester.tap(find.text('Login'));
     await tester.pumpAndSettle();
+    
     expect(find.text('Music4'), findsOneWidget);
   });
 }
