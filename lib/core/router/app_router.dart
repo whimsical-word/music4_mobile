@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../features/user_profile/presentation/screens/user_profile_screen.dart';
+
 import 'route_names.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../features/auth/presentation/screens/user_profile_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/artist_profile/presentation/screens/artist_profile_screen.dart';
@@ -63,8 +64,8 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
-      path: RouteNames.profile,
-      name: 'profile',
+      path: RouteNames.userProfile,
+      name: 'user-profile',
       builder: (context, state) => const UserProfileScreen(),
     ),
 
@@ -80,7 +81,10 @@ final GoRouter appRouter = GoRouter(
             const begin = Offset(0.0, 1.0);
             const end = Offset.zero;
             const curve = Curves.easeInOutCubic;
-            var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
             return SlideTransition(
               position: animation.drive(tween),
               child: child,
