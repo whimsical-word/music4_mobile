@@ -14,11 +14,7 @@ class NotificationRepository {
         '${ApiEndpoints.baseUrl}/api/notifications/user/$userId',
       );
 
-      // In log để debug lỗi TypeError
-      print('=== DEBUG NOTIFICATION API ===');
-      print('Response Data Type: ${response.data.runtimeType}');
-      print('Response Data: ${response.data}');
-      print('==============================');
+      // Dữ liệu thô từ API
 
       final dynamic rawData = response.data;
       final List<dynamic> data = rawData is List
