@@ -44,7 +44,7 @@ class UserProfileHeader extends StatelessWidget {
                       ? NetworkImage(profile.avatarUrl)
                       : null,
                   onBackgroundImageError: profile.avatarUrl.isNotEmpty
-                      ? (_, __) {}
+                      ? (_, _) {}
                       : null,
                   child: profile.avatarUrl.isEmpty
                       ? const Icon(

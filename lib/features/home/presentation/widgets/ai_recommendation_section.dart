@@ -47,7 +47,7 @@ class AiRecommendationSection extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16.0),
             scrollDirection: Axis.horizontal,
             itemCount: tracks.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 12),
+            separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
               return AiRecommendationCard(track: tracks[index]);
             },

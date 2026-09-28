@@ -29,7 +29,7 @@ class AlbumDetailHeader extends StatelessWidget {
             child: Image.network(
               imageUrl,
               fit: BoxFit.cover,
-              errorBuilder: (_, __, ___) => Container(
+              errorBuilder: (_, _, _) => Container(
                 color: AppColors.surface,
                 child: const Icon(Icons.album, size: 80, color: AppColors.primary),
               ),

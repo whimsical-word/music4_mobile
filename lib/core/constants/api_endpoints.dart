@@ -1,8 +1,35 @@
+import 'dart:io';
+import 'package:flutter/foundation.dart';
+
 class ApiEndpoints {
   ApiEndpoints._();
 
-  // Thay đổi IP này theo môi trường chạy của bạn (VD: 10.0.2.2 cho Android Emulator, localhost cho iOS/Web, hoặc IP máy LAN)
-  static const String baseUrl = 'http://10.0.2.2:8080';
+  // ==========================================
+  // 🔴 1. CẤU HÌNH CHO ĐIỆN THOẠI THẬT
+  // Mở cmd gõ 'ipconfig' lấy IPv4 dán vào đây (VD: 192.168.1.45)
+  // ==========================================
+  static const String _lanIp = '192.168.1.45'; 
+
+  // ==========================================
+  // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO? 
+  // Để 'true' nếu dùng Máy Ảo (Emulator), 'false' nếu cắm cáp Điện thoại thật
+  // ==========================================
+  static const bool _isEmulator = true;
+
+  // Tự động phân giải IP theo môi trường
+  static String get baseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:8080'; // Web luôn là localhost
+    }
+    
+    if (_isEmulator) {
+      if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
+      if (Platform.isIOS) return 'http://localhost:8080';    // Máy ảo iOS (Simulator)
+    }
+
+    // Điện thoại thật (Phải bắt chung mạng WiFi với máy tính)
+    return 'http://$_lanIp:8080';
+  }
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 15);
 
