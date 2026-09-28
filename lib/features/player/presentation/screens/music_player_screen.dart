@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../widgets/player_controls_widget.dart';
+import '../widgets/progress_bar_widget.dart';
+import '../widgets/track_info_widget.dart';
+import '../widgets/vinyl_disc_widget.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   const MusicPlayerScreen({super.key});
