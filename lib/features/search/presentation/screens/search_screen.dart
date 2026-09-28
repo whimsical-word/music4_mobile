@@ -26,9 +26,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
   void _openVoiceSearchBottomSheet() async {
     HapticFeedback.lightImpact();
-    final hasPermission = await ref
-        .read(voiceSearchProvider.notifier)
-        .checkAndRequestPermission();
+    final hasPermission = await ref.read(voiceSearchProvider.notifier).checkAndRequestPermission();
 
     if (!hasPermission) return;
 
@@ -45,6 +43,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         builder: (context) => const VoiceSearchBottomSheet(),
       ).then((_) {
         _isVoiceSheetOpen = false;
+        
+        // FIX MERGE CONFLICT: Ép buộc dọn dẹp luồng Mic ngay khi đóng BottomSheet
+        ref.read(voiceSearchProvider.notifier).stopListening();
+
         final text = ref.read(voiceSearchProvider).recognizedWords;
         if (text.trim().isNotEmpty) {
           _searchController.text = text;
@@ -53,7 +55,6 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       });
     }
   }
-
   // Đã di chuyển _buildSectionTitle vào ĐÚNG VỊ TRÍ (bên trong _SearchScreenState)
   Widget _buildSectionTitle(
     String title,

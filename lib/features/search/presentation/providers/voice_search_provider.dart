@@ -116,39 +116,28 @@ class VoiceSearchNotifier extends StateNotifier<VoiceState> {
     }
   }
 
-  Future<void> startListening() async {
+    Future<void> startListening() async {
     try {
       final hasPermission = await checkAndRequestPermission();
       if (!hasPermission) {
-        state = state.copyWith(
-          errorMessage: 'Vui lòng cấp quyền Micro trong Cài đặt',
-        );
+        state = state.copyWith(errorMessage: 'Vui lòng cấp quyền Micro trong Cài đặt');
         return;
       }
 
       await _initSpeech();
       if (!_isInitialized) {
-        state = state.copyWith(
-          errorMessage: 'Không thể khởi tạo Engine nhận diện giọng nói',
-        );
+        state = state.copyWith(errorMessage: 'Không thể khởi tạo Engine nhận diện giọng nói');
         return;
       }
 
       String? targetLocaleId = await _resolveTargetLocale();
       if (targetLocaleId == null) {
         String langName = state.isEnglishMode ? 'Tiếng Anh' : 'Tiếng Việt';
-        state = state.copyWith(
-          isListening: false,
-          errorMessage: 'Thiết bị chưa cài gói nhận diện $langName.',
-        );
+        state = state.copyWith(isListening: false, errorMessage: 'Thiết bị chưa cài gói nhận diện $langName.');
         return;
       }
 
-      state = state.copyWith(
-        errorMessage: '',
-        recognizedWords: '',
-        isListening: true,
-      );
+      state = state.copyWith(errorMessage: '', recognizedWords: '', isListening: true);
 
       void resetSilenceTimer() {
         _silenceTimer?.cancel();
@@ -157,33 +146,37 @@ class VoiceSearchNotifier extends StateNotifier<VoiceState> {
         });
       }
 
-      // ==========================================
-      // FIX LỖI RACE CONDITION & SAFE START
-      // ==========================================
+      // FIX MERGE CONFLICT: Bọc thép Safe Start ngắt luồng cũ an toàn trên Web
       if (_speechToText.isListening || _speechToText.isAvailable) {
-        _isCancelling = true; // Bật khiên bảo vệ
+        _isCancelling = true;
         await _speechToText.cancel();
-        await Future.delayed(const Duration(milliseconds: 100));
-        _isCancelling = false; // Hạ khiên
+        await Future.delayed(const Duration(milliseconds: 100)); // Trình duyệt cần 100ms để dọn rác
+        _isCancelling = false;
       }
 
-      await _speechToText.listen(
-        onResult: (result) {
-          state = state.copyWith(recognizedWords: result.recognizedWords);
-          resetSilenceTimer();
-        },
-        localeId: targetLocaleId,
-      );
+      // FIX MERGE CONFLICT: Dập lỗi InvalidStateError bằng try-catch cục bộ
+      try {
+        await _speechToText.listen(
+          onResult: (result) {
+            state = state.copyWith(recognizedWords: result.recognizedWords);
+            resetSilenceTimer();
+          },
+          listenOptions: SpeechListenOptions(localeId: targetLocaleId),
+        );
+      } catch (e) {
+        if (e.toString().contains('InvalidStateError')) {
+          // Nếu vẫn bị Webkit bắt bẻ, force tắt và kết thúc im lặng
+          stopListening();
+          return;
+        }
+        rethrow;
+      }
 
       resetSilenceTimer();
     } catch (e) {
-      state = state.copyWith(
-        isListening: false,
-        errorMessage: 'Lỗi hệ thống: ${e.toString()}',
-      );
+      state = state.copyWith(isListening: false, errorMessage: 'Lỗi hệ thống: ${e.toString()}');
     }
   }
-
   Future<void> stopListening() async {
     _silenceTimer?.cancel();
     await _speechToText.stop();
