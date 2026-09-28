@@ -161,7 +161,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                   title: track.title,
                   artist: track.artist,
                   duration: track.duration,
-                  onTap: () => context.push(RouteNames.player),
+                  onTap: () => context.push('/track/${index + 1}'),
                   onRemove: () => _removeTrack(index),
                 );
               },

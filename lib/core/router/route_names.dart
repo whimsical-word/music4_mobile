@@ -4,7 +4,7 @@ class RouteNames {
   static const String home = '/';
   static const String login = '/login';
   static const String register = '/register';
-  static const String profile = '/profile';
+
   static const String search = '/search';
   static const String playlist = '/playlist';
   static const String playlistDetail = '/playlist/:id';
@@ -19,4 +19,5 @@ class RouteNames {
   static const String notifications = '/notifications';
   static const String categoryDetail = '/category/:id';
   static const String admin = '/admin';
+  static const String userProfile = '/user-profile';
 }

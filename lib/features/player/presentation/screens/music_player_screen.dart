@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
-import '../widgets/vinyl_disc_widget.dart';
 import '../widgets/player_controls_widget.dart';
-import '../widgets/track_info_widget.dart';
 import '../widgets/progress_bar_widget.dart';
+import '../widgets/track_info_widget.dart';
+import '../widgets/vinyl_disc_widget.dart';
 
 class MusicPlayerScreen extends StatefulWidget {
   const MusicPlayerScreen({super.key});
@@ -49,7 +49,15 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> with SingleTicker
         title: const Text('Đang phát'),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.more_vert), onPressed: () => context.push('/track/1')),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            tooltip: 'Xem chi tiết bài hát',
+            onPressed: () => context.push('/track/1'),
+          ),
+          IconButton(
+            icon: const Icon(Icons.favorite_border),
+            onPressed: () {},
+          ),
         ],
       ),
       body: Padding(
