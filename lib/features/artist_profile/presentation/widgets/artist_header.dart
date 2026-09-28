@@ -42,7 +42,7 @@ class ArtistHeader extends StatelessWidget {
               child: Image.network(
                 artist.coverUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: AppColors.surface),
+                errorBuilder: (_, _, _) => Container(color: AppColors.surface),
               ),
             ),
             Positioned(
@@ -54,7 +54,7 @@ class ArtistHeader extends StatelessWidget {
                   radius: 46,
                   backgroundColor: AppColors.card,
                   backgroundImage: NetworkImage(artist.avatarUrl),
-                  onBackgroundImageError: (_, __) {},
+                  onBackgroundImageError: (_, _) {},
                   child: const Icon(Icons.person, size: 40, color: AppColors.textMuted),
                 ),
               ),
