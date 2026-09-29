@@ -1,62 +1,82 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class NotificationScreen extends StatefulWidget {
+import '../providers/notification_provider.dart';
+import '../widgets/notification_tile.dart';
+import '../widgets/notification_shimmer.dart';
+import '../widgets/notification_error_view.dart';
+
+class NotificationScreen extends ConsumerWidget {
   const NotificationScreen({super.key});
 
   @override
-  State<NotificationScreen> createState() => _NotificationScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final notificationState = ref.watch(notificationProvider);
+    final theme = Theme.of(context);
 
-class _NotificationScreenState extends State<NotificationScreen> {
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => isLoading = false);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Thông báo'),
-        actions: [TextButton(onPressed: () {}, child: const Text('Đánh dấu đã đọc'))],
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.done_all),
+            onPressed: () {
+              // TODO: Tích hợp hàm đánh dấu đã đọc tất cả ở Tuần 4
+            },
+            tooltip: 'Đánh dấu đã đọc',
+          ),
+        ],
       ),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (isLoading) return _buildShimmer(constraints);
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.notifications_off_outlined, size: 64, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5)),
-                const SizedBox(height: 16),
-                const Text('Bạn không có thông báo nào.'),
-              ],
+      body: notificationState.when(
+        loading: () => const NotificationShimmer(),
+
+        error: (error, stack) => NotificationErrorView(
+          errorMessage: error.toString().replaceAll('Exception: ', ''),
+          onRetry: () => ref.read(notificationProvider.notifier).refresh(),
+        ),
+
+        data: (notifications) {
+          if (notifications.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.notifications_off_outlined,
+                    size: 64,
+                    color: theme.colorScheme.outline,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Bạn chưa có thông báo nào.',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }
+
+          return RefreshIndicator(
+            onRefresh: () => ref.read(notificationProvider.notifier).refresh(),
+            child: ListView.separated(
+              itemCount: notifications.length,
+              separatorBuilder: (context, index) =>
+                  const Divider(height: 1, indent: 72),
+              itemBuilder: (context, index) {
+                final notification = notifications[index];
+                return NotificationTile(
+                  notification: notification,
+                  onTap: () {
+                    // TODO: Điều hướng đến trang tương ứng (Ví dụ: Chi tiết bài hát)
+                  },
+                );
+              },
             ),
           );
-        }
-      ),
-    );
-  }
-
-  Widget _buildShimmer(BoxConstraints constraints) {
-    return ListView.separated(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      itemCount: 8,
-      separatorBuilder: (context, index) => const Divider(height: 1),
-      itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: Colors.grey[800]!, highlightColor: Colors.grey[600]!,
-        child: ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          leading: const CircleAvatar(backgroundColor: Colors.white, radius: 24),
-          title: Container(width: double.infinity, height: 14, color: Colors.white, margin: const EdgeInsets.only(bottom: 8)),
-          subtitle: Container(width: constraints.maxWidth * 0.6, height: 12, color: Colors.white),
-        ),
+        },
       ),
     );
   }
