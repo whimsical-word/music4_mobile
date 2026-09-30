@@ -34,10 +34,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     // 2. Gọi AuthNotifier.login() — notifier sẽ chuyển state sang Loading → Authenticated/Error
-    await ref.read(authNotifierProvider.notifier).login(
-          _usernameController.text.trim(),
-          _passwordController.text,
-        );
+    await ref
+        .read(authNotifierProvider.notifier)
+        .login(_usernameController.text.trim(), _passwordController.text);
   }
 
   @override
@@ -86,8 +85,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 24),
                   const Text(
                     'Sign in',
-                    style: TextStyle(
-                        fontSize: 28, fontWeight: FontWeight.bold),
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 8),
@@ -99,8 +97,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 40),
                   const Text(
                     'Username',
-                    style: TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 8),
                   // TextFormField thay vì TextField — tích hợp với Form để validate
@@ -117,7 +114,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                     ),
                     validator: (value) {
                       if (value == null || value.trim().isEmpty) {
@@ -129,8 +128,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 24),
                   const Text(
                     'Password',
-                    style: TextStyle(
-                        fontSize: 14, fontWeight: FontWeight.w500),
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 8),
                   TextFormField(
@@ -147,7 +145,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 16),
+                        horizontal: 16,
+                        vertical: 16,
+                      ),
                       suffixIcon: IconButton(
                         icon: Icon(
                           _obscurePassword
@@ -197,10 +197,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     onPressed: isLoading ? null : _onLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,
-                      disabledBackgroundColor:
-                          AppColors.primary.withOpacity(0.5),
-                      padding:
-                          const EdgeInsets.symmetric(vertical: 16),
+                      disabledBackgroundColor: AppColors.primary.withValues(
+                        alpha: 100,
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -226,25 +226,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 40),
                   Row(
                     children: [
-                      Expanded(
-                          child:
-                              Divider(color: Colors.grey.shade800)),
+                      Expanded(child: Divider(color: Colors.grey.shade800)),
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
-                        child: Text('Or',
-                            style: TextStyle(color: Colors.grey)),
+                        child: Text('Or', style: TextStyle(color: Colors.grey)),
                       ),
-                      Expanded(
-                          child:
-                              Divider(color: Colors.grey.shade800)),
+                      Expanded(child: Divider(color: Colors.grey.shade800)),
                     ],
                   ),
                   const SizedBox(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _buildSocialButton('G', null, () {}),
-                    ],
+                    children: [_buildSocialButton('G', null, () {})],
                   ),
                   const SizedBox(height: 48),
                   Row(
@@ -255,8 +248,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                         style: TextStyle(color: Colors.grey),
                       ),
                       GestureDetector(
-                        onTap: () =>
-                            context.push(RouteNames.register),
+                        onTap: () => context.push(RouteNames.register),
                         child: const Text(
                           'Sign up for Free',
                           style: TextStyle(
