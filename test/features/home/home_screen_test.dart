@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music4_mobile/core/theme/app_theme.dart';
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_controller.dart';
+import 'package:music4_mobile/features/home/presentation/controllers/home_feed_state.dart';
 import 'package:music4_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/ai_recommendation_banner.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/ai_recommendation_section.dart';
@@ -10,10 +11,35 @@ import 'package:music4_mobile/features/home/presentation/widgets/home_empty_stat
 import 'package:music4_mobile/features/home/presentation/widgets/home_error_state.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/home_shimmer_skeleton.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/trending_section.dart';
+import 'package:music4_mobile/features/home/data/sources/home_mock_data.dart';
+
+class MockHomeFeedController extends HomeFeedController {
+  @override
+  Future<HomeFeedState> build() async {
+    return _fetchHomeFeed();
+  }
+
+  Future<HomeFeedState> _fetchHomeFeed() async {
+    return const HomeFeedState(
+      featuredAiTrack: HomeMockData.featuredAiTrack,
+      aiRecommendations: HomeMockData.aiRecommendations,
+      trendingTracks: HomeMockData.topTrendingTracks,
+    );
+  }
+
+  @override
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() async => _fetchHomeFeed());
+  }
+}
 
 Widget createTestWidget({List<Override> overrides = const []}) {
   return ProviderScope(
-    overrides: overrides,
+    overrides: [
+      homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+      ...overrides,
+    ],
     child: MaterialApp(
       theme: AppTheme.darkTheme,
       home: const HomeScreen(),
@@ -26,7 +52,7 @@ void main() {
     testWidgets('renders loaded Home feed with AI recommendation and Top Trending',
         (tester) async {
       await tester.pumpWidget(createTestWidget());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // Verify App Bar
       expect(find.text('Music4'), findsOneWidget);
@@ -44,7 +70,11 @@ void main() {
 
     testWidgets('renders Loading Shimmer Skeleton when in loading state',
         (tester) async {
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [
+          homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+        ],
+      );
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -67,7 +97,11 @@ void main() {
     });
 
     testWidgets('renders Error State and allows retry', (tester) async {
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [
+          homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+        ],
+      );
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -92,7 +126,7 @@ void main() {
 
       // Tap retry button
       await tester.tap(find.text('Thử lại'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // State restored
       expect(find.byType(HomeErrorState), findsNothing);
@@ -100,7 +134,11 @@ void main() {
     });
 
     testWidgets('renders Empty State when data has no tracks', (tester) async {
-      final container = ProviderContainer();
+      final container = ProviderContainer(
+        overrides: [
+          homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+        ],
+      );
       addTearDown(container.dispose);
 
       await tester.pumpWidget(
@@ -122,7 +160,7 @@ void main() {
 
       // Tap refresh
       await tester.tap(find.text('Làm mới'));
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       expect(find.byType(HomeEmptyState), findsNothing);
       expect(find.byType(TrendingSection, skipOffstage: false), findsOneWidget);
@@ -139,7 +177,7 @@ void main() {
       });
 
       await tester.pumpWidget(createTestWidget());
-      await tester.pump();
+      await tester.pumpAndSettle();
 
       // Verify that no RenderFlex overflow error is thrown
       expect(tester.takeException(), isNull);
