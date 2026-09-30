@@ -8,10 +8,14 @@ void main() {
   ) async {
     await tester.pumpWidget(const ProviderScope(child: Music4App()));
 
-    // Verify that the title 'Music4' is present in the app bar
+    // Navigate from Login to Home.
     await tester.tap(find.text('Login'));
-    await tester.pumpAndSettle();
-    
+
+    // Do not use pumpAndSettle() because Home contains ongoing animations
+    // such as Shimmer/async UI updates.
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 500));
+
     expect(find.text('Music4'), findsOneWidget);
   });
 }
