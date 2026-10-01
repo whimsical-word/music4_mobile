@@ -5,6 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+class LocaleNotAvailableException implements Exception {
+  final String message;
+  LocaleNotAvailableException(this.message);
+}
+
 class VoiceState {
   final bool isListening;
   final String recognizedWords;
@@ -117,6 +122,9 @@ class VoiceSearchNotifier extends StateNotifier<VoiceState> {
   }
 
     Future<void> startListening() async {
+    // FIX: Xóa lỗi cũ để UI listener có thể bắt được sự thay đổi State ở những lần nhấn sau
+    state = state.copyWith(errorMessage: '');
+
     try {
       final hasPermission = await checkAndRequestPermission();
       if (!hasPermission) {
@@ -124,16 +132,23 @@ class VoiceSearchNotifier extends StateNotifier<VoiceState> {
         return;
       }
 
-      await _initSpeech();
-      if (!_isInitialized) {
-        state = state.copyWith(errorMessage: 'Không thể khởi tạo Engine nhận diện giọng nói');
+      try {
+        await _initSpeech();
+        if (!_isInitialized) {
+          state = state.copyWith(errorMessage: 'Lỗi khởi tạo micro: Không thể kết nối Engine nhận diện.');
+          return;
+        }
+      } catch (initErr) {
+        state = state.copyWith(errorMessage: 'Lỗi khởi tạo micro: ${initErr.toString()}');
         return;
       }
 
       String? targetLocaleId = await _resolveTargetLocale();
       if (targetLocaleId == null) {
-        String langName = state.isEnglishMode ? 'Tiếng Anh' : 'Tiếng Việt';
-        state = state.copyWith(isListening: false, errorMessage: 'Thiết bị chưa cài gói nhận diện $langName.');
+        state = state.copyWith(
+          isListening: false,
+          errorMessage: 'Hệ điều hành hiện tại không hỗ trợ nhận diện giọng nói cho ngôn ngữ này. Vui lòng thử lại trên điện thoại hoặc trình duyệt Web.',
+        );
         return;
       }
 
@@ -173,6 +188,8 @@ class VoiceSearchNotifier extends StateNotifier<VoiceState> {
       }
 
       resetSilenceTimer();
+    } on LocaleNotAvailableException catch (e) {
+      state = state.copyWith(isListening: false, errorMessage: e.message);
     } catch (e) {
       state = state.copyWith(isListening: false, errorMessage: 'Lỗi hệ thống: ${e.toString()}');
     }
@@ -188,6 +205,13 @@ class VoiceSearchNotifier extends StateNotifier<VoiceState> {
     _silenceTimer?.cancel();
     await _speechToText.cancel();
     state = state.copyWith(isListening: false, recognizedWords: '');
+  }
+
+  // BỔ SUNG: Reset lỗi sau khi UI đã show SnackBar để tránh spam
+  void clearError() {
+    if (state.errorMessage.isNotEmpty) {
+      state = state.copyWith(errorMessage: '');
+    }
   }
 
   @override

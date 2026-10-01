@@ -136,13 +136,28 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
     ref.listen<VoiceState>(voiceSearchProvider, (previous, next) {
       if (next.errorMessage.isNotEmpty &&
           next.errorMessage != previous?.errorMessage) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(next.errorMessage)));
+        
+        // 1. BẮT BUỘC: Đóng ngay Dialog/BottomSheet bị kẹt
+        if (_isVoiceSheetOpen && Navigator.of(context).canPop()) {
+          Navigator.of(context).pop();
+        }
+
+        // 2. BẮT BUỘC: Sau đó mới gọi ScaffoldMessenger hiển thị lỗi
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.errorMessage),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        // 3. BẮT BUỘC: Reset State ngay lập tức để tránh vòng lặp Spam SnackBar ở lần build sau
+        Future.microtask(() => ref.read(voiceSearchProvider.notifier).clearError());
       }
     });
 
     ref.listen<VoiceState>(voiceSearchProvider, (previous, next) {
-      if (previous?.isListening == true && next.isListening == false) {
+      if (previous?.isListening == true && next.isListening == false && next.errorMessage.isEmpty) {
         if (_isVoiceSheetOpen && Navigator.canPop(context)) {
           Navigator.pop(context);
         }
