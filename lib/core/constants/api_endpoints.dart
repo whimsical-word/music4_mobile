@@ -19,19 +19,34 @@ class ApiEndpoints {
 
   // Tự động phân giải IP theo môi trường
   static String get baseUrl {
-    if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-      return 'http://localhost:8080'; // Web và Desktop luôn là localhost
-    }
+    /* 
+    🔴 CHÚ Ý DÀNH CHO TEAM (T1 -> T5) KHI TEST API 🔴
+    ======================================================
+    1. ĐỂ TEST TRÊN ĐIỆN THOẠI THẬT (Cắm cáp):
+       - Máy tính và điện thoại BẮT BUỘC dùng chung 1 mạng Wi-Fi.
+       - Gõ lệnh 'ipconfig' trên máy tính để lấy IPv4 (Ví dụ: 192.168.88.149).
+       - Mở comment dòng IP LAN bên dưới và điền đúng IP đó. Đóng comment tất cả các dòng còn lại.
 
-    if (_isEmulator) {
-      if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
-      if (Platform.isIOS) {
-        return 'http://localhost:8080'; // Máy ảo iOS (Simulator)
-      }
-    }
+    2. ĐỂ TEST TRÊN WEB / WINDOWS / MÁY ẢO EMULATOR:
+       - Đóng comment dòng IP LAN.
+       - Mở comment các dòng (if kIsWeb, _isEmulator...) ở bên dưới.
+    ======================================================
+    */
 
-    // Điện thoại thật (Phải bắt chung mạng WiFi với máy tính)
-    return 'http://$_lanIp:8080';
+    // 👇 MỞ DÒNG NÀY VÀ SỬA IP NẾU TEST MÁY THẬT
+    return 'http://192.168.88.149:8080'; 
+
+    // 👇 MỞ CÁC DÒNG NÀY NẾU TEST TRÊN WEB / WINDOWS / MÁY ẢO
+    // if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+    //   return 'http://localhost:8080'; // Web và Desktop luôn là localhost
+    // }
+
+    // if (_isEmulator) {
+    //   if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
+    //   if (Platform.isIOS) return 'http://localhost:8080'; // Máy ảo iOS
+    // }
+
+    // return 'http://$_lanIp:8080';
   }
 
   static const Duration connectTimeout = Duration(seconds: 15);
