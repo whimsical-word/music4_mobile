@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../domain/models/player_state_data.dart';
+import '../../../auth/data/datasources/token_storage.dart';
 
 final audioPlayerProvider = Provider<AudioPlayer>((ref) {
   final player = AudioPlayer();
@@ -59,7 +60,10 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
     try {
       state = const AsyncLoading();
       
-      final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/$trackId';
+      await _player.stop();
+      
+      final token = await TokenStorage.instance.getAccessToken();
+      final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/$trackId?token=${token ?? ""}';
       
       await _player.setAudioSource(
         AudioSource.uri(
