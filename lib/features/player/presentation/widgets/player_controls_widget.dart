@@ -6,18 +6,26 @@ class PlayerControlsWidget extends StatelessWidget {
   final bool isPlaying;
   final bool isShuffle;
   final bool isRepeat;
+  final bool hasNext;
+  final bool hasPrevious;
   final VoidCallback onPlayPause;
   final VoidCallback onShuffle;
   final VoidCallback onRepeat;
+  final VoidCallback onNext;
+  final VoidCallback onPrevious;
 
   const PlayerControlsWidget({
     super.key,
     required this.isPlaying,
     required this.isShuffle,
     required this.isRepeat,
+    required this.hasNext,
+    required this.hasPrevious,
     required this.onPlayPause,
     required this.onShuffle,
     required this.onRepeat,
+    required this.onNext,
+    required this.onPrevious,
   });
 
   @override
@@ -30,9 +38,10 @@ class PlayerControlsWidget extends StatelessWidget {
           onPressed: onShuffle,
         ),
         IconButton(
-          icon: const Icon(Icons.skip_previous, size: 36),
+          icon: Icon(Icons.skip_previous, size: 36, color: hasPrevious ? Colors.white : AppColors.textMuted),
           onPressed: () {
             HapticFeedback.lightImpact();
+            onPrevious();
           },
         ),
         CircleAvatar(
@@ -44,9 +53,10 @@ class PlayerControlsWidget extends StatelessWidget {
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.skip_next, size: 36),
+          icon: Icon(Icons.skip_next, size: 36, color: hasNext ? Colors.white : AppColors.textMuted),
           onPressed: () {
             HapticFeedback.lightImpact();
+            if (hasNext) onNext();
           },
         ),
         IconButton(

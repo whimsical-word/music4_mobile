@@ -49,6 +49,23 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
         state = state.whenData((data) => data.copyWith(duration: duration));
       }
     });
+
+    _player.sequenceStateStream.listen((sequenceState) {
+      final currentSource = sequenceState.currentSource;
+      if (currentSource == null) return;
+      if (currentSource.tag is TrackQueueItem) {
+        final tag = currentSource.tag as TrackQueueItem;
+        state = state.whenData((data) => data.copyWith(
+          currentTrackId: tag.id,
+          title: tag.title,
+          artist: tag.artist,
+          coverUrl: tag.coverUrl,
+          duration: tag.duration,
+          hasNext: _player.hasNext,
+          hasPrevious: _player.hasPrevious,
+        ));
+      }
+    });
   }
 
   Future<void> playTrack({
@@ -90,6 +107,61 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
       ));
     } catch (e, st) {
       state = AsyncError("Không thể tải luồng nhạc. Vui lòng thử lại.", st);
+    }
+  }
+
+  Future<void> playPlaylist(List<TrackQueueItem> playlist, int initialIndex) async {
+    try {
+      state = const AsyncLoading();
+      await _player.stop();
+
+      final token = await TokenStorage.instance.getAccessToken();
+      
+      final audioSources = playlist.map((item) {
+        final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=${token ?? ""}';
+        return AudioSource.uri(
+          Uri.parse(streamUrl),
+          tag: item,
+        );
+      }).toList();
+
+      // ignore: deprecated_member_use
+      final playlistSource = ConcatenatingAudioSource(
+        useLazyPreparation: true,
+        children: audioSources,
+      );
+
+      _player.play(); // Auto-play
+
+      await _player.setAudioSource(
+        playlistSource,
+        initialIndex: initialIndex,
+        initialPosition: Duration.zero,
+      );
+      
+      state = state.whenData((data) => data.copyWith(isPlaying: true));
+    } catch (e, st) {
+      state = AsyncError("Lỗi khi tải danh sách phát.", st);
+    }
+  }
+
+  Future<void> next() async {
+    if (_player.hasNext) {
+      await _player.seekToNext();
+    }
+  }
+
+  Future<void> previous() async {
+    // If playing for more than 3 seconds, restart the song
+    if (_player.position > const Duration(seconds: 3)) {
+      await _player.seek(Duration.zero);
+    } else {
+      // Otherwise go to previous song if it exists, else just restart
+      if (_player.hasPrevious) {
+        await _player.seekToPrevious();
+      } else {
+        await _player.seek(Duration.zero);
+      }
     }
   }
 

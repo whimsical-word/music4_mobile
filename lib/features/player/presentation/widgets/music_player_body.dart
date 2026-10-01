@@ -13,6 +13,8 @@ class MusicPlayerBody extends StatelessWidget {
   final VoidCallback onPlayPause;
   final VoidCallback onShuffle;
   final VoidCallback onRepeat;
+  final VoidCallback onNext;
+  final VoidCallback onPrevious;
   final ValueChanged<double> onSeek;
 
   const MusicPlayerBody({
@@ -24,6 +26,8 @@ class MusicPlayerBody extends StatelessWidget {
     required this.onPlayPause,
     required this.onShuffle,
     required this.onRepeat,
+    required this.onNext,
+    required this.onPrevious,
     required this.onSeek,
   });
 
@@ -54,9 +58,13 @@ class MusicPlayerBody extends StatelessWidget {
             isPlaying: state.isPlaying,
             isShuffle: isShuffle,
             isRepeat: isRepeat,
+            hasNext: state.hasNext,
+            hasPrevious: state.hasPrevious,
             onPlayPause: onPlayPause,
             onShuffle: onShuffle,
             onRepeat: onRepeat,
+            onNext: onNext,
+            onPrevious: onPrevious,
           ),
         ],
       ),

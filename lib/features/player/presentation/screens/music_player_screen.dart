@@ -71,6 +71,8 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
           onPlayPause: () => _onPlayPause(state.isPlaying),
           onShuffle: () => setState(() => _isShuffle = !_isShuffle),
           onRepeat: () => setState(() => _isRepeat = !_isRepeat),
+          onNext: () => ref.read(playerNotifierProvider.notifier).next(),
+          onPrevious: () => ref.read(playerNotifierProvider.notifier).previous(),
           onSeek: (val) {
             ref.read(playerNotifierProvider.notifier).seek(Duration(seconds: val.toInt()));
           },
