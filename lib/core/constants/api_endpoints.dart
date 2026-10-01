@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 
 class ApiEndpoints {
@@ -8,10 +9,10 @@ class ApiEndpoints {
   // 🔴 1. CẤU HÌNH CHO ĐIỆN THOẠI THẬT
   // Mở cmd gõ 'ipconfig' lấy IPv4 dán vào đây (VD: 192.168.1.45)
   // ==========================================
-  static const String _lanIp = '192.168.1.45'; 
+  static const String _lanIp = '192.168.1.45';
 
   // ==========================================
-  // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO? 
+  // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
   // Để 'true' nếu dùng Máy Ảo (Emulator), 'false' nếu cắm cáp Điện thoại thật
   // ==========================================
   static const bool _isEmulator = true;
@@ -21,15 +22,18 @@ class ApiEndpoints {
     if (kIsWeb) {
       return 'http://localhost:8080'; // Web luôn là localhost
     }
-    
+
     if (_isEmulator) {
       if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
-      if (Platform.isIOS) return 'http://localhost:8080';    // Máy ảo iOS (Simulator)
+      if (Platform.isIOS) {
+        return 'http://localhost:8080'; // Máy ảo iOS (Simulator)
+      }
     }
 
     // Điện thoại thật (Phải bắt chung mạng WiFi với máy tính)
     return 'http://$_lanIp:8080';
   }
+
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 15);
 
@@ -75,5 +79,6 @@ class ApiEndpoints {
 
   // Notifications
   static const String notifications = '/api/notifications/user'; // + /{userId}
-  static const String subscribeNotification = '/api/notifications/subscribe'; // + /{userId}
+  static const String subscribeNotification =
+      '/api/notifications/subscribe'; // + /{userId}
 }
