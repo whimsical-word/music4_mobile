@@ -79,10 +79,12 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
         );
       }).toList();
 
-      // Disable lazy preparation to proactively buffer all track streams at once
+      // Use lazy preparation: only buffer next 1-2 tracks, not the whole playlist at once.
+      // Loading ALL tracks simultaneously (useLazyPreparation: false) floods the backend
+      // with N concurrent S3 requests, causing connection pool exhaustion and seek lag.
       // ignore: deprecated_member_use
       final playlistSource = ConcatenatingAudioSource(
-        useLazyPreparation: false,
+        useLazyPreparation: true,
         children: audioSources,
       );
 
@@ -100,81 +102,102 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
     }
   }
 
-  bool _isSeeking = false;
+  // Debounce seek: tracks the desired target index, executes seek after a short idle window.
+  // This lets the user click Next/Prev as fast as they want — only the final target is acted upon.
+  int? _targetSeekIndex;
+  DateTime _lastSeekRequestTime = DateTime.fromMillisecondsSinceEpoch(0);
+  static const _seekDebounce = Duration(milliseconds: 150);
 
   Future<void> next() async {
-    if (_isSeeking) return;
-    if (_player.hasNext) {
-      _isSeeking = true;
-      // Optimistic UI update
-      final currentIndex = _player.currentIndex ?? 0;
-      final nextIndex = currentIndex + 1;
-      final sequence = _player.sequence;
-      if (sequence != null && nextIndex < sequence.length) {
-        final tag = sequence[nextIndex].tag;
-        if (tag is TrackQueueItem) {
-          state = state.whenData((data) => data.copyWith(
-            currentTrackId: tag.id,
-            title: tag.title,
-            artist: tag.artist,
-            coverUrl: tag.coverUrl,
-            duration: tag.duration,
-            hasNext: nextIndex < sequence.length - 1,
-            hasPrevious: true,
-          ));
-        }
-      }
-      try {
-        await _player.seekToNext();
-      } finally {
-        _isSeeking = false;
+    final sequence = _player.sequence;
+    if (sequence == null) return;
+
+    final currentIndex = _targetSeekIndex ?? _player.currentIndex ?? 0;
+    final nextIndex = currentIndex + 1;
+    if (nextIndex >= sequence.length) return;
+
+    _targetSeekIndex = nextIndex;
+    _lastSeekRequestTime = DateTime.now();
+
+    // Optimistic UI update immediately
+    final tag = sequence[nextIndex].tag;
+    if (tag is TrackQueueItem) {
+      state = state.whenData((data) => data.copyWith(
+        currentTrackId: tag.id,
+        title: tag.title,
+        artist: tag.artist,
+        coverUrl: tag.coverUrl,
+        duration: tag.duration,
+        hasNext: nextIndex < sequence.length - 1,
+        hasPrevious: true,
+        position: Duration.zero,
+        bufferedPosition: Duration.zero,
+      ));
+    }
+
+    // Wait for debounce window — if more clicks come in, this one is superseded
+    final myRequestTime = _lastSeekRequestTime;
+    await Future.delayed(_seekDebounce);
+    if (_lastSeekRequestTime != myRequestTime) return; // superseded by newer click
+
+    // Execute the actual seek to the final target
+    try {
+      await _player.seek(Duration.zero, index: nextIndex);
+    } finally {
+      if (_lastSeekRequestTime == myRequestTime) {
+        _targetSeekIndex = null;
       }
     }
   }
 
   Future<void> previous() async {
-    if (_isSeeking) return;
-    
-    if (_player.position > const Duration(seconds: 3)) {
-      _isSeeking = true;
-      try {
-        await _player.seek(Duration.zero);
-      } finally {
-        _isSeeking = false;
-      }
-    } else {
-      if (_player.hasPrevious) {
-        _isSeeking = true;
-        // Optimistic UI update
-        final currentIndex = _player.currentIndex ?? 0;
-        final prevIndex = currentIndex - 1;
-        final sequence = _player.sequence;
-        if (sequence != null && prevIndex >= 0) {
-          final tag = sequence[prevIndex].tag;
-          if (tag is TrackQueueItem) {
-            state = state.whenData((data) => data.copyWith(
-              currentTrackId: tag.id,
-              title: tag.title,
-              artist: tag.artist,
-              coverUrl: tag.coverUrl,
-              duration: tag.duration,
-              hasNext: true,
-              hasPrevious: prevIndex > 0,
-            ));
-          }
-        }
-        try {
-          await _player.seekToPrevious();
-        } finally {
-          _isSeeking = false;
-        }
-      } else {
-        _isSeeking = true;
-        try {
-          await _player.seek(Duration.zero);
-        } finally {
-          _isSeeking = false;
-        }
+    final sequence = _player.sequence;
+    if (sequence == null) return;
+
+    final currentIndex = _targetSeekIndex ?? _player.currentIndex ?? 0;
+
+    // If user is already at the beginning of progress or rapid prev click, go to prev song
+    if (_player.position > const Duration(seconds: 3) && _targetSeekIndex == null) {
+      // First press while position > 3s: restart current song
+      await _player.seek(Duration.zero);
+      return;
+    }
+
+    final prevIndex = currentIndex - 1;
+    if (prevIndex < 0) {
+      await _player.seek(Duration.zero);
+      return;
+    }
+
+    _targetSeekIndex = prevIndex;
+    _lastSeekRequestTime = DateTime.now();
+
+    // Optimistic UI update immediately
+    final tag = sequence[prevIndex].tag;
+    if (tag is TrackQueueItem) {
+      state = state.whenData((data) => data.copyWith(
+        currentTrackId: tag.id,
+        title: tag.title,
+        artist: tag.artist,
+        coverUrl: tag.coverUrl,
+        duration: tag.duration,
+        hasNext: true,
+        hasPrevious: prevIndex > 0,
+        position: Duration.zero,
+        bufferedPosition: Duration.zero,
+      ));
+    }
+
+    final myRequestTime = _lastSeekRequestTime;
+    await Future.delayed(_seekDebounce);
+    if (_lastSeekRequestTime != myRequestTime) return; // superseded
+
+    // Execute the actual seek to the final target
+    try {
+      await _player.seek(Duration.zero, index: prevIndex);
+    } finally {
+      if (_lastSeekRequestTime == myRequestTime) {
+        _targetSeekIndex = null;
       }
     }
   }
