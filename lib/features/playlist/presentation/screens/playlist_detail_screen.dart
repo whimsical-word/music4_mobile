@@ -4,9 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/image_url_helper.dart';
+import '../../data/models/playlist_model.dart';
 import '../../data/models/playlist_track_model.dart';
+import '../controllers/playlist_controller.dart';
 import '../controllers/playlist_detail_controller.dart';
 import '../widgets/add_track_bottom_sheet.dart';
+import '../widgets/edit_playlist_dialog.dart';
 import '../widgets/playlist_detail_header.dart';
 import '../widgets/playlist_error_state.dart';
 import '../widgets/playlist_shimmer_skeleton.dart';
@@ -83,6 +87,47 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
     );
   }
 
+  void _showEditDialog(PlaylistModel playlist) async {
+    final result = await EditPlaylistDialog.show(
+      context,
+      initialName: playlist.name,
+      initialDescription: playlist.description,
+      initialCoverUrl: playlist.coverUrl,
+    );
+    if (result != null) {
+      try {
+        await ref
+            .read(playlistDetailControllerProvider(_id).notifier)
+            .updatePlaylist(
+              name: result.name,
+              description: result.description,
+              coverFilePath: result.coverFilePath,
+            );
+        // Đồng bộ danh sách playlist ngoài màn hình chính
+        ref.read(playlistControllerProvider.notifier).loadPlaylists();
+
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã cập nhật playlist "${result.name}"'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Cập nhật thất bại: ${e.toString().replaceAll("Exception: ", "")}',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final detailState = ref.watch(playlistDetailControllerProvider(_id));
@@ -94,6 +139,16 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
           onPressed: () => context.pop(),
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Chỉnh sửa playlist',
+            onPressed: () {
+              final playlist = detailState.value?.playlist;
+              if (playlist != null) {
+                _showEditDialog(playlist);
+              }
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.share_outlined),
             onPressed: () {
@@ -134,10 +189,12 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                 PlaylistDetailHeader(
                   title: playlist.name,
                   description: playlist.description,
+                  coverUrl: playlist.coverUrl,
                   trackCount: tracks.length,
                   onPlayAll: () => context.push(RouteNames.player),
                   onShuffle: () => context.push(RouteNames.player),
                   onAddTrack: () => _showAddTrackSheet(state.availableTracks),
+                  onEdit: () => _showEditDialog(playlist),
                   onShare: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -205,6 +262,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                       title: track.name,
                       artist: track.artistNames,
                       duration: track.formattedDuration,
+                      imageUrl: ImageUrlHelper.resolve(track.img),
                       onTap: () => context.push(RouteNames.player),
                       onRemove: () => _removeTrack(track.id, track.name),
                     );

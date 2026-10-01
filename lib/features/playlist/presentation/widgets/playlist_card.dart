@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/image_url_helper.dart';
 
 class PlaylistCard extends StatelessWidget {
   final String id;
@@ -11,6 +12,7 @@ class PlaylistCard extends StatelessWidget {
   final IconData icon;
   final bool isGrid;
   final VoidCallback onTap;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   const PlaylistCard({
@@ -22,6 +24,7 @@ class PlaylistCard extends StatelessWidget {
     this.icon = Icons.queue_music_rounded,
     this.isGrid = false,
     required this.onTap,
+    this.onEdit,
     this.onDelete,
   });
 
@@ -36,6 +39,7 @@ class PlaylistCard extends StatelessWidget {
   /// YouTube Music style List Tile (Gọn gàng, thanh lịch)
   Widget _buildListItem(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
+    final resolvedCover = ImageUrlHelper.resolve(coverUrl);
 
     return Material(
       color: Colors.transparent,
@@ -49,19 +53,31 @@ class PlaylistCard extends StatelessWidget {
           child: Row(
             children: [
               // Thumbnail 52x52 vuông bo góc kiểu YouTube Music
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(6),
-                  border: Border.all(
-                    color: AppColors.divider.withValues(alpha: 0.3),
-                    width: 0.8,
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  width: 52,
+                  height: 52,
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      width: 0.8,
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: Icon(icon, color: AppColors.primary, size: 24),
+                  child: resolvedCover != null && resolvedCover.isNotEmpty
+                      ? Image.network(
+                          resolvedCover,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Center(
+                            child:
+                                Icon(icon, color: AppColors.primary, size: 24),
+                          ),
+                        )
+                      : Center(
+                          child: Icon(icon, color: AppColors.primary, size: 24),
+                        ),
                 ),
               ),
               const SizedBox(width: 14),
@@ -108,6 +124,8 @@ class PlaylistCard extends StatelessWidget {
   Widget _buildGridItem(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
 
+    final resolvedCover = ImageUrlHelper.resolve(coverUrl);
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -122,17 +140,29 @@ class PlaylistCard extends StatelessWidget {
             // Ảnh vuông 1:1
             AspectRatio(
               aspectRatio: 1.0,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: AppColors.divider.withValues(alpha: 0.3),
-                    width: 0.8,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: AppColors.divider.withValues(alpha: 0.3),
+                      width: 0.8,
+                    ),
                   ),
-                ),
-                child: Center(
-                  child: Icon(icon, color: AppColors.primary, size: 36),
+                  child: resolvedCover != null && resolvedCover.isNotEmpty
+                      ? Image.network(
+                          resolvedCover,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Center(
+                            child:
+                                Icon(icon, color: AppColors.primary, size: 36),
+                          ),
+                        )
+                      : Center(
+                          child: Icon(icon, color: AppColors.primary, size: 36),
+                        ),
                 ),
               ),
             ),
@@ -179,7 +209,7 @@ class PlaylistCard extends StatelessWidget {
   }
 
   Widget _buildMoreMenu(BuildContext context, {double size = 20}) {
-    if (onDelete == null) return const SizedBox.shrink();
+    if (onDelete == null && onEdit == null) return const SizedBox.shrink();
 
     return PopupMenuButton<String>(
       icon: Icon(Icons.more_vert, size: size, color: AppColors.textSecondary),
@@ -189,22 +219,42 @@ class PlaylistCard extends StatelessWidget {
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       onSelected: (value) {
         HapticFeedback.lightImpact();
+        if (value == 'edit') onEdit?.call();
         if (value == 'delete') onDelete?.call();
       },
       itemBuilder: (ctx) => [
-        const PopupMenuItem(
-          value: 'delete',
-          child: Row(
-            children: [
-              Icon(Icons.delete_outline, color: AppColors.error, size: 18),
-              SizedBox(width: 8),
-              Text(
-                'Xóa',
-                style: TextStyle(color: AppColors.error, fontSize: 13),
-              ),
-            ],
+        if (onEdit != null)
+          const PopupMenuItem(
+            value: 'edit',
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_outlined,
+                  color: AppColors.textPrimary,
+                  size: 18,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Chỉnh sửa',
+                  style: TextStyle(color: AppColors.textPrimary, fontSize: 13),
+                ),
+              ],
+            ),
           ),
-        ),
+        if (onDelete != null)
+          const PopupMenuItem(
+            value: 'delete',
+            child: Row(
+              children: [
+                Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                SizedBox(width: 8),
+                Text(
+                  'Xóa',
+                  style: TextStyle(color: AppColors.error, fontSize: 13),
+                ),
+              ],
+            ),
+          ),
       ],
     );
   }

@@ -59,6 +59,44 @@ class PlaylistRepository {
     }
   }
 
+  /// Cập nhật thông tin Playlist (PUT /api/playlists/{id})
+  Future<PlaylistModel> updatePlaylist(
+    int id, {
+    required String name,
+    String? description,
+  }) async {
+    try {
+      final response = await _dio.put(
+        '${ApiEndpoints.playlists}/$id',
+        data: {'name': name, 'description': description ?? ''},
+      );
+      return PlaylistModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw Exception(_handleDioError(e));
+    } catch (e) {
+      throw Exception('Không thể cập nhật playlist: $e');
+    }
+  }
+
+  /// Cập nhật ảnh bìa Playlist (PUT /api/playlists/{id}/image)
+  Future<PlaylistModel> uploadPlaylistImage(int id, String filePath) async {
+    try {
+      final fileName = filePath.split(RegExp(r'[\\/]')).last;
+      final formData = FormData.fromMap({
+        'file': await MultipartFile.fromFile(filePath, filename: fileName),
+      });
+      final response = await _dio.put(
+        '${ApiEndpoints.playlists}/$id/image',
+        data: formData,
+      );
+      return PlaylistModel.fromJson(response.data as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw Exception(_handleDioError(e));
+    } catch (e) {
+      throw Exception('Không thể tải ảnh bìa lên: $e');
+    }
+  }
+
   /// "Dịch" lỗi Dio sang tiếng Việt thân thiện theo quy định của Leader
   String _handleDioError(DioException e) {
     switch (e.type) {

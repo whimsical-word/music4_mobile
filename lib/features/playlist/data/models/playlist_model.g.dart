@@ -11,7 +11,7 @@ _PlaylistModel _$PlaylistModelFromJson(Map<String, dynamic> json) =>
       id: (json['id'] as num).toInt(),
       name: json['name'] as String,
       description: json['description'] as String?,
-      coverUrl: json['coverUrl'] as String?,
+      coverUrl: _readImg(json, 'coverUrl') as String?,
       trackCount: (json['trackCount'] as num?)?.toInt() ?? 0,
       createdAt: json['createdAt'] as String?,
     );

@@ -64,7 +64,40 @@ class PlaylistController
     }
   }
 
-  /// 4. Làm mới danh sách khi vuốt màn hình
+  /// 4. Cập nhật thông tin Playlist (Đổi tên, mô tả hoặc ảnh bìa)
+  Future<void> updatePlaylist(
+    int id, {
+    required String name,
+    String? description,
+    String? coverFilePath,
+  }) async {
+    try {
+      var updated = await _repository.updatePlaylist(
+        id,
+        name: name,
+        description: description,
+      );
+      if (coverFilePath != null && coverFilePath.isNotEmpty) {
+        updated = await _repository.uploadPlaylistImage(id, coverFilePath);
+      }
+      state.whenData((currentList) {
+        state = AsyncValue.data(
+          currentList
+              .map(
+                (p) => p.id == id
+                    ? updated.copyWith(trackCount: p.trackCount)
+                    : p,
+              )
+              .toList(),
+        );
+      });
+    } catch (e, stackTrace) {
+      state = AsyncValue.error(e, stackTrace);
+      rethrow;
+    }
+  }
+
+  /// 5. Làm mới danh sách khi vuốt màn hình
   Future<void> refresh() async {
     await loadPlaylists();
   }

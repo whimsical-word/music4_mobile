@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../data/models/playlist_model.dart';
 import '../controllers/playlist_controller.dart';
 import '../widgets/create_playlist_dialog.dart';
+import '../widgets/edit_playlist_dialog.dart';
 import '../widgets/playlist_card.dart';
 import '../widgets/playlist_empty_state.dart';
 import '../widgets/playlist_error_state.dart';
@@ -73,6 +75,43 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    }
+  }
+
+  void _showEditDialog(PlaylistModel item) async {
+    final result = await EditPlaylistDialog.show(
+      context,
+      initialName: item.name,
+      initialDescription: item.description,
+      initialCoverUrl: item.coverUrl,
+    );
+    if (result != null) {
+      try {
+        await ref.read(playlistControllerProvider.notifier).updatePlaylist(
+              item.id,
+              name: result.name,
+              description: result.description,
+              coverFilePath: result.coverFilePath,
+            );
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Đã cập nhật playlist "${result.name}"'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Cập nhật thất bại: ${e.toString().replaceAll("Exception: ", "")}',
+            ),
+            backgroundColor: AppColors.error,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
     }
   }
 
@@ -185,8 +224,10 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                               id: item.id.toString(),
                               title: item.name,
                               trackCount: item.trackCount,
+                              coverUrl: item.coverUrl,
                               isGrid: true,
                               onTap: () => context.push('/playlist/${item.id}'),
+                              onEdit: () => _showEditDialog(item),
                               onDelete: () =>
                                   _deletePlaylist(item.id, item.name),
                             );
@@ -201,8 +242,10 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                               id: item.id.toString(),
                               title: item.name,
                               trackCount: item.trackCount,
+                              coverUrl: item.coverUrl,
                               isGrid: false,
                               onTap: () => context.push('/playlist/${item.id}'),
+                              onEdit: () => _showEditDialog(item),
                               onDelete: () =>
                                   _deletePlaylist(item.id, item.name),
                             );

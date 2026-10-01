@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$PlaylistModel {
 
- int get id; String get name; String? get description; String? get coverUrl; int get trackCount; String? get createdAt;
+ int get id; String get name; String? get description;@JsonKey(readValue: _readImg) String? get coverUrl; int get trackCount; String? get createdAt;
 /// Create a copy of PlaylistModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -54,7 +54,7 @@ abstract mixin class $PlaylistModelCopyWith<$Res>  {
   factory $PlaylistModelCopyWith(PlaylistModel value, $Res Function(PlaylistModel) _then) = _$PlaylistModelCopyWithImpl;
 @useResult
 $Res call({
- int id, String name, String? description, String? coverUrl, int trackCount, String? createdAt
+ int id, String name, String? description,@JsonKey(readValue: _readImg) String? coverUrl, int trackCount, String? createdAt
 });
 
 
@@ -164,7 +164,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String name,  String? description,  String? coverUrl,  int trackCount,  String? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String name,  String? description, @JsonKey(readValue: _readImg)  String? coverUrl,  int trackCount,  String? createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _PlaylistModel() when $default != null:
 return $default(_that.id,_that.name,_that.description,_that.coverUrl,_that.trackCount,_that.createdAt);case _:
@@ -185,7 +185,7 @@ return $default(_that.id,_that.name,_that.description,_that.coverUrl,_that.track
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String name,  String? description,  String? coverUrl,  int trackCount,  String? createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String name,  String? description, @JsonKey(readValue: _readImg)  String? coverUrl,  int trackCount,  String? createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistModel():
 return $default(_that.id,_that.name,_that.description,_that.coverUrl,_that.trackCount,_that.createdAt);case _:
@@ -205,7 +205,7 @@ return $default(_that.id,_that.name,_that.description,_that.coverUrl,_that.track
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String name,  String? description,  String? coverUrl,  int trackCount,  String? createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String name,  String? description, @JsonKey(readValue: _readImg)  String? coverUrl,  int trackCount,  String? createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _PlaylistModel() when $default != null:
 return $default(_that.id,_that.name,_that.description,_that.coverUrl,_that.trackCount,_that.createdAt);case _:
@@ -220,13 +220,13 @@ return $default(_that.id,_that.name,_that.description,_that.coverUrl,_that.track
 @JsonSerializable()
 
 class _PlaylistModel implements PlaylistModel {
-  const _PlaylistModel({required this.id, required this.name, this.description, this.coverUrl, this.trackCount = 0, this.createdAt});
+  const _PlaylistModel({required this.id, required this.name, this.description, @JsonKey(readValue: _readImg) this.coverUrl, this.trackCount = 0, this.createdAt});
   factory _PlaylistModel.fromJson(Map<String, dynamic> json) => _$PlaylistModelFromJson(json);
 
 @override final  int id;
 @override final  String name;
 @override final  String? description;
-@override final  String? coverUrl;
+@override@JsonKey(readValue: _readImg) final  String? coverUrl;
 @override@JsonKey() final  int trackCount;
 @override final  String? createdAt;
 
@@ -265,7 +265,7 @@ abstract mixin class _$PlaylistModelCopyWith<$Res> implements $PlaylistModelCopy
   factory _$PlaylistModelCopyWith(_PlaylistModel value, $Res Function(_PlaylistModel) _then) = __$PlaylistModelCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String name, String? description, String? coverUrl, int trackCount, String? createdAt
+ int id, String name, String? description,@JsonKey(readValue: _readImg) String? coverUrl, int trackCount, String? createdAt
 });
 
 
