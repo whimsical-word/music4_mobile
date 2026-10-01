@@ -1,3 +1,19 @@
+class TrackQueueItem {
+  final String id;
+  final String title;
+  final String artist;
+  final String? coverUrl;
+  final Duration duration;
+
+  const TrackQueueItem({
+    required this.id,
+    required this.title,
+    required this.artist,
+    this.coverUrl,
+    required this.duration,
+  });
+}
+
 class PlayerStateData {
   final String? currentTrackId;
   final String title;
@@ -8,6 +24,9 @@ class PlayerStateData {
   final Duration duration;
   final Duration bufferedPosition;
 
+  final bool hasNext;
+  final bool hasPrevious;
+
   const PlayerStateData({
     this.currentTrackId,
     this.title = 'Unknown Title',
@@ -17,6 +36,8 @@ class PlayerStateData {
     this.position = Duration.zero,
     this.duration = Duration.zero,
     this.bufferedPosition = Duration.zero,
+    this.hasNext = false,
+    this.hasPrevious = false,
   });
 
   PlayerStateData copyWith({
@@ -28,6 +49,8 @@ class PlayerStateData {
     Duration? position,
     Duration? duration,
     Duration? bufferedPosition,
+    bool? hasNext,
+    bool? hasPrevious,
   }) {
     return PlayerStateData(
       currentTrackId: currentTrackId ?? this.currentTrackId,
@@ -38,6 +61,8 @@ class PlayerStateData {
       position: position ?? this.position,
       duration: duration ?? this.duration,
       bufferedPosition: bufferedPosition ?? this.bufferedPosition,
+      hasNext: hasNext ?? this.hasNext,
+      hasPrevious: hasPrevious ?? this.hasPrevious,
     );
   }
 

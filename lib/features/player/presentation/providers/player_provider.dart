@@ -56,6 +56,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
     required String title,
     required String artist,
     String? coverUrl,
+    Duration? duration,
   }) async {
     try {
       state = const AsyncLoading();
@@ -64,6 +65,8 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
       
       final token = await TokenStorage.instance.getAccessToken();
       final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/$trackId?token=${token ?? ""}';
+      
+      _player.play(); // Auto-play as soon as source is ready
       
       await _player.setAudioSource(
         AudioSource.uri(
@@ -83,9 +86,8 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
         artist: artist,
         coverUrl: coverUrl,
         isPlaying: true, // Optimistic update
+        duration: duration ?? Duration.zero,
       ));
-      
-      await _player.play();
     } catch (e, st) {
       state = AsyncError("Không thể tải luồng nhạc. Vui lòng thử lại.", st);
     }

@@ -33,6 +33,7 @@ class AiRecommendationBanner extends ConsumerWidget {
               title: track!.title,
               artist: track!.artist,
               coverUrl: track!.coverUrl,
+              duration: Duration(seconds: track!.durationSeconds),
             );
             ref.read(homeFeedControllerProvider.notifier).trackPlay(track!.id);
             context.push(RouteNames.player);
