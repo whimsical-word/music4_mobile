@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/route_names.dart';
 import '../providers/player_provider.dart';
+import '../../../../core/widgets/app_network_image.dart';
 
 class MiniPlayerWidget extends ConsumerWidget {
   const MiniPlayerWidget({super.key});
@@ -34,26 +35,26 @@ class MiniPlayerWidget extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                // Cover Image
                 Container(
                   width: 48,
                   height: 48,
                   margin: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
+                  child: ClipRRect(
                     borderRadius: BorderRadius.circular(4),
-                    color: AppColors.surface,
-                    image: state.coverUrl != null
-                        ? DecorationImage(
-                            image: NetworkImage(state.coverUrl!),
+                    child: state.coverUrl != null && state.coverUrl!.isNotEmpty
+                        ? AppNetworkImage(
+                            imageUrl: state.coverUrl!,
+                            width: 48,
+                            height: 48,
                             fit: BoxFit.cover,
                           )
-                        : null,
+                        : Container(
+                            color: AppColors.surface,
+                            child: const Center(
+                              child: Icon(Icons.music_note, color: AppColors.primary),
+                            ),
+                          ),
                   ),
-                  child: state.coverUrl == null
-                      ? const Center(
-                          child: Icon(Icons.music_note, color: AppColors.primary),
-                        )
-                      : null,
                 ),
                 // Track Info
                 Expanded(
@@ -78,14 +79,13 @@ class MiniPlayerWidget extends ConsumerWidget {
                 ),
                 // Play/Pause Button
                 IconButton(
-                  icon: Icon(state.isPlaying ? Icons.pause : Icons.play_arrow, size: 28),
+                  icon: Icon(
+                    state.isPlaying ? Icons.pause : Icons.play_arrow,
+                    color: AppColors.primary,
+                  ),
                   onPressed: () {
                     final notifier = ref.read(playerNotifierProvider.notifier);
-                    if (state.isPlaying) {
-                      notifier.pause();
-                    } else {
-                      notifier.play();
-                    }
+                    state.isPlaying ? notifier.pause() : notifier.play();
                   },
                 ),
                 const SizedBox(width: 8),

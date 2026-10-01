@@ -5,19 +5,25 @@ import 'package:flutter/foundation.dart';
 class ApiEndpoints {
   ApiEndpoints._();
 
+  static const String s3BaseUrl = 'https://music4-v3-storage-kenz.s3.ap-southeast-1.amazonaws.com/';
+
+  static String buildImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    return s3BaseUrl + path;
+  }
+
   // ==========================================
-  // 🔴 1. CẤU HÌNH CHO ĐIỆN THOẠI THẬT
-  // Mở cmd gõ 'ipconfig' lấy IPv4 dán vào đây (VD: 192.168.1.45)
+  // 1. CAU HINH CHO DIEN THOAI THAT
   // ==========================================
-  static const String _lanIp = '192.168.1.45';
+  static const String _lanIp = '192.168.88.149';
 
   // ==========================================
   // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
   // Để 'true' nếu dùng Máy Ảo (Emulator), 'false' nếu cắm cáp Điện thoại thật
   // ==========================================
-  static const bool _isEmulator = true;
+  static const bool _isEmulator = false;
 
-  // Tự động phân giải IP theo môi trường
   static String get baseUrl {
     if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
       return 'http://localhost:8080'; // Web và Desktop luôn là localhost
@@ -25,12 +31,9 @@ class ApiEndpoints {
 
     if (_isEmulator) {
       if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
-      if (Platform.isIOS) {
-        return 'http://localhost:8080'; // Máy ảo iOS (Simulator)
-      }
+      if (Platform.isIOS) return 'http://localhost:8080'; // Máy ảo iOS
     }
 
-    // Điện thoại thật (Phải bắt chung mạng WiFi với máy tính)
     return 'http://$_lanIp:8080';
   }
 
