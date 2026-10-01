@@ -13,8 +13,13 @@ import '../../../player/domain/models/player_state_data.dart';
 
 class AiRecommendationBanner extends ConsumerWidget {
   final HomeTrackItem? track;
+  final List<HomeTrackItem> playlist;
 
-  const AiRecommendationBanner({super.key, this.track});
+  const AiRecommendationBanner({
+    super.key,
+    this.track,
+    required this.playlist,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -31,20 +36,17 @@ class AiRecommendationBanner extends ConsumerWidget {
           onTap: () {
             HapticFeedback.lightImpact();
             
-            final homeState = ref.read(homeFeedControllerProvider).value;
-            if (homeState != null) {
-              final playlist = homeState.aiRecommendations.map((t) => TrackQueueItem(
-                id: t.id,
-                title: t.title,
-                artist: t.artist,
-                coverUrl: t.coverUrl,
-                duration: Duration(seconds: t.durationSeconds),
-              )).toList();
-              
-              final initialIndex = playlist.indexWhere((t) => t.id == track!.id);
-              if (initialIndex != -1) {
-                ref.read(playerNotifierProvider.notifier).playPlaylist(playlist, initialIndex);
-              }
+            final queue = playlist.map((t) => TrackQueueItem(
+              id: t.id,
+              title: t.title,
+              artist: t.artist,
+              coverUrl: t.coverUrl,
+              duration: Duration(seconds: t.durationSeconds),
+            )).toList();
+            
+            final initialIndex = queue.indexWhere((t) => t.id == track!.id);
+            if (initialIndex != -1) {
+              ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
             }
             
             ref.read(homeFeedControllerProvider.notifier).trackPlay(track!.id);

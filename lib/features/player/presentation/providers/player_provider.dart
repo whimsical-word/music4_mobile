@@ -25,12 +25,6 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
   void _initStreams() {
     _player.playerStateStream.listen((playerState) {
       final isPlaying = playerState.playing;
-      final processingState = playerState.processingState;
-
-      if (processingState == ProcessingState.completed) {
-        // Auto pause or next track logic can go here
-      }
-
       state = state.whenData((data) => data.copyWith(isPlaying: isPlaying));
     }, onError: (Object e, StackTrace st) {
       state = AsyncError("Lỗi khi phát nhạc: ${e.toString()}", st);
@@ -51,7 +45,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
     });
 
     _player.sequenceStateStream.listen((sequenceState) {
-      final currentSource = sequenceState.currentSource;
+      final currentSource = sequenceState?.currentSource;
       if (currentSource == null) return;
       if (currentSource.tag is TrackQueueItem) {
         final tag = currentSource.tag as TrackQueueItem;
@@ -68,51 +62,11 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
     });
   }
 
-  Future<void> playTrack({
-    required String trackId,
-    required String title,
-    required String artist,
-    String? coverUrl,
-    Duration? duration,
-  }) async {
-    try {
-      state = const AsyncLoading();
-      
-      await _player.stop();
-      
-      final token = await TokenStorage.instance.getAccessToken();
-      final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/$trackId?token=${token ?? ""}';
-      
-      _player.play(); // Auto-play as soon as source is ready
-      
-      await _player.setAudioSource(
-        AudioSource.uri(
-          Uri.parse(streamUrl),
-          tag: {
-            'id': trackId,
-            'title': title,
-            'artist': artist,
-            'coverUrl': coverUrl,
-          },
-        ),
-      );
-      
-      state = AsyncData(PlayerStateData(
-        currentTrackId: trackId,
-        title: title,
-        artist: artist,
-        coverUrl: coverUrl,
-        isPlaying: true, // Optimistic update
-        duration: duration ?? Duration.zero,
-      ));
-    } catch (e, st) {
-      state = AsyncError("Không thể tải luồng nhạc. Vui lòng thử lại.", st);
-    }
-  }
-
   Future<void> playPlaylist(List<TrackQueueItem> playlist, int initialIndex) async {
     try {
-      state = const AsyncLoading();
+      final currentData = state.value ?? const PlayerStateData();
+      state = AsyncData(currentData); // Keep as AsyncData
+      
       await _player.stop();
 
       final token = await TokenStorage.instance.getAccessToken();
@@ -125,42 +79,102 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
         );
       }).toList();
 
+      // Disable lazy preparation to proactively buffer all track streams at once
       // ignore: deprecated_member_use
       final playlistSource = ConcatenatingAudioSource(
-        useLazyPreparation: true,
+        useLazyPreparation: false,
         children: audioSources,
       );
 
-      _player.play(); // Auto-play
-
+      // Await loading completion before calling play()
       await _player.setAudioSource(
         playlistSource,
         initialIndex: initialIndex,
         initialPosition: Duration.zero,
       );
       
-      state = state.whenData((data) => data.copyWith(isPlaying: true));
+      _player.play();
+      
     } catch (e, st) {
       state = AsyncError("Lỗi khi tải danh sách phát.", st);
     }
   }
 
+  bool _isSeeking = false;
+
   Future<void> next() async {
+    if (_isSeeking) return;
     if (_player.hasNext) {
-      await _player.seekToNext();
+      _isSeeking = true;
+      // Optimistic UI update
+      final currentIndex = _player.currentIndex ?? 0;
+      final nextIndex = currentIndex + 1;
+      final sequence = _player.sequence;
+      if (sequence != null && nextIndex < sequence.length) {
+        final tag = sequence[nextIndex].tag;
+        if (tag is TrackQueueItem) {
+          state = state.whenData((data) => data.copyWith(
+            currentTrackId: tag.id,
+            title: tag.title,
+            artist: tag.artist,
+            coverUrl: tag.coverUrl,
+            duration: tag.duration,
+            hasNext: nextIndex < sequence.length - 1,
+            hasPrevious: true,
+          ));
+        }
+      }
+      try {
+        await _player.seekToNext();
+      } finally {
+        _isSeeking = false;
+      }
     }
   }
 
   Future<void> previous() async {
-    // If playing for more than 3 seconds, restart the song
+    if (_isSeeking) return;
+    
     if (_player.position > const Duration(seconds: 3)) {
-      await _player.seek(Duration.zero);
-    } else {
-      // Otherwise go to previous song if it exists, else just restart
-      if (_player.hasPrevious) {
-        await _player.seekToPrevious();
-      } else {
+      _isSeeking = true;
+      try {
         await _player.seek(Duration.zero);
+      } finally {
+        _isSeeking = false;
+      }
+    } else {
+      if (_player.hasPrevious) {
+        _isSeeking = true;
+        // Optimistic UI update
+        final currentIndex = _player.currentIndex ?? 0;
+        final prevIndex = currentIndex - 1;
+        final sequence = _player.sequence;
+        if (sequence != null && prevIndex >= 0) {
+          final tag = sequence[prevIndex].tag;
+          if (tag is TrackQueueItem) {
+            state = state.whenData((data) => data.copyWith(
+              currentTrackId: tag.id,
+              title: tag.title,
+              artist: tag.artist,
+              coverUrl: tag.coverUrl,
+              duration: tag.duration,
+              hasNext: true,
+              hasPrevious: prevIndex > 0,
+            ));
+          }
+        }
+        try {
+          await _player.seekToPrevious();
+        } finally {
+          _isSeeking = false;
+        }
+      } else {
+        _isSeeking = true;
+        try {
+          await _player.seek(Duration.zero);
+        } finally {
+          _isSeeking = false;
+        }
       }
     }
   }

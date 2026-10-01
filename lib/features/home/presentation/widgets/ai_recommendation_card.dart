@@ -13,8 +13,15 @@ import '../../../player/domain/models/player_state_data.dart';
 
 class AiRecommendationCard extends ConsumerWidget {
   final HomeTrackItem track;
+  final List<HomeTrackItem> playlist;
+  final int initialIndex;
 
-  const AiRecommendationCard({super.key, required this.track});
+  const AiRecommendationCard({
+    super.key,
+    required this.track,
+    required this.playlist,
+    required this.initialIndex,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -27,21 +34,15 @@ class AiRecommendationCard extends ConsumerWidget {
         onTap: () {
           HapticFeedback.lightImpact();
           
-          final homeState = ref.read(homeFeedControllerProvider).value;
-          if (homeState != null) {
-            final playlist = homeState.aiRecommendations.map((t) => TrackQueueItem(
-              id: t.id,
-              title: t.title,
-              artist: t.artist,
-              coverUrl: t.coverUrl,
-              duration: Duration(seconds: t.durationSeconds),
-            )).toList();
-            
-            final initialIndex = playlist.indexWhere((t) => t.id == track.id);
-            if (initialIndex != -1) {
-              ref.read(playerNotifierProvider.notifier).playPlaylist(playlist, initialIndex);
-            }
-          }
+          final queue = playlist.map((t) => TrackQueueItem(
+            id: t.id,
+            title: t.title,
+            artist: t.artist,
+            coverUrl: t.coverUrl,
+            duration: Duration(seconds: t.durationSeconds),
+          )).toList();
+          
+          ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
           
           ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
           context.push(RouteNames.player);
