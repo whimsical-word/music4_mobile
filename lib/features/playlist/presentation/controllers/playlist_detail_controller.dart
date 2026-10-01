@@ -113,7 +113,39 @@ class PlaylistDetailController
     }
   }
 
-  /// 4. Làm mới dữ liệu
+  /// 4. Cập nhật thông tin và ảnh bìa Playlist (PUT /api/playlists/{id} & PUT /api/playlists/{id}/image)
+  Future<PlaylistModel> updatePlaylist({
+    required String name,
+    String? description,
+    String? coverFilePath,
+  }) async {
+    try {
+      var updated = await _repository.updatePlaylist(
+        playlistId,
+        name: name,
+        description: description,
+      );
+      if (coverFilePath != null && coverFilePath.isNotEmpty) {
+        updated = await _repository.uploadPlaylistImage(playlistId, coverFilePath);
+      }
+      state.whenData((currentState) {
+        state = AsyncValue.data(
+          currentState.copyWith(
+            playlist: currentState.playlist.copyWith(
+              name: updated.name,
+              description: updated.description,
+              coverUrl: updated.coverUrl,
+            ),
+          ),
+        );
+      });
+      return updated;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// 5. Làm mới dữ liệu
   Future<void> refresh() async {
     await loadPlaylistDetail();
   }

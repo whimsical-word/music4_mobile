@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/image_url_helper.dart';
 import '../../data/models/playlist_track_model.dart';
 
 class AddTrackBottomSheet extends StatefulWidget {
@@ -122,8 +123,37 @@ class _AddTrackBottomSheetState extends State<AddTrackBottomSheet> {
                     itemCount: filteredTracks.length,
                     itemBuilder: (context, index) {
                       final track = filteredTracks[index];
+                      final imageUrl = ImageUrlHelper.resolve(track.img);
                       return ListTile(
-                        leading: const Icon(Icons.music_note, color: AppColors.primary),
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            color: AppColors.surface,
+                            child: imageUrl != null && imageUrl.isNotEmpty
+                                ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Center(
+                                      child: Icon(
+                                        Icons.music_note,
+                                        color: AppColors.primary,
+                                        size: 22,
+                                      ),
+                                    ),
+                                  )
+                                : const Center(
+                                    child: Icon(
+                                      Icons.music_note,
+                                      color: AppColors.primary,
+                                      size: 22,
+                                    ),
+                                  ),
+                          ),
+                        ),
                         title: Text(
                           track.name,
                           maxLines: 1,
