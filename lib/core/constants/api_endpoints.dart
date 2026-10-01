@@ -19,8 +19,8 @@ class ApiEndpoints {
 
   // Tự động phân giải IP theo môi trường
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8080'; // Web luôn là localhost
+    if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      return 'http://localhost:8080'; // Web và Desktop luôn là localhost
     }
 
     if (_isEmulator) {
@@ -46,7 +46,7 @@ class ApiEndpoints {
   static const String resetPassword = '/api/auth/reset-password';
 
   // Tracks & Media
-  static const String tracks = '/api/tracks';
+  static const String tracks = '/api/tracks/all';
   static const String trackDetail = '/api/tracks'; // + /{id}
   static const String uploadTrack = '/api/tracks';
   static const String uploadTemp = '/api/tracks/upload-temp';
