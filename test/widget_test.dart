@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music4_mobile/main.dart';
 
 void main() {
-  testWidgets('App smoke test - verifies Music4 title renders', (
+  testWidgets('App smoke test - verifies Login screen renders', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const ProviderScope(child: Music4App()));
