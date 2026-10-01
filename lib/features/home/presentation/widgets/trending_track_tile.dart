@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
+import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 
 class TrendingTrackTile extends ConsumerWidget {
@@ -25,6 +26,7 @@ class TrendingTrackTile extends ConsumerWidget {
       artist: track.artist,
       coverUrl: track.coverUrl,
     );
+    ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
     context.push(RouteNames.player);
   }
 

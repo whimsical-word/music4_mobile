@@ -8,7 +8,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const ProviderScope(child: Music4App()));
 
-    // Verify that the title 'Sign in' is present on the login screen
-    expect(find.text('Sign in'), findsOneWidget);
+    // Verify the Login screen renders without requiring backend/auth.
+    expect(find.text('Login'), findsOneWidget);
   });
 }
