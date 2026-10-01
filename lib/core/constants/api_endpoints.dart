@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -16,25 +16,22 @@ class ApiEndpoints {
   // ==========================================
   // 1. CAU HINH CHO DIEN THOAI THAT
   // ==========================================
-  static const String _lanIp = '10.64.252.46';
+  static const String _lanIp = '192.168.88.149';
 
   // ==========================================
-  // 2. MAY AO HAY THIET BI THAT?
+  // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
+  // Để 'true' nếu dùng Máy Ảo (Emulator), 'false' nếu cắm cáp Điện thoại thật
   // ==========================================
-  static const bool _isEmulator = true;
+  static const bool _isEmulator = false;
 
   static String get baseUrl {
-    if (kIsWeb) {
-      return 'http://localhost:8080';
-    }
-
-    if (Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
-      return 'http://localhost:8080';
+    if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      return 'http://localhost:8080'; // Web và Desktop luôn là localhost
     }
 
     if (_isEmulator) {
-      if (Platform.isAndroid) return 'http://10.0.2.2:8080';
-      if (Platform.isIOS) return 'http://localhost:8080';
+      if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
+      if (Platform.isIOS) return 'http://localhost:8080'; // Máy ảo iOS
     }
 
     return 'http://$_lanIp:8080';
@@ -52,7 +49,7 @@ class ApiEndpoints {
   static const String resetPassword = '/api/auth/reset-password';
 
   // Tracks & Media
-  static const String tracks = '/api/tracks';
+  static const String tracks = '/api/tracks/all';
   static const String trackDetail = '/api/tracks'; // + /{id}
   static const String uploadTrack = '/api/tracks';
   static const String uploadTemp = '/api/tracks/upload-temp';
@@ -85,5 +82,6 @@ class ApiEndpoints {
 
   // Notifications
   static const String notifications = '/api/notifications/user'; // + /{userId}
-  static const String subscribeNotification = '/api/notifications/subscribe'; // + /{userId}
+  static const String subscribeNotification =
+      '/api/notifications/subscribe'; // + /{userId}
 }

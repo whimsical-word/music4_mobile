@@ -1,10 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../data/models/history_track_response.dart';
 import '../providers/history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -17,11 +17,6 @@ class HistoryScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Lịch sử nghe nhạc'),
-        actions: [
-          // Remove if no specific actions needed, or keep for debugging states:
-          // IconButton(icon: const Icon(Icons.error), onPressed: () => ref.read(historyNotifierProvider.notifier).simulateError()),
-          // IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => ref.read(historyNotifierProvider.notifier).simulateEmpty()),
-        ],
       ),
       body: historyAsync.when(
         data: (items) {
@@ -47,7 +42,15 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryItem(BuildContext context, dynamic item) {
+  Widget _buildHistoryItem(BuildContext context, HistoryTrackResponse item) {
+    final artistName = item.artists.isNotEmpty
+        ? item.artists.map((e) => e.name).join(', ')
+        : 'Không rõ nghệ sĩ';
+        
+    final positionText = item.playbackPosition > 0 
+        ? 'Đã nghe đến ${item.playbackPosition}s'
+        : 'Mới nghe';
+
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -66,7 +69,7 @@ class HistoryScreen extends ConsumerWidget {
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
                 child: CachedNetworkImage(
-                  imageUrl: item.artworkUrl,
+                  imageUrl: item.img ?? '',
                   width: 64,
                   height: 64,
                   fit: BoxFit.cover,
@@ -86,7 +89,7 @@ class HistoryScreen extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      item.trackTitle,
+                      item.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.bold,
                             color: AppColors.textPrimary,
@@ -96,7 +99,7 @@ class HistoryScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      item.artistName,
+                      artistName,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.textSecondary,
                           ),
@@ -105,7 +108,7 @@ class HistoryScreen extends ConsumerWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _formatDate(item.playedAt),
+                      positionText,
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: AppColors.textMuted,
                           ),
@@ -125,21 +128,6 @@ class HistoryScreen extends ConsumerWidget {
         ),
       ),
     );
-  }
-
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final difference = now.difference(date);
-
-    if (difference.inMinutes < 60) {
-      return '${difference.inMinutes} phút trước';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours} giờ trước';
-    } else if (difference.inDays < 7) {
-      return '${difference.inDays} ngày trước';
-    } else {
-      return DateFormat('dd/MM/yyyy').format(date);
-    }
   }
 
   Widget _buildLoadingState() {

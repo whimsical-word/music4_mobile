@@ -5,7 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
+import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class TrendingTrackTile extends ConsumerWidget {
   final int rank;
@@ -25,6 +27,7 @@ class TrendingTrackTile extends ConsumerWidget {
       artist: track.artist,
       coverUrl: track.coverUrl,
     );
+    ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
     context.push(RouteNames.player);
   }
 
@@ -60,9 +63,31 @@ class TrendingTrackTile extends ConsumerWidget {
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Center(
-                  child: Icon(Icons.music_note, color: AppColors.primary, size: 24),
-                ),
+                child: track.coverUrl != null && track.coverUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: CachedNetworkImage(
+                          imageUrl: track.coverUrl!,
+                          width: 48,
+                          height: 48,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: AppColors.surface,
+                            child: const Center(
+                              child: Icon(Icons.music_note, color: AppColors.primary, size: 24),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: AppColors.surface,
+                            child: const Center(
+                              child: Icon(Icons.music_note, color: AppColors.primary, size: 24),
+                            ),
+                          ),
+                        ),
+                      )
+                    : const Center(
+                        child: Icon(Icons.music_note, color: AppColors.primary, size: 24),
+                      ),
               ),
               const SizedBox(width: 12),
               Expanded(
