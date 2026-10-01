@@ -1,12 +1,17 @@
 import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../../core/utils/image_url_helper.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../data/sources/home_repository.dart';
 import '../../data/models/home_track_item.dart';
 import 'home_feed_state.dart';
 
 final dioClientProvider = Provider((ref) => DioClient());
-final homeRepositoryProvider = Provider((ref) => HomeRepository(ref.read(dioClientProvider)));
+final homeRepositoryProvider = Provider(
+  (ref) => HomeRepository(ref.read(dioClientProvider)),
+);
 
 class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
   @override
@@ -16,7 +21,7 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
 
   Future<HomeFeedState> _fetchHomeFeed() async {
     final repo = ref.read(homeRepositoryProvider);
-    
+
     // Fetch concurrently
     final results = await Future.wait([
       repo.getRecommendations(),
@@ -26,23 +31,37 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
     final recommendations = results[0] as List<dynamic>;
     final trending = results[1] as List<dynamic>;
 
-    final aiTracks = recommendations.map((e) => HomeTrackItem(
-      id: e.id.toString(),
-      title: e.name,
-      artist: e.artists.isNotEmpty ? e.artists.map((a) => a.name).join(', ') : 'Unknown Artist',
-      coverUrl: e.img,
-      duration: _formatDuration(e.duration ?? 0),
-      matchPercentage: e.matchScore != null ? (e.matchScore! * 100).toInt() : null,
-    )).toList();
+    final aiTracks = recommendations
+        .map(
+          (e) => HomeTrackItem(
+            id: e.id.toString(),
+            title: e.name,
+            artist: e.artists.isNotEmpty
+                ? e.artists.map((a) => a.name).join(', ')
+                : 'Unknown Artist',
+            coverUrl: ImageUrlHelper.resolve(e.img),
+            duration: _formatDuration(e.duration ?? 0),
+            matchPercentage: e.matchScore != null
+                ? (e.matchScore! * 100).toInt()
+                : null,
+          ),
+        )
+        .toList();
 
-    final trendingTracks = trending.map((e) => HomeTrackItem(
-      id: e.id.toString(),
-      title: e.name,
-      artist: e.artists.isNotEmpty ? e.artists.map((a) => a.name).join(', ') : 'Unknown Artist',
-      coverUrl: e.img,
-      duration: _formatDuration(e.duration ?? 0),
-      playsCount: e.viewCount.toString(),
-    )).toList();
+    final trendingTracks = trending
+        .map(
+          (e) => HomeTrackItem(
+            id: e.id.toString(),
+            title: e.name,
+            artist: e.artists.isNotEmpty
+                ? e.artists.map((a) => a.name).join(', ')
+                : 'Unknown Artist',
+            coverUrl: ImageUrlHelper.resolve(e.img),
+            duration: _formatDuration(e.duration ?? 0),
+            playsCount: e.viewCount.toString(),
+          ),
+        )
+        .toList();
 
     return HomeFeedState(
       featuredAiTrack: aiTracks.isNotEmpty ? aiTracks.first : null,
@@ -87,5 +106,5 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
 
 final homeFeedControllerProvider =
     AsyncNotifierProvider.autoDispose<HomeFeedController, HomeFeedState>(
-  HomeFeedController.new,
-);
+      HomeFeedController.new,
+    );

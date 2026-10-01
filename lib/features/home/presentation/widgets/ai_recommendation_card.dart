@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
 import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class AiRecommendationCard extends ConsumerWidget {
   final HomeTrackItem track;
@@ -51,13 +52,31 @@ class AiRecommendationCard extends ConsumerWidget {
                     top: Radius.circular(12),
                   ),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.music_note,
-                    color: AppColors.primary,
-                    size: 40,
-                  ),
-                ),
+                child: track.coverUrl != null && track.coverUrl!.isNotEmpty
+                    ? ClipRRect(
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
+                        child: CachedNetworkImage(
+                          imageUrl: track.coverUrl!,
+                          width: double.infinity,
+                          height: 110,
+                          fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: AppColors.surface,
+                            child: const Center(
+                              child: Icon(Icons.music_note, color: AppColors.primary, size: 40),
+                            ),
+                          ),
+                          errorWidget: (context, url, error) => Container(
+                            color: AppColors.surface,
+                            child: const Center(
+                              child: Icon(Icons.music_note, color: AppColors.primary, size: 40),
+                            ),
+                          ),
+                        ),
+                      )
+                    : const Center(
+                        child: Icon(Icons.music_note, color: AppColors.primary, size: 40),
+                      ),
               ),
               Padding(
                 padding: const EdgeInsets.all(8.0),

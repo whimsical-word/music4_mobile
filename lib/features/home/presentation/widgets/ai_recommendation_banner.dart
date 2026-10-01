@@ -7,6 +7,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
 import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class AiRecommendationBanner extends ConsumerWidget {
   final HomeTrackItem? track;
@@ -51,13 +52,31 @@ class AiRecommendationBanner extends ConsumerWidget {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.album,
-                      color: AppColors.textSecondary,
-                      size: 28,
-                    ),
-                  ),
+                  child: track!.coverUrl != null && track!.coverUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: track!.coverUrl!,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: AppColors.surface,
+                              child: const Center(
+                                child: Icon(Icons.album, color: AppColors.textSecondary, size: 28),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: AppColors.surface,
+                              child: const Center(
+                                child: Icon(Icons.album, color: AppColors.textSecondary, size: 28),
+                              ),
+                            ),
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(Icons.album, color: AppColors.textSecondary, size: 28),
+                        ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
