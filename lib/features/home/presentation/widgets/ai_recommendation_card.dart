@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
+import '../controllers/home_feed_controller.dart';
+import '../../../player/presentation/providers/player_provider.dart';
 
-class AiRecommendationCard extends StatelessWidget {
+class AiRecommendationCard extends ConsumerWidget {
   final HomeTrackItem track;
 
   const AiRecommendationCard({super.key, required this.track});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
 
     return Material(
@@ -20,6 +23,13 @@ class AiRecommendationCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: () {
           HapticFeedback.lightImpact();
+          ref.read(playerNotifierProvider.notifier).playTrack(
+            trackId: track.id,
+            title: track.title,
+            artist: track.artist,
+            coverUrl: track.coverUrl,
+          );
+          ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
           context.push(RouteNames.player);
         },
         child: Container(

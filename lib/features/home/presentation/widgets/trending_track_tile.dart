@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
+import '../controllers/home_feed_controller.dart';
+import '../../../player/presentation/providers/player_provider.dart';
 
-class TrendingTrackTile extends StatelessWidget {
+class TrendingTrackTile extends ConsumerWidget {
   final int rank;
   final HomeTrackItem track;
 
@@ -15,8 +18,20 @@ class TrendingTrackTile extends StatelessWidget {
     required this.track,
   });
 
+  void _onPlay(BuildContext context, WidgetRef ref) {
+    HapticFeedback.lightImpact();
+    ref.read(playerNotifierProvider.notifier).playTrack(
+      trackId: track.id,
+      title: track.title,
+      artist: track.artist,
+      coverUrl: track.coverUrl,
+    );
+    ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
+    context.push(RouteNames.player);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
     final isTop3 = rank <= 3;
 
@@ -24,10 +39,7 @@ class TrendingTrackTile extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          HapticFeedback.lightImpact();
-          context.push(RouteNames.player);
-        },
+        onTap: () => _onPlay(context, ref),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
@@ -85,10 +97,7 @@ class TrendingTrackTile extends StatelessWidget {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.play_circle_fill, color: AppColors.primary, size: 28),
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  context.push(RouteNames.player);
-                },
+                onPressed: () => _onPlay(context, ref),
               ),
             ],
           ),

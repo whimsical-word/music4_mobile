@@ -3,16 +3,26 @@ import '../../../../core/theme/app_colors.dart';
 
 class ProgressBarWidget extends StatelessWidget {
   final double currentValue;
+  final double maxValue;
+  final String positionText;
+  final String durationText;
   final ValueChanged<double> onChanged;
 
   const ProgressBarWidget({
     super.key,
     required this.currentValue,
+    required this.maxValue,
+    required this.positionText,
+    required this.durationText,
     required this.onChanged,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Ensure currentValue is not greater than maxValue and maxValue > 0
+    final safeMax = maxValue > 0 ? maxValue : 1.0;
+    final safeCurrent = currentValue.clamp(0.0, safeMax);
+
     return Column(
       children: [
         SliderTheme(
@@ -22,8 +32,8 @@ class ProgressBarWidget extends StatelessWidget {
             overlayShape: const RoundSliderOverlayShape(overlayRadius: 16),
           ),
           child: Slider(
-            value: currentValue,
-            max: 200,
+            value: safeCurrent,
+            max: safeMax,
             activeColor: AppColors.primary,
             inactiveColor: AppColors.divider,
             onChanged: onChanged,
@@ -35,12 +45,12 @@ class ProgressBarWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                '${(currentValue ~/ 60)}:${(currentValue.toInt() % 60).toString().padLeft(2, '0')}',
+                positionText,
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
               ),
-              const Text(
-                '3:20', // Total is 200 seconds (3:20)
-                style: TextStyle(color: AppColors.textMuted, fontSize: 12),
+              Text(
+                durationText,
+                style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
               ),
             ],
           ),

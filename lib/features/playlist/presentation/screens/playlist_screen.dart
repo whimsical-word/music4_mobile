@@ -21,6 +21,7 @@ class PlaylistScreen extends ConsumerStatefulWidget {
 class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
   String _searchQuery = '';
   bool _isSearching = false;
+  bool _isGrid = false;
 
   void _showCreateDialog() async {
     final result = await CreatePlaylistDialog.show(context);
@@ -110,7 +111,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
         ],
       ),
       body: playlistState.when(
-        loading: () => const PlaylistShimmerSkeleton(),
+        loading: () => PlaylistShimmerSkeleton(isGrid: _isGrid),
         error: (error, _) => PlaylistErrorState(
           message: error.toString().replaceAll('Exception: ', ''),
           onRetry: () =>
@@ -135,41 +136,78 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16.0,
-                    vertical: 8.0,
-                  ),
-                  child: Text(
-                    '${filtered.length} danh sách phát',
-                    style: Theme.of(context).textTheme.bodySmall
-                        ?.copyWith(color: AppColors.textSecondary),
+                  padding: const EdgeInsets.fromLTRB(16.0, 4.0, 8.0, 4.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${filtered.length} danh sách phát',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontWeight: FontWeight.w500,
+                            ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          _isGrid
+                              ? Icons.format_list_bulleted
+                              : Icons.grid_view_outlined,
+                          size: 20,
+                          color: AppColors.textSecondary,
+                        ),
+                        tooltip: _isGrid ? 'Xem dạng danh sách' : 'Xem dạng lưới',
+                        onPressed: () {
+                          HapticFeedback.lightImpact();
+                          setState(() => _isGrid = !_isGrid);
+                        },
+                      ),
+                    ],
                   ),
                 ),
                 Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16.0,
-                      vertical: 8.0,
-                    ),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.85,
+                  child: _isGrid
+                      ? GridView.builder(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16.0,
+                            vertical: 8.0,
+                          ),
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 2,
+                                crossAxisSpacing: 14,
+                                mainAxisSpacing: 16,
+                                childAspectRatio: 0.78,
+                              ),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final item = filtered[index];
+                            return PlaylistCard(
+                              id: item.id.toString(),
+                              title: item.name,
+                              trackCount: item.trackCount,
+                              isGrid: true,
+                              onTap: () => context.push('/playlist/${item.id}'),
+                              onDelete: () =>
+                                  _deletePlaylist(item.id, item.name),
+                            );
+                          },
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 4.0),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final item = filtered[index];
+                            return PlaylistCard(
+                              id: item.id.toString(),
+                              title: item.name,
+                              trackCount: item.trackCount,
+                              isGrid: false,
+                              onTap: () => context.push('/playlist/${item.id}'),
+                              onDelete: () =>
+                                  _deletePlaylist(item.id, item.name),
+                            );
+                          },
                         ),
-                    itemCount: filtered.length,
-                    itemBuilder: (context, index) {
-                      final item = filtered[index];
-                      return PlaylistCard(
-                        id: item.id.toString(),
-                        title: item.name,
-                        trackCount: item.trackCount,
-                        onTap: () => context.push('/playlist/${item.id}'),
-                        onDelete: () => _deletePlaylist(item.id, item.name),
-                      );
-                    },
-                  ),
                 ),
               ],
             ),
