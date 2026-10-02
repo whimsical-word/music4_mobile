@@ -16,7 +16,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CAU HINH CHO DIEN THOAI THAT
   // ==========================================
-  static const String _lanIp = '192.168.88.149';
+  static const String _lanIp = '192.168.38.52';
 
   // ==========================================
   // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?

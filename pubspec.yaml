@@ -32,8 +32,7 @@ dependencies:
   speech_to_text: ^7.5.0
   permission_handler: ^13.0.2
   just_audio_windows: ^0.2.3
-  file_picker: ^11.0.3
-
+  image_picker: ^1.2.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
