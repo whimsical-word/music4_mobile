@@ -1,11 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music4_mobile/core/network/dio_client.dart';
+import 'package:music4_mobile/features/user_profile/data/datasources/user_profile_remote_data_source.dart';
+import 'package:music4_mobile/features/user_profile/data/repositories/user_profile_repository_impl.dart';
+import 'package:music4_mobile/features/user_profile/domain/repositories/user_profile_repository.dart';
 
 import '../../domain/models/user_profile.dart';
 import '../state/user_profile_state.dart';
 
-// ---------------------------------------------------------------------------
-// Notifier
-// ---------------------------------------------------------------------------
+final userProfileRemoteDataSourceProvider =
+    Provider<UserProfileRemoteDataSource>((ref) {
+      return UserProfileRemoteDataSourceImpl(dioClient: DioClient());
+    });
+final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
+  return UserProfileRepositoryImpl(
+    ref.read(userProfileRemoteDataSourceProvider),
+  );
+});
 
 class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
   @override

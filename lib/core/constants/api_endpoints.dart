@@ -48,5 +48,9 @@ class ApiEndpoints {
 
   // Notifications
   static const String notifications = '/api/notifications/user'; // + /{userId}
-  static const String subscribeNotification = '/api/notifications/subscribe'; // + /{userId}
+  static const String subscribeNotification =
+      '/api/notifications/subscribe'; // + /{userId}
+
+  // User Profile
+  static const String userProfile = '/api/users'; // + /{userId}
 }
