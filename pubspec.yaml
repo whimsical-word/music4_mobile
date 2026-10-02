@@ -33,6 +33,7 @@ dependencies:
   permission_handler: ^13.0.2
   file_picker: ^11.0.3
   just_audio_windows_plus: ^0.5.3
+  path_provider: ^2.1.6
 
 dev_dependencies:
   flutter_test:

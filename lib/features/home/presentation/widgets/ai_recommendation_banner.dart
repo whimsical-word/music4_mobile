@@ -44,11 +44,20 @@ class AiRecommendationBanner extends ConsumerWidget {
               duration: Duration(seconds: t.durationSeconds),
             )).toList();
             
-            final initialIndex = queue.indexWhere((t) => t.id == track!.id);
-            if (initialIndex != -1) {
-              ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
+            int initialIndex = queue.indexWhere((t) => t.id == track!.id);
+            if (initialIndex == -1) {
+              // Nếu bài featured không nằm trong list playlist, thêm nó vào đầu tiên
+              queue.insert(0, TrackQueueItem(
+                id: track!.id,
+                title: track!.title,
+                artist: track!.artist,
+                coverUrl: track!.coverUrl,
+                duration: Duration(seconds: track!.durationSeconds),
+              ));
+              initialIndex = 0;
             }
             
+            ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
             ref.read(homeFeedControllerProvider.notifier).trackPlay(track!.id);
             context.push(RouteNames.player);
           },

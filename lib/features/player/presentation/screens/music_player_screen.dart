@@ -39,9 +39,10 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
   Widget build(BuildContext context) {
     final playerStateAsync = ref.watch(playerNotifierProvider);
 
-    ref.listen(playerNotifierProvider, (_, next) {
+    ref.listen(playerNotifierProvider, (prev, next) {
       if (next is AsyncData) {
         next.value!.isPlaying ? _spinController.repeat() : _spinController.stop();
+
       }
     });
 
