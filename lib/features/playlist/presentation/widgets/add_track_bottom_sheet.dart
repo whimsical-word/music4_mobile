@@ -1,72 +1,182 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/image_url_helper.dart';
+import '../../data/models/playlist_track_model.dart';
 
-class AddTrackBottomSheet extends StatelessWidget {
-  final ValueChanged<Map<String, String>> onTrackAdded;
+class AddTrackBottomSheet extends StatefulWidget {
+  final List<PlaylistTrackModel> tracks;
+  final ValueChanged<PlaylistTrackModel> onTrackAdded;
 
-  const AddTrackBottomSheet({super.key, required this.onTrackAdded});
+  const AddTrackBottomSheet({
+    super.key,
+    required this.tracks,
+    required this.onTrackAdded,
+  });
 
-  static void show(BuildContext context, ValueChanged<Map<String, String>> onAdded) {
+  static void show(
+    BuildContext context, {
+    required List<PlaylistTrackModel> tracks,
+    required ValueChanged<PlaylistTrackModel> onAdded,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
+      isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => AddTrackBottomSheet(onTrackAdded: onAdded),
+      builder: (ctx) => AddTrackBottomSheet(
+        tracks: tracks,
+        onTrackAdded: onAdded,
+      ),
     );
   }
 
-  static const _availableTracks = [
-    {'title': 'Chạy Ngay Đi', 'artist': 'Sơn Tùng M-TP', 'duration': '04:07'},
-    {'title': 'Waiting For You', 'artist': 'MONO', 'duration': '04:25'},
-    {'title': 'See Tình', 'artist': 'Hoàng Thùy Linh', 'duration': '03:05'},
-    {'title': 'Cắt Đôi Nỗi Sầu', 'artist': 'Tăng Duy Tân', 'duration': '03:13'},
-    {'title': 'Ánh Sao Và Bầu Trời', 'artist': 'T.R.I', 'duration': '04:18'},
-  ];
+  @override
+  State<AddTrackBottomSheet> createState() => _AddTrackBottomSheetState();
+}
+
+class _AddTrackBottomSheetState extends State<AddTrackBottomSheet> {
+  String _searchQuery = '';
 
   @override
   Widget build(BuildContext context) {
+    final query = _searchQuery.trim().toLowerCase();
+    final filteredTracks = query.isEmpty
+        ? widget.tracks
+        : widget.tracks.where((t) {
+            return t.name.toLowerCase().contains(query) ||
+                t.artistNames.toLowerCase().contains(query);
+          }).toList();
+
     return SafeArea(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text('Thêm bài hát gợi ý', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.pop(context)),
-              ],
+      child: Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Thêm bài hát (${filteredTracks.length})',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const Divider(color: AppColors.divider),
-          Flexible(
-            child: ListView.builder(
-              shrinkWrap: true,
-              itemCount: _availableTracks.length,
-              itemBuilder: (context, index) {
-                final track = _availableTracks[index];
-                return ListTile(
-                  leading: const Icon(Icons.music_note, color: AppColors.primary),
-                  title: Text(track['title']!, maxLines: 1, overflow: TextOverflow.ellipsis),
-                  subtitle: Text('${track['artist']} • ${track['duration']}'),
-                  trailing: IconButton(
-                    icon: const Icon(Icons.add_circle, color: AppColors.primary),
-                    onPressed: () {
-                      HapticFeedback.lightImpact();
-                      onTrackAdded(track);
-                      Navigator.pop(context);
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: TextField(
+                decoration: InputDecoration(
+                  hintText: 'Tìm theo tên bài hát hoặc nghệ sĩ...',
+                  prefixIcon: const Icon(Icons.search, size: 20),
+                  suffixIcon: _searchQuery.isNotEmpty
+                      ? IconButton(
+                          icon: const Icon(Icons.clear, size: 18),
+                          onPressed: () => setState(() => _searchQuery = ''),
+                        )
+                      : null,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  isDense: true,
+                  filled: true,
+                  fillColor: AppColors.card,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(8),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                onChanged: (val) => setState(() => _searchQuery = val),
+              ),
+            ),
+            const Divider(color: AppColors.divider),
+            if (filteredTracks.isEmpty)
+              const Padding(
+                padding: EdgeInsets.all(32.0),
+                child: Center(
+                  child: Text(
+                    'Không tìm thấy bài hát nào',
+                    style: TextStyle(color: AppColors.textSecondary),
+                  ),
+                ),
+              )
+            else
+              Flexible(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxHeight: MediaQuery.of(context).size.height * 0.55,
+                  ),
+                  child: ListView.builder(
+                    shrinkWrap: true,
+                    itemCount: filteredTracks.length,
+                    itemBuilder: (context, index) {
+                      final track = filteredTracks[index];
+                      final imageUrl = ImageUrlHelper.resolve(track.img);
+                      return ListTile(
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(6),
+                          child: Container(
+                            width: 44,
+                            height: 44,
+                            color: AppColors.surface,
+                            child: imageUrl != null && imageUrl.isNotEmpty
+                                ? Image.network(
+                                    imageUrl,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Center(
+                                      child: Icon(
+                                        Icons.music_note,
+                                        color: AppColors.primary,
+                                        size: 22,
+                                      ),
+                                    ),
+                                  )
+                                : const Center(
+                                    child: Icon(
+                                      Icons.music_note,
+                                      color: AppColors.primary,
+                                      size: 22,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                        title: Text(
+                          track.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: Text(
+                          '${track.artistNames} • ${track.formattedDuration}',
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.add_circle, color: AppColors.primary),
+                          onPressed: () {
+                            HapticFeedback.lightImpact();
+                            widget.onTrackAdded(track);
+                            Navigator.pop(context);
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
-            ),
-          ),
-        ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

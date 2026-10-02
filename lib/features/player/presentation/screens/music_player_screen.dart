@@ -1,22 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../widgets/vinyl_disc_widget.dart';
-import '../widgets/player_controls_widget.dart';
-import '../widgets/track_info_widget.dart';
-import '../widgets/progress_bar_widget.dart';
+import '../providers/player_provider.dart';
+import '../widgets/music_player_body.dart';
 
-class MusicPlayerScreen extends StatefulWidget {
+class MusicPlayerScreen extends ConsumerStatefulWidget {
   const MusicPlayerScreen({super.key});
 
   @override
-  State<MusicPlayerScreen> createState() => _MusicPlayerScreenState();
+  ConsumerState<MusicPlayerScreen> createState() => _MusicPlayerScreenState();
 }
 
-class _MusicPlayerScreenState extends State<MusicPlayerScreen> with SingleTickerProviderStateMixin {
+class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with SingleTickerProviderStateMixin {
   late AnimationController _spinController;
-  bool _isPlaying = false, _isShuffle = false, _isRepeat = false;
-  double _currentValue = 30.0;
+  bool _isShuffle = false;
+  bool _isRepeat = false;
 
   @override
   void initState() {
@@ -30,43 +29,51 @@ class _MusicPlayerScreenState extends State<MusicPlayerScreen> with SingleTicker
     super.dispose();
   }
 
-  void _togglePlayPause() {
+  void _onPlayPause(bool isPlaying) {
     HapticFeedback.lightImpact();
-    setState(() {
-      _isPlaying = !_isPlaying;
-      _isPlaying ? _spinController.repeat() : _spinController.stop();
-    });
+    final notifier = ref.read(playerNotifierProvider.notifier);
+    isPlaying ? notifier.pause() : notifier.play();
   }
 
   @override
   Widget build(BuildContext context) {
+    final playerStateAsync = ref.watch(playerNotifierProvider);
+
+    ref.listen(playerNotifierProvider, (_, next) {
+      if (next is AsyncData) {
+        next.value!.isPlaying ? _spinController.repeat() : _spinController.stop();
+      }
+    });
+
     return Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.keyboard_arrow_down, size: 32),
-          onPressed: () => context.pop(), // Thu nhỏ player
+          onPressed: () => context.pop(),
         ),
         title: const Text('Đang phát'),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.more_vert), onPressed: () => context.push('/track/1')),
+          IconButton(
+            icon: const Icon(Icons.info_outline),
+            onPressed: () => context.push('/track/1'),
+          ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            VinylDiscWidget(animation: _spinController, imageUrl: 'https://picsum.photos/300'),
-            const TrackInfoWidget(),
-            ProgressBarWidget(currentValue: _currentValue, onChanged: (val) => setState(() => _currentValue = val)),
-            PlayerControlsWidget(
-              isPlaying: _isPlaying, isShuffle: _isShuffle, isRepeat: _isRepeat,
-              onPlayPause: _togglePlayPause,
-              onShuffle: () => setState(() => _isShuffle = !_isShuffle),
-              onRepeat: () => setState(() => _isRepeat = !_isRepeat),
-            ),
-          ],
+      body: playerStateAsync.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (err, _) => Center(child: Text(err.toString())),
+        data: (state) => MusicPlayerBody(
+          state: state,
+          spinController: _spinController,
+          isShuffle: _isShuffle,
+          isRepeat: _isRepeat,
+          onPlayPause: () => _onPlayPause(state.isPlaying),
+          onShuffle: () => setState(() => _isShuffle = !_isShuffle),
+          onRepeat: () => setState(() => _isRepeat = !_isRepeat),
+          onSeek: (val) {
+            ref.read(playerNotifierProvider.notifier).seek(Duration(seconds: val.toInt()));
+          },
         ),
       ),
     );

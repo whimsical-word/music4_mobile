@@ -1,8 +1,43 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+
 class ApiEndpoints {
   ApiEndpoints._();
 
-  // Thay đổi IP này theo môi trường chạy của bạn (VD: 10.0.2.2 cho Android Emulator, localhost cho iOS/Web, hoặc IP máy LAN)
-  static const String baseUrl = 'http://10.0.2.2:8080';
+  static const String s3BaseUrl =
+      'https://music4-v3-storage-kenz.s3.ap-southeast-1.amazonaws.com/';
+
+  static String buildImageUrl(String? path) {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http')) return path;
+    return s3BaseUrl + path;
+  }
+
+  // ==========================================
+  // 1. CAU HINH CHO DIEN THOAI THAT
+  // ==========================================
+  static const String _lanIp = '192.168.88.149';
+
+  // ==========================================
+  // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
+  // Để 'true' nếu dùng Máy Ảo (Emulator), 'false' nếu cắm cáp Điện thoại thật
+  // ==========================================
+  static const bool _isEmulator = false;
+
+  static String get baseUrl {
+    if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
+      return 'http://localhost:8080'; // Web và Desktop luôn là localhost
+    }
+
+    if (_isEmulator) {
+      if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
+      if (Platform.isIOS) return 'http://localhost:8080'; // Máy ảo iOS
+    }
+
+    return 'http://$_lanIp:8080';
+  }
+
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 15);
 
@@ -15,7 +50,7 @@ class ApiEndpoints {
   static const String resetPassword = '/api/auth/reset-password';
 
   // Tracks & Media
-  static const String tracks = '/api/tracks';
+  static const String tracks = '/api/tracks/all';
   static const String trackDetail = '/api/tracks'; // + /{id}
   static const String uploadTrack = '/api/tracks';
   static const String uploadTemp = '/api/tracks/upload-temp';

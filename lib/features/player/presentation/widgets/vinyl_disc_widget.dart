@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/widgets/app_network_image.dart';
+
 class VinylDiscWidget extends StatelessWidget {
   final Animation<double> animation;
   final String imageUrl;
@@ -29,15 +31,26 @@ class VinylDiscWidget extends StatelessWidget {
           ],
           border: Border.all(color: Colors.grey.shade900, width: 4),
         ),
-        child: Center(
-          child: Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: Colors.grey.shade900,
-              border: Border.all(color: Colors.black, width: 2),
-            ),
+        child: ClipOval(
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              AppNetworkImage(
+                imageUrl: imageUrl,
+                width: 280,
+                height: 280,
+                fit: BoxFit.cover,
+              ),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey.shade900,
+                  border: Border.all(color: Colors.black, width: 2),
+                ),
+              ),
+            ],
           ),
         ),
       ),

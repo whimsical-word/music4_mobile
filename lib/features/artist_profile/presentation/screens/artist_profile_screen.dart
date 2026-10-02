@@ -5,10 +5,22 @@ import '../providers/artist_profile_provider.dart';
 import '../widgets/artist_header.dart';
 import '../widgets/artist_profile_shimmer.dart';
 import '../widgets/track_list_item.dart';
+import '../widgets/artist_dashboard.dart';
+
+enum ArtistProfileMode {
+  listener,
+  owner,
+}
 
 class ArtistProfileScreen extends ConsumerWidget {
   final String? artistId;
-  const ArtistProfileScreen({super.key, this.artistId});
+  final ArtistProfileMode mode;
+
+  const ArtistProfileScreen({
+    super.key,
+    this.artistId,
+    this.mode = ArtistProfileMode.listener, // Default to listener
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,12 +35,14 @@ class ArtistProfileScreen extends ConsumerWidget {
       extendBodyBehindAppBar: true,
       body: profileState.when(
         data: (data) {
+          final isOwnerMode = mode == ArtistProfileMode.owner;
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
                 child: ArtistHeader(
                   artist: data.artist,
                   isFollowing: data.isFollowing,
+                  showFollowButton: !isOwnerMode,
                   onToggleFollow: () {
                     ref.read(artistProfileProvider.notifier).toggleFollow();
                   },
@@ -77,6 +91,13 @@ class ArtistProfileScreen extends ConsumerWidget {
                     childCount: data.popularTracks.length,
                   ),
                 ),
+              
+              // Artist Dashboard (Owner Only)
+              if (isOwnerMode && data.dashboardStats != null)
+                SliverToBoxAdapter(
+                  child: ArtistDashboard(stats: data.dashboardStats!),
+                ),
+
               // Padding for bottom nav bar if needed
               const SliverToBoxAdapter(child: SizedBox(height: 32)),
             ],

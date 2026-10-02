@@ -5,12 +5,14 @@ import '../../domain/models/artist.dart';
 class ArtistHeader extends StatelessWidget {
   final Artist artist;
   final bool isFollowing;
+  final bool showFollowButton;
   final VoidCallback onToggleFollow;
 
   const ArtistHeader({
     super.key,
     required this.artist,
     required this.isFollowing,
+    this.showFollowButton = true,
     required this.onToggleFollow,
   });
 
@@ -40,7 +42,7 @@ class ArtistHeader extends StatelessWidget {
               child: Image.network(
                 artist.coverUrl,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: AppColors.surface),
+                errorBuilder: (_, _, _) => Container(color: AppColors.surface),
               ),
             ),
             Positioned(
@@ -52,7 +54,7 @@ class ArtistHeader extends StatelessWidget {
                   radius: 46,
                   backgroundColor: AppColors.card,
                   backgroundImage: NetworkImage(artist.avatarUrl),
-                  onBackgroundImageError: (_, __) {},
+                  onBackgroundImageError: (_, _) {},
                   child: const Icon(Icons.person, size: 40, color: AppColors.textMuted),
                 ),
               ),
@@ -96,18 +98,19 @@ class ArtistHeader extends StatelessWidget {
               const SizedBox(height: 16),
               
               // Follow Button
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  style: FilledButton.styleFrom(
-                    backgroundColor: isFollowing ? AppColors.surface : AppColors.primary,
-                    foregroundColor: isFollowing ? AppColors.textPrimary : Colors.black,
+              if (showFollowButton)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    style: FilledButton.styleFrom(
+                      backgroundColor: isFollowing ? AppColors.surface : AppColors.primary,
+                      foregroundColor: isFollowing ? AppColors.textPrimary : Colors.black,
+                    ),
+                    onPressed: onToggleFollow,
+                    icon: Icon(isFollowing ? Icons.check : Icons.person_add),
+                    label: Text(isFollowing ? 'Đang theo dõi' : 'Theo dõi'),
                   ),
-                  onPressed: onToggleFollow,
-                  icon: Icon(isFollowing ? Icons.check : Icons.person_add),
-                  label: Text(isFollowing ? 'Đang theo dõi' : 'Theo dõi'),
                 ),
-              ),
             ],
           ),
         ),
