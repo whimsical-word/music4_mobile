@@ -12,8 +12,8 @@ class TokenStorage {
 
   static const _keyAccessToken = 'access_token';
   static const _keyRefreshToken = 'refresh_token';
-  static const _keyUserId = 'user_id';
-  static const _keyRole = 'role';
+  // static const _keyUserId = 'user_id';
+  // static const _keyRole = 'role';
 
   Future<String?> getAccessToken() async {
     return await _storage.read(key: _keyAccessToken);
