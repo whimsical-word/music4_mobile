@@ -51,9 +51,14 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> checkSession() async {
     final isLoggedIn = await repository.isLoggedIn();
-    if (!isLoggedIn) {
-      state = const AuthUnauthenticated();
+    if (isLoggedIn) {
+      final cachedUser = await TokenStorage.instance.getUser();
+      if (cachedUser != null) {
+        state = AuthAuthenticated(cachedUser);
+        return;
+      }
     }
+    state = const AuthUnauthenticated();
   }
 
   Future<void> login(String username, String password) async {
