@@ -9,7 +9,7 @@
 #include <app_links/app_links_plugin_c_api.h>
 #include <connectivity_plus/connectivity_plus_windows_plugin.h>
 #include <flutter_secure_storage_windows/flutter_secure_storage_windows_plugin.h>
-#include <just_audio_windows/just_audio_windows_plugin.h>
+#include <just_audio_windows_plus/just_audio_windows_plus_plugin.h>
 #include <permission_handler_windows/permission_handler_windows_plugin.h>
 #include <share_plus/share_plus_windows_plugin_c_api.h>
 #include <speech_to_text_windows/speech_to_text_windows.h>
@@ -22,8 +22,8 @@ void RegisterPlugins(flutter::PluginRegistry* registry) {
       registry->GetRegistrarForPlugin("ConnectivityPlusWindowsPlugin"));
   FlutterSecureStorageWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("FlutterSecureStorageWindowsPlugin"));
-  JustAudioWindowsPluginRegisterWithRegistrar(
-      registry->GetRegistrarForPlugin("JustAudioWindowsPlugin"));
+  JustAudioWindowsPlusPluginRegisterWithRegistrar(
+      registry->GetRegistrarForPlugin("JustAudioWindowsPlusPlugin"));
   PermissionHandlerWindowsPluginRegisterWithRegistrar(
       registry->GetRegistrarForPlugin("PermissionHandlerWindowsPlugin"));
   SharePlusWindowsPluginCApiRegisterWithRegistrar(

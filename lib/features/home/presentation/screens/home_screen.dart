@@ -63,7 +63,10 @@ class HomeScreen extends ConsumerWidget {
                     children: [
                       const HomeHeaderGreeting(),
                       const SizedBox(height: 8),
-                      AiRecommendationBanner(track: state.featuredAiTrack),
+                      AiRecommendationBanner(
+                        track: state.featuredAiTrack,
+                        playlist: state.aiRecommendations,
+                      ),
                       const SizedBox(height: 16),
                       AiRecommendationSection(tracks: state.aiRecommendations),
                       const SizedBox(height: 16),

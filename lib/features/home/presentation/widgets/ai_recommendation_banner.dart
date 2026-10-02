@@ -9,10 +9,17 @@ import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../player/domain/models/player_state_data.dart';
+
 class AiRecommendationBanner extends ConsumerWidget {
   final HomeTrackItem? track;
+  final List<HomeTrackItem> playlist;
 
-  const AiRecommendationBanner({super.key, this.track});
+  const AiRecommendationBanner({
+    super.key,
+    this.track,
+    required this.playlist,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -28,12 +35,29 @@ class AiRecommendationBanner extends ConsumerWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: () {
             HapticFeedback.lightImpact();
-            ref.read(playerNotifierProvider.notifier).playTrack(
-              trackId: track!.id,
-              title: track!.title,
-              artist: track!.artist,
-              coverUrl: track!.coverUrl,
-            );
+            
+            final queue = playlist.map((t) => TrackQueueItem(
+              id: t.id,
+              title: t.title,
+              artist: t.artist,
+              coverUrl: t.coverUrl,
+              duration: Duration(seconds: t.durationSeconds),
+            )).toList();
+            
+            int initialIndex = queue.indexWhere((t) => t.id == track!.id);
+            if (initialIndex == -1) {
+              // Nếu bài featured không nằm trong list playlist, thêm nó vào đầu tiên
+              queue.insert(0, TrackQueueItem(
+                id: track!.id,
+                title: track!.title,
+                artist: track!.artist,
+                coverUrl: track!.coverUrl,
+                duration: Duration(seconds: track!.durationSeconds),
+              ));
+              initialIndex = 0;
+            }
+            
+            ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
             ref.read(homeFeedControllerProvider.notifier).trackPlay(track!.id);
             context.push(RouteNames.player);
           },
