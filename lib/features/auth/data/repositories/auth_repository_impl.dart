@@ -25,8 +25,10 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
         accessToken: authData.accessToken,
         refreshToken: authData.refreshToken,
       );
+      final entity = authData.toEntity();
+      await tokenStorage.saveUser(entity);
 
-      return Success(authData.toEntity());
+      return Success(entity);
     } on DioException catch (e) {
       if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
         return const Error(InvalidCredentialsFailure());
