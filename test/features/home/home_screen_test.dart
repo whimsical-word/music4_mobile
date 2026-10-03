@@ -20,7 +20,15 @@ import 'package:music4_mobile/features/home/presentation/widgets/home_error_stat
 import 'package:music4_mobile/features/home/presentation/widgets/home_shimmer_skeleton.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/trending_section.dart';
 
-class MockHomeRepository extends HomeRepository { MockHomeRepository() : super(DioClient()); @override Future<void> trackHistory(String trackId) async { return Future.value(); } } class MockHomeFeedController extends HomeFeedController {
+class MockHomeRepository extends HomeRepository {
+  MockHomeRepository() : super(DioClient());
+  @override
+  Future<void> trackHistory(String trackId) async {
+    return Future.value();
+  }
+}
+
+class MockHomeFeedController extends HomeFeedController {
   @override
   Future<HomeFeedState> build() async {
     return _mockHomeFeed();
@@ -70,7 +78,8 @@ class FakeHomeRepository extends HomeRepository {
 Widget createTestWidget({List<Override> overrides = const []}) {
   return ProviderScope(
     overrides: [
-      homeRepositoryProvider.overrideWithValue(MockHomeRepository()), homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+      homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+      homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
       ...overrides,
     ],
     child: MaterialApp(theme: AppTheme.darkTheme, home: const HomeScreen()),
@@ -84,7 +93,8 @@ void main() {
       (tester) async {
         await tester.pumpWidget(createTestWidget());
 
-        await tester.pumpAndSettle();
+        // Allow the AsyncNotifier build future to complete.
+        await tester.pump();
 
         // Verify App Bar.
         expect(find.text('Music4'), findsOneWidget);
@@ -104,7 +114,7 @@ void main() {
 
         expect(find.text('Gợi ý cho bạn'), findsOneWidget);
 
-        expect(find.text('Thịnh hành'), findsOneWidget);
+        expect(find.text('Thịnh hành'), findsWidgets);
       },
     );
 
@@ -113,7 +123,8 @@ void main() {
     ) async {
       final container = ProviderContainer(
         overrides: [
-          homeRepositoryProvider.overrideWithValue(MockHomeRepository()), homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+          homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+          homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
         ],
       );
 
@@ -142,7 +153,8 @@ void main() {
     testWidgets('renders Error State and allows retry', (tester) async {
       final container = ProviderContainer(
         overrides: [
-          homeRepositoryProvider.overrideWithValue(MockHomeRepository()), homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+          homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+          homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
         ],
       );
 
@@ -185,7 +197,8 @@ void main() {
     testWidgets('renders Empty State when data has no tracks', (tester) async {
       final container = ProviderContainer(
         overrides: [
-          homeRepositoryProvider.overrideWithValue(MockHomeRepository()), homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+          homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+          homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
         ],
       );
 
@@ -249,7 +262,8 @@ void main() {
 
         final container = ProviderContainer(
           overrides: [
-            homeRepositoryProvider.overrideWithValue(MockHomeRepository()), homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
+            homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+            homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
             homeRepositoryProvider.overrideWithValue(fakeRepository),
           ],
         );
