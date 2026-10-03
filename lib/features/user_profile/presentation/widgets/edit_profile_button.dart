@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music4_mobile/features/user_profile/domain/models/user_profile.dart';
+import 'package:music4_mobile/features/user_profile/presentation/widgets/edit_profile_dialog.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../providers/user_profile_provider.dart';
 
 class EditProfileButton extends ConsumerWidget {
-  const EditProfileButton({super.key});
+  final UserProfile profile;
+
+  const EditProfileButton({super.key, required this.profile});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -25,10 +29,12 @@ class EditProfileButton extends ConsumerWidget {
           'Chỉnh sửa hồ sơ',
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
         ),
-        onPressed: () {
-          ref.read(userProfileProvider.notifier).toggleEditing();
-          // TODO: Navigate to EditProfileScreen
-        },
+        onPressed: () => showEditProfileDialog(
+          context,
+          ref,
+          currentName: profile.displayName,
+          imageUrl: profile.avatarUrl,
+        ),
       ),
     );
   }
