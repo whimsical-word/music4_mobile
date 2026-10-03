@@ -712,14 +712,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "0.4.16"
-  just_audio_windows_plus:
+  just_audio_windows:
     dependency: "direct main"
     description:
-      name: just_audio_windows_plus
-      sha256: e688dd2367555d8220b8ca3af1c4a5adffd47e9e30a0360bdf60bc87b78ae55a
+      name: just_audio_windows
+      sha256: "7d80dfa02a2189f1c26673a56f4d8584a306d3f22735302be6111e9578a40318"
       url: "https://pub.dev"
     source: hosted
-    version: "0.5.3"
+    version: "0.2.3"
   leak_tracker:
     dependency: transitive
     description:
