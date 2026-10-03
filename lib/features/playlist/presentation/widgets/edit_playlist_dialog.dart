@@ -1,8 +1,8 @@
 import 'dart:io';
 
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
@@ -75,13 +75,16 @@ class _EditPlaylistDialogState extends State<EditPlaylistDialog> {
   Future<void> _pickImage() async {
     HapticFeedback.lightImpact();
     try {
-      final result = await FilePicker.pickFiles(
-        type: FileType.image,
-        allowMultiple: false,
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
       );
-      if (result != null && result.files.single.path != null) {
+      if (pickedFile != null) {
         setState(() {
-          _pickedFilePath = result.files.single.path;
+          _pickedFilePath = pickedFile.path;
         });
       }
     } catch (e) {
