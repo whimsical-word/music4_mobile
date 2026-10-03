@@ -1,35 +1,34 @@
-import 'dart:async';
-
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/utils/image_url_helper.dart';
 import '../../../../core/network/dio_client.dart';
-import '../../data/sources/home_repository.dart';
+import '../../../../core/utils/image_url_helper.dart';
 import '../../data/models/home_track_item.dart';
+import '../../data/sources/home_repository.dart';
 import 'home_feed_state.dart';
 
-final dioClientProvider = Provider((ref) => DioClient());
-final homeRepositoryProvider = Provider(
+final dioClientProvider = Provider<DioClient>((ref) => DioClient());
+
+final homeRepositoryProvider = Provider<HomeRepository>(
   (ref) => HomeRepository(ref.read(dioClientProvider)),
 );
 
 class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
+  int _silentRefreshId = 0;
+
   @override
-  Future<HomeFeedState> build() async {
+  Future<HomeFeedState> build() {
     return _fetchHomeFeed();
   }
 
   Future<HomeFeedState> _fetchHomeFeed() async {
     final repo = ref.read(homeRepositoryProvider);
 
-    // Fetch concurrently
-    final results = await Future.wait([
-      repo.getRecommendations(),
-      repo.getTopTrending(),
-    ]);
+    // Start both requests concurrently.
+    final recommendationsFuture = repo.getRecommendations();
+    final trendingFuture = repo.getTopTrending();
 
-    final recommendations = results[0] as List<dynamic>;
-    final trending = results[1] as List<dynamic>;
+    final recommendations = await recommendationsFuture;
+    final trending = await trendingFuture;
 
     final aiTracks = recommendations
         .map(
@@ -67,20 +66,46 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
 
     return HomeFeedState(
       featuredAiTrack: aiTracks.isNotEmpty ? aiTracks.first : null,
-      aiRecommendations: aiTracks.isNotEmpty ? aiTracks.skip(1).toList() : [],
+      aiRecommendations: aiTracks.length > 1 ? aiTracks.sublist(1) : const [],
       trendingTracks: trendingTracks,
     );
   }
 
   String _formatDuration(int seconds) {
-    final m = seconds ~/ 60;
-    final s = seconds % 60;
-    return '$m:${s.toString().padLeft(2, '0')}';
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+
+    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
   }
 
   Future<void> refresh() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() async => _fetchHomeFeed());
+    state = await AsyncValue.guard(_fetchHomeFeed);
+  }
+
+  Future<void> trackPlay(String trackId) async {
+    try {
+      // Wait until backend tracking is completed.
+      await ref.read(homeRepositoryProvider).trackHistory(trackId);
+
+      // Create a new generation for the silent refresh.
+      final refreshId = ++_silentRefreshId;
+
+      final newState = await _fetchHomeFeed();
+
+      // Ignore an older refresh if a newer one has started.
+      if (refreshId != _silentRefreshId) {
+        return;
+      }
+
+      // Silent refresh:
+      // replace data directly without triggering loading/shimmer.
+      if (state.hasValue && !state.isLoading) {
+        state = AsyncValue.data(newState);
+      }
+    } catch (_) {
+      // Tracking/refresh failure must not interrupt playback.
+    }
   }
 
   void setLoadingForTesting() {
@@ -99,10 +124,6 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
 
   void setErrorForTesting(String message) {
     state = AsyncValue.error(message, StackTrace.current);
-  }
-
-  void trackPlay(String trackId) {
-    ref.read(homeRepositoryProvider).trackHistory(trackId);
   }
 }
 
