@@ -41,6 +41,7 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
                 : 'Unknown Artist',
             coverUrl: ImageUrlHelper.resolve(e.img),
             duration: _formatDuration(e.duration ?? 0),
+            durationSeconds: e.duration ?? 0,
             matchPercentage: e.matchScore != null
                 ? (e.matchScore! * 100).toInt()
                 : null,
@@ -58,6 +59,7 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
                 : 'Unknown Artist',
             coverUrl: ImageUrlHelper.resolve(e.img),
             duration: _formatDuration(e.duration ?? 0),
+            durationSeconds: e.duration ?? 0,
             playsCount: e.viewCount.toString(),
           ),
         )

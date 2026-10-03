@@ -7,7 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   connectivity_plus
   file_selector_windows
   flutter_secure_storage_windows
-  just_audio_windows
+  just_audio_windows_plus
   permission_handler_windows
   share_plus
   speech_to_text_windows

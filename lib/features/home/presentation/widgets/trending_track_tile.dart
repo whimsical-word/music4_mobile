@@ -9,24 +9,35 @@ import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../player/domain/models/player_state_data.dart';
+
 class TrendingTrackTile extends ConsumerWidget {
   final int rank;
   final HomeTrackItem track;
+  final List<HomeTrackItem> playlist;
+  final int initialIndex;
 
   const TrendingTrackTile({
     super.key,
     required this.rank,
     required this.track,
+    required this.playlist,
+    required this.initialIndex,
   });
 
   void _onPlay(BuildContext context, WidgetRef ref) {
     HapticFeedback.lightImpact();
-    ref.read(playerNotifierProvider.notifier).playTrack(
-      trackId: track.id,
-      title: track.title,
-      artist: track.artist,
-      coverUrl: track.coverUrl,
-    );
+    
+    final queue = playlist.map((t) => TrackQueueItem(
+      id: t.id,
+      title: t.title,
+      artist: t.artist,
+      coverUrl: t.coverUrl,
+      duration: Duration(seconds: t.durationSeconds),
+    )).toList();
+    
+    ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
+    
     ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
     context.push(RouteNames.player);
   }

@@ -39,9 +39,10 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
   Widget build(BuildContext context) {
     final playerStateAsync = ref.watch(playerNotifierProvider);
 
-    ref.listen(playerNotifierProvider, (_, next) {
+    ref.listen(playerNotifierProvider, (prev, next) {
       if (next is AsyncData) {
         next.value!.isPlaying ? _spinController.repeat() : _spinController.stop();
+
       }
     });
 
@@ -71,6 +72,8 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
           onPlayPause: () => _onPlayPause(state.isPlaying),
           onShuffle: () => setState(() => _isShuffle = !_isShuffle),
           onRepeat: () => setState(() => _isRepeat = !_isRepeat),
+          onNext: () => ref.read(playerNotifierProvider.notifier).next(),
+          onPrevious: () => ref.read(playerNotifierProvider.notifier).previous(),
           onSeek: (val) {
             ref.read(playerNotifierProvider.notifier).seek(Duration(seconds: val.toInt()));
           },
