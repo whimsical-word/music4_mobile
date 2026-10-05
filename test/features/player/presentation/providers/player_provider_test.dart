@@ -1,4 +1,5 @@
 import 'package:music4_mobile/features/track_detail/data/repositories/track_detail_repository.dart';
+import 'package:music4_mobile/features/player/data/services/app_audio_handler.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:just_audio/just_audio.dart';
@@ -8,11 +9,13 @@ import 'dart:async';
 
 class MockAudioPlayer extends Mock implements AudioPlayer {}
 class MockTrackDetailRepo extends Mock implements TrackDetailRepository {}
+class MockAppAudioHandler extends Mock implements AppAudioHandler {}
 
 void main() {
   group('[CE190036] PlayerNotifier & Audio Streaming Logic Tests', () {
     late MockAudioPlayer mockAudioPlayer;
     late MockTrackDetailRepo mockTrackDetailRepo;
+    late MockAppAudioHandler mockAppAudioHandler;
     late PlayerNotifier playerNotifier;
     
     late StreamController<PlayerState> playerStateController;
@@ -23,6 +26,7 @@ void main() {
     setUp(() {
       mockAudioPlayer = MockAudioPlayer();
       mockTrackDetailRepo = MockTrackDetailRepo();
+      mockAppAudioHandler = MockAppAudioHandler();
       
       playerStateController = StreamController<PlayerState>.broadcast();
       positionController = StreamController<Duration>.broadcast();
@@ -37,7 +41,7 @@ void main() {
       when(() => mockAudioPlayer.play()).thenAnswer((_) async {});
       when(() => mockAudioPlayer.pause()).thenAnswer((_) async {});
       
-      playerNotifier = PlayerNotifier(mockAudioPlayer, mockTrackDetailRepo);
+      playerNotifier = PlayerNotifier(mockAudioPlayer, mockTrackDetailRepo, mockAppAudioHandler);
     });
 
     tearDown(() {

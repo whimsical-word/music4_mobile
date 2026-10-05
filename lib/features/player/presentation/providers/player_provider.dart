@@ -7,6 +7,7 @@ import '../../../../core/constants/api_endpoints.dart';
 import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
 import '../../../../features/track_detail/data/repositories/track_detail_repository.dart';
+import '../../data/services/app_audio_handler.dart';
 
 final audioPlayerProvider = Provider<AudioPlayer>((ref) {
  final player = AudioPlayer();
@@ -14,15 +15,21 @@ final audioPlayerProvider = Provider<AudioPlayer>((ref) {
  return player;
 });
 
+final audioHandlerProvider = Provider<AppAudioHandler>((ref) {
+  throw UnimplementedError('Must be overridden in main.dart');
+});
+
 final playerNotifierProvider = StateNotifierProvider<PlayerNotifier, AsyncValue<PlayerStateData>>((ref) {
+ final audioHandler = ref.watch(audioHandlerProvider);
  final player = ref.watch(audioPlayerProvider);
  final trackDetailRepo = ref.watch(trackDetailRepositoryProvider);
- return PlayerNotifier(player, trackDetailRepo);
+ return PlayerNotifier(player, trackDetailRepo, audioHandler);
 });
 
 class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  final AudioPlayer _player;
  final TrackDetailRepository _trackDetailRepo;
+ final AppAudioHandler _audioHandler;
 
  // ── Spotify-style Queue: tự quản lý playlist + index thay vì dùng ConcatenatingAudioSource ──
  // Lý do: ConcatenatingAudioSource.seek(index) trên just_audio_windows_plus gây ra transient states
@@ -97,7 +104,9 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // Mỗi lần gọi _loadAndPlayCurrentTrack, tăng _loadId lên 1.
  // Nếu một load cũ đang chạy dở mà load mới bắt đầu, load cũ sẽ tự hủy khi thấy _loadId đã thay đổi.
  int _loadId = 0;
-  PlayerNotifier(this._player, this._trackDetailRepo) : super(const AsyncData(PlayerStateData())) {
+  PlayerNotifier(this._player, this._trackDetailRepo, this._audioHandler) : super(const AsyncData(PlayerStateData())) {
+    _audioHandler.onSkipToNextCb = () => next();
+    _audioHandler.onSkipToPreviousCb = () => previous();
  _initStreams();
  }
 
@@ -164,6 +173,15 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
       bufferedPosition: Duration.zero,
       isLiked: false, // Tạm thời set false, sẽ check api sau
     ));
+    
+    // Cập nhật lên Notification / Lockscreen
+    _audioHandler.updateCurrentMediaItem(
+      id: item.id,
+      title: item.title,
+      artist: item.artist,
+      artUri: item.coverUrl,
+      duration: item.duration,
+    );
 
     // Gọi API check isFavorite ngầm (không chặn UI)
     _trackDetailRepo.checkIsFavorite(int.tryParse(item.id) ?? 0).then((isLiked) {
