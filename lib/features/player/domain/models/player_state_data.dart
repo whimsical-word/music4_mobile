@@ -1,3 +1,5 @@
+enum RepeatState { off, all, one }
+
 class TrackQueueItem {
   final String id;
   final String title;
@@ -27,6 +29,9 @@ class PlayerStateData {
   final bool hasNext;
   final bool hasPrevious;
 
+  final bool isShuffle;
+  final RepeatState repeatMode;
+
   const PlayerStateData({
     this.currentTrackId,
     this.title = 'Unknown Title',
@@ -38,6 +43,8 @@ class PlayerStateData {
     this.bufferedPosition = Duration.zero,
     this.hasNext = false,
     this.hasPrevious = false,
+    this.isShuffle = false,
+    this.repeatMode = RepeatState.off,
   });
 
   PlayerStateData copyWith({
@@ -51,6 +58,8 @@ class PlayerStateData {
     Duration? bufferedPosition,
     bool? hasNext,
     bool? hasPrevious,
+    bool? isShuffle,
+    RepeatState? repeatMode,
   }) {
     return PlayerStateData(
       currentTrackId: currentTrackId ?? this.currentTrackId,
@@ -63,6 +72,8 @@ class PlayerStateData {
       bufferedPosition: bufferedPosition ?? this.bufferedPosition,
       hasNext: hasNext ?? this.hasNext,
       hasPrevious: hasPrevious ?? this.hasPrevious,
+      isShuffle: isShuffle ?? this.isShuffle,
+      repeatMode: repeatMode ?? this.repeatMode,
     );
   }
 

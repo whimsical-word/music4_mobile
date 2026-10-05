@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../domain/models/player_state_data.dart';
 import 'player_controls_widget.dart';
 import 'progress_bar_widget.dart';
@@ -9,7 +9,7 @@ class MusicPlayerBody extends StatelessWidget {
   final PlayerStateData state;
   final AnimationController spinController;
   final bool isShuffle;
-  final bool isRepeat;
+  final RepeatState repeatMode;
   final VoidCallback onPlayPause;
   final VoidCallback onShuffle;
   final VoidCallback onRepeat;
@@ -22,7 +22,7 @@ class MusicPlayerBody extends StatelessWidget {
     required this.state,
     required this.spinController,
     required this.isShuffle,
-    required this.isRepeat,
+    required this.repeatMode,
     required this.onPlayPause,
     required this.onShuffle,
     required this.onRepeat,
@@ -57,7 +57,7 @@ class MusicPlayerBody extends StatelessWidget {
           PlayerControlsWidget(
             isPlaying: state.isPlaying,
             isShuffle: isShuffle,
-            isRepeat: isRepeat,
+            repeatMode: repeatMode,
             hasNext: state.hasNext,
             hasPrevious: state.hasPrevious,
             onPlayPause: onPlayPause,
@@ -71,3 +71,4 @@ class MusicPlayerBody extends StatelessWidget {
     );
   }
 }
+
