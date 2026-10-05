@@ -1,17 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
+import '../controllers/home_feed_controller.dart';
+import '../../../player/presentation/providers/player_provider.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class AiRecommendationBanner extends StatelessWidget {
+import '../../../player/domain/models/player_state_data.dart';
+
+class AiRecommendationBanner extends ConsumerWidget {
   final HomeTrackItem? track;
+  final List<HomeTrackItem> playlist;
 
-  const AiRecommendationBanner({super.key, this.track});
+  const AiRecommendationBanner({
+    super.key,
+    this.track,
+    required this.playlist,
+  });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     if (track == null) return const SizedBox.shrink();
 
     final textTheme = Theme.of(context).textTheme;
@@ -24,6 +35,30 @@ class AiRecommendationBanner extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           onTap: () {
             HapticFeedback.lightImpact();
+            
+            final queue = playlist.map((t) => TrackQueueItem(
+              id: t.id,
+              title: t.title,
+              artist: t.artist,
+              coverUrl: t.coverUrl,
+              duration: Duration(seconds: t.durationSeconds),
+            )).toList();
+            
+            int initialIndex = queue.indexWhere((t) => t.id == track!.id);
+            if (initialIndex == -1) {
+              // Nếu bài featured không nằm trong list playlist, thêm nó vào đầu tiên
+              queue.insert(0, TrackQueueItem(
+                id: track!.id,
+                title: track!.title,
+                artist: track!.artist,
+                coverUrl: track!.coverUrl,
+                duration: Duration(seconds: track!.durationSeconds),
+              ));
+              initialIndex = 0;
+            }
+            
+            ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
+            ref.read(homeFeedControllerProvider.notifier).trackPlay(track!.id);
             context.push(RouteNames.player);
           },
           child: Container(
@@ -41,13 +76,31 @@ class AiRecommendationBanner extends StatelessWidget {
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.album,
-                      color: AppColors.textSecondary,
-                      size: 28,
-                    ),
-                  ),
+                  child: track!.coverUrl != null && track!.coverUrl!.isNotEmpty
+                      ? ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: CachedNetworkImage(
+                            imageUrl: track!.coverUrl!,
+                            width: 56,
+                            height: 56,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Container(
+                              color: AppColors.surface,
+                              child: const Center(
+                                child: Icon(Icons.album, color: AppColors.textSecondary, size: 28),
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Container(
+                              color: AppColors.surface,
+                              child: const Center(
+                                child: Icon(Icons.album, color: AppColors.textSecondary, size: 28),
+                              ),
+                            ),
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(Icons.album, color: AppColors.textSecondary, size: 28),
+                        ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

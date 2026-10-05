@@ -7,6 +7,7 @@ class PlaylistTrackTile extends StatelessWidget {
   final String title;
   final String artist;
   final String duration;
+  final String? imageUrl;
   final VoidCallback onTap;
   final VoidCallback onRemove;
 
@@ -16,6 +17,7 @@ class PlaylistTrackTile extends StatelessWidget {
     required this.title,
     required this.artist,
     required this.duration,
+    this.imageUrl,
     required this.onTap,
     required this.onRemove,
   });
@@ -35,15 +37,32 @@ class PlaylistTrackTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
+              ClipRRect(
+                borderRadius: BorderRadius.circular(6),
+                child: Container(
+                  width: 48,
+                  height: 48,
                   color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Center(
-                  child: Icon(Icons.music_note, color: AppColors.primary, size: 24),
+                  child: imageUrl != null && imageUrl!.isNotEmpty
+                      ? Image.network(
+                          imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Center(
+                            child: Icon(
+                              Icons.music_note,
+                              color: AppColors.primary,
+                              size: 24,
+                            ),
+                          ),
+                        )
+                      : const Center(
+                          child: Icon(
+                            Icons.music_note,
+                            color: AppColors.primary,
+                            size: 24,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 12),

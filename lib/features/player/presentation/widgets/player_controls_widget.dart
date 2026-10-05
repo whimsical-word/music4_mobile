@@ -1,3 +1,4 @@
+﻿import '../../domain/models/player_state_data.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -5,19 +6,27 @@ import '../../../../core/theme/app_colors.dart';
 class PlayerControlsWidget extends StatelessWidget {
   final bool isPlaying;
   final bool isShuffle;
-  final bool isRepeat;
+  final RepeatState repeatMode;
+  final bool hasNext;
+  final bool hasPrevious;
   final VoidCallback onPlayPause;
   final VoidCallback onShuffle;
   final VoidCallback onRepeat;
+  final VoidCallback onNext;
+  final VoidCallback onPrevious;
 
   const PlayerControlsWidget({
     super.key,
     required this.isPlaying,
     required this.isShuffle,
-    required this.isRepeat,
+    required this.repeatMode,
+    required this.hasNext,
+    required this.hasPrevious,
     required this.onPlayPause,
     required this.onShuffle,
     required this.onRepeat,
+    required this.onNext,
+    required this.onPrevious,
   });
 
   @override
@@ -30,9 +39,10 @@ class PlayerControlsWidget extends StatelessWidget {
           onPressed: onShuffle,
         ),
         IconButton(
-          icon: const Icon(Icons.skip_previous, size: 36),
+          icon: Icon(Icons.skip_previous, size: 36, color: hasPrevious ? Colors.white : AppColors.textMuted),
           onPressed: () {
             HapticFeedback.lightImpact();
+            onPrevious();
           },
         ),
         CircleAvatar(
@@ -44,16 +54,21 @@ class PlayerControlsWidget extends StatelessWidget {
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.skip_next, size: 36),
+          icon: Icon(Icons.skip_next, size: 36, color: hasNext ? Colors.white : AppColors.textMuted),
           onPressed: () {
             HapticFeedback.lightImpact();
+            if (hasNext) onNext();
           },
         ),
         IconButton(
-          icon: Icon(Icons.repeat, color: isRepeat ? AppColors.primary : Colors.white),
+          icon: Icon(
+            repeatMode == RepeatState.one ? Icons.repeat_one : Icons.repeat,
+            color: repeatMode != RepeatState.off ? AppColors.primary : Colors.white,
+          ),
           onPressed: onRepeat,
         ),
       ],
     );
   }
 }
+
