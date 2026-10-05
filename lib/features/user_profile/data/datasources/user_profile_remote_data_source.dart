@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:music4_mobile/core/constants/api_endpoints.dart';
 import 'package:music4_mobile/core/network/dio_client.dart';
 import 'package:music4_mobile/features/user_profile/data/models/user_profile_response.dart';
@@ -10,6 +11,7 @@ abstract class UserProfileRemoteDataSource {
     String? displayName,
     String? bio,
     String? avatarUrl,
+    bool? gender,
   });
 }
 
@@ -32,14 +34,35 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     required int userId,
     String? displayName,
     String? bio,
+    bool? gender,
     String? avatarUrl,
   }) async {
-    final body = <String, dynamic>{};
-    if (displayName != null) body['name'] = displayName;
-    if (bio != null) body['bio'] = bio;
+    dynamic requestData;
+
+    if (avatarUrl != null &&
+        !avatarUrl.startsWith('http') &&
+        avatarUrl.isNotEmpty) {
+      // Local file -> Use FormData
+      requestData = FormData.fromMap({
+        if (displayName != null) 'name': displayName,
+        if (gender != null) 'gender': gender,
+        'img': await MultipartFile.fromFile(
+          avatarUrl,
+          filename: avatarUrl.split('/').last,
+        ),
+      });
+    } else {
+      // No file -> JSON, maybe FormData if API strictly requires it?
+      // Usually FormData can also be sent without files. Let's stick to FormData to be safe since API says multipart/form-data
+      requestData = FormData.fromMap({
+        if (displayName != null) 'name': displayName,
+        if (gender != null) 'gender': gender,
+      });
+    }
+
     final response = await dioClient.dio.patch(
       '${ApiEndpoints.userProfile}/$userId',
-      data: body,
+      data: requestData,
     );
     final responseModel = UserProfileResponse.fromJson(response.data);
     return responseModel.toDomain();

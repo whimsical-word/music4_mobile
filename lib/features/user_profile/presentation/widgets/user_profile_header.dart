@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/user_profile.dart';
 
@@ -41,7 +42,7 @@ class UserProfileHeader extends StatelessWidget {
                   radius: 48,
                   backgroundColor: AppColors.card,
                   backgroundImage: profile.avatarUrl.isNotEmpty
-                      ? NetworkImage(profile.avatarUrl)
+                      ? NetworkImage(ApiEndpoints.buildImageUrl(profile.avatarUrl))
                       : null,
                   onBackgroundImageError: profile.avatarUrl.isNotEmpty
                       ? (_, _) {}

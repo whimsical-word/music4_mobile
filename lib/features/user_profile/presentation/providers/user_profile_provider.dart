@@ -1,46 +1,89 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:music4_mobile/core/network/dio_client.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
-import 'package:music4_mobile/features/user_profile/data/datasources/user_profile_remote_data_source.dart';
-import 'package:music4_mobile/features/user_profile/data/repositories/user_profile_repository_impl.dart';
-import 'package:music4_mobile/features/user_profile/domain/repositories/user_profile_repository.dart';
 
-import '../../domain/models/user_profile.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../data/datasources/user_profile_remote_data_source.dart';
+import '../../data/repositories/user_profile_repository_impl.dart';
+import '../../domain/repositories/user_profile_repository.dart';
 import '../state/user_profile_state.dart';
+
+// ---------------------------------------------------------------------------
+// Dependency Injection (Providers)
+// ---------------------------------------------------------------------------
+
+// Giả định dioClientProvider đã được khai báo ở đâu đó (thường ở core).
+// Nếu chưa, ta có thể inject trực tiếp. Ở đây tôi sẽ cung cấp 1 instance tạm.
+final dioClientProvider = Provider<DioClient>((ref) => DioClient());
 
 final userProfileRemoteDataSourceProvider =
     Provider<UserProfileRemoteDataSource>((ref) {
-      return UserProfileRemoteDataSourceImpl(dioClient: DioClient());
+      return UserProfileRemoteDataSourceImpl(
+        dioClient: ref.read(dioClientProvider),
+      );
     });
+
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
   return UserProfileRepositoryImpl(
     ref.read(userProfileRemoteDataSourceProvider),
   );
 });
 
+// ---------------------------------------------------------------------------
+// Notifier
+// ---------------------------------------------------------------------------
+
 class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
+  late UserProfileRepository _repository;
+
   @override
   Future<UserProfileState> build() async {
+    _repository = ref.read(userProfileRepositoryProvider);
+    return _fetchProfile();
+  }
+
+  Future<UserProfileState> _fetchProfile() async {
     final authState = ref.read(authNotifierProvider);
-    if (authState is! AuthAuthenticated) {
-      throw Exception('Chưa đăng nhập');
+    int userId = 1; // Fallback
+    if (authState is AuthAuthenticated) {
+      userId = authState.user.id;
     }
-    final userId = authState.user.id;
-    final repo = ref.read(userProfileRepositoryProvider);
-    final profile = await repo.getProfile(userId);
+
+    final profile = await _repository.getProfile(userId);
     return UserProfileState(profile: profile);
   }
 
   Future<void> retry() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(build);
+    state = await AsyncValue.guard(_fetchProfile);
   }
 
   void toggleEditing() {
     state.whenData(
       (s) => state = AsyncData(s.copyWith(isEditing: !s.isEditing)),
     );
+  }
+
+  Future<void> updateProfile({
+    String? displayName,
+    String? bio,
+    bool? gender,
+    String? avatarFilePath,
+  }) async {
+    final authState = ref.read(authNotifierProvider);
+    if (authState is! AuthAuthenticated) return;
+
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      final updatedProfile = await _repository.updateProfile(
+        userId: authState.user.id,
+        displayName: displayName,
+        bio: bio,
+        gender: gender,
+        avatarUrl: avatarFilePath,
+      );
+      return UserProfileState(profile: updatedProfile);
+    });
   }
 
   Future<void> logout() async {

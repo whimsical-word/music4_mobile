@@ -6,6 +6,8 @@ abstract interface class UserProfileRepository {
   Future<UserProfile> updateProfile({
     required int userId,
     String? displayName,
+    String? bio,
+    bool? gender,
     String? avatarUrl,
   });
 }
