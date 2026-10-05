@@ -6,6 +6,11 @@ import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 class TokenStorage {
   final FlutterSecureStorage _storage;
 
+  @Deprecated(
+    'Ưu tiên sử dụng Dependency Injection hoặc TokenStorage() thay vì gọi singleton instance.',
+  )
+  static final TokenStorage instance = TokenStorage();
+
   TokenStorage({FlutterSecureStorage? storage})
     : _storage = storage ?? const FlutterSecureStorage();
 
