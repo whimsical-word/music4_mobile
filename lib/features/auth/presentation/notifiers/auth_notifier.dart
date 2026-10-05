@@ -75,8 +75,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   }
 
   Future<void> logout() async {
-    await logoutUseCase();
-    state = const AuthUnauthenticated();
+    try {
+      await logoutUseCase();
+    } finally {
+      state = const AuthUnauthenticated();
+    }
   }
 }
 
