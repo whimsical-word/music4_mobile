@@ -1,8 +1,9 @@
 import 'package:dio/dio.dart';
+import '../../../../core/network/dio_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../models/album_model.dart';
 
-final _dioProvider = Provider<Dio>((ref) => Dio());
+final _dioProvider = Provider<Dio>((ref) => DioClient().dio);
 
 final albumRepositoryProvider = Provider<AlbumRepository>((ref) {
   return AlbumRepository(ref.watch(_dioProvider));
