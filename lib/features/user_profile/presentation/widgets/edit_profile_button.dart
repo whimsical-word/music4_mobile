@@ -4,7 +4,6 @@ import 'package:music4_mobile/features/user_profile/domain/models/user_profile.d
 import 'package:music4_mobile/features/user_profile/presentation/widgets/edit_profile_dialog.dart';
 
 import '../../../../core/theme/app_colors.dart';
-import '../providers/user_profile_provider.dart';
 
 class EditProfileButton extends ConsumerWidget {
   final UserProfile profile;
@@ -33,6 +32,7 @@ class EditProfileButton extends ConsumerWidget {
           context,
           ref,
           currentName: profile.displayName,
+          currentGender: profile.gender,
           imageUrl: profile.avatarUrl,
         ),
       ),
