@@ -1,20 +1,22 @@
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+
 import '../constants/api_endpoints.dart';
 
 class AuthInterceptor extends Interceptor {
   final FlutterSecureStorage storage;
   final Dio retryDio;
   bool _isRefreshing = false;
-  final _pendingRequests = <({RequestOptions options, ErrorInterceptorHandler handler})>[];
+  final _pendingRequests =
+      <({RequestOptions options, ErrorInterceptorHandler handler})>[];
 
-  AuthInterceptor({
-    required this.storage,
-    required this.retryDio,
-  });
+  AuthInterceptor({required this.storage, required this.retryDio});
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     final token = await storage.read(key: 'access_token');
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
@@ -60,7 +62,8 @@ class AuthInterceptor extends Interceptor {
           _pendingRequests.clear();
 
           // Retry the current failed request
-          err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+          err.requestOptions.headers['Authorization'] =
+              'Bearer $newAccessToken';
           handler.resolve(await retryDio.fetch(err.requestOptions));
           return;
         }
