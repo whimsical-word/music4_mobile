@@ -1,20 +1,20 @@
-import 'dart:async';
+﻿import 'dart:async';
 
-import 'package:dio/dio.dart';
+import '../../../../core/network/dio_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/search_repository.dart';
 import '../../data/models/search_models.dart';
 
-// Provider quản lý loại tìm kiếm đang được chọn (Tab/Chip)
+// Provider quáº£n lÃ½ loáº¡i tÃ¬m kiáº¿m Ä‘ang Ä‘Æ°á»£c chá»n (Tab/Chip)
 final searchTypeProvider = StateProvider<String>((ref) => 'all');
 
-// Provider cung cấp Repository
+// Provider cung cáº¥p Repository
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
-  return SearchRepository(Dio());
+  return SearchRepository(DioClient().dio);
 });
 
-// Provider quản lý State bằng AsyncValue
+// Provider quáº£n lÃ½ State báº±ng AsyncValue
 final searchProvider =
     StateNotifierProvider<SearchNotifier, AsyncValue<SearchResponse?>>((ref) {
       return SearchNotifier(ref.watch(searchRepositoryProvider), ref);
@@ -66,3 +66,4 @@ class SearchNotifier extends StateNotifier<AsyncValue<SearchResponse?>> {
     super.dispose();
   }
 }
+
