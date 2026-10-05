@@ -73,23 +73,6 @@ class HomeRepository {
     }
   }
 
-  Future<void> trackHistory(String trackId) async {
-    final parsedTrackId = int.tryParse(trackId);
-
-    if (parsedTrackId == null) {
-      throw ArgumentError('Track ID không hợp lệ: $trackId');
-    }
-
-    try {
-      await _dioClient.dio.post(
-        ApiEndpoints.history,
-        data: {'trackId': parsedTrackId},
-      );
-    } on DioException catch (e) {
-      throw HomeException(_handleError(e));
-    }
-  }
-
   String _handleError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {

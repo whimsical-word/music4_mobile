@@ -8,6 +8,8 @@ import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
 import '../../../../features/track_detail/data/repositories/track_detail_repository.dart';
 import '../../data/services/app_audio_handler.dart';
+import '../../../tracking/application/playback_tracker.dart';
+import '../../../tracking/presentation/providers/playback_tracker_provider.dart';
 
 final audioPlayerProvider = Provider<AudioPlayer>((ref) {
  final player = AudioPlayer();
@@ -23,13 +25,18 @@ final playerNotifierProvider = StateNotifierProvider<PlayerNotifier, AsyncValue<
  final audioHandler = ref.watch(audioHandlerProvider);
  final player = ref.watch(audioPlayerProvider);
  final trackDetailRepo = ref.watch(trackDetailRepositoryProvider);
- return PlayerNotifier(player, trackDetailRepo, audioHandler);
+ final tracker = ref.watch(playbackTrackerProvider);
+ return PlayerNotifier(player, trackDetailRepo, audioHandler, tracker: tracker);
 });
 
 class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  final AudioPlayer _player;
  final TrackDetailRepository _trackDetailRepo;
  final AppAudioHandler _audioHandler;
+
+ // Listening tracking (position sync every 10s + count a view on full completion).
+ // Optional so existing tests / callers that build a PlayerNotifier are unaffected.
+ final PlaybackTracker? _tracker;
 
  // ── Spotify-style Queue: tự quản lý playlist + index thay vì dùng ConcatenatingAudioSource ──
  // Lý do: ConcatenatingAudioSource.seek(index) trên just_audio_windows_plus gây ra transient states
@@ -104,7 +111,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // Mỗi lần gọi _loadAndPlayCurrentTrack, tăng _loadId lên 1.
  // Nếu một load cũ đang chạy dở mà load mới bắt đầu, load cũ sẽ tự hủy khi thấy _loadId đã thay đổi.
  int _loadId = 0;
-  PlayerNotifier(this._player, this._trackDetailRepo, this._audioHandler) : super(const AsyncData(PlayerStateData())) {
+  PlayerNotifier(this._player, this._trackDetailRepo, this._audioHandler, {this._tracker}) : super(const AsyncData(PlayerStateData())) {
     _audioHandler.onSkipToNextCb = () => next();
     _audioHandler.onSkipToPreviousCb = () => previous();
  _initStreams();
@@ -117,6 +124,8 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  // Auto-advance: bài hát phát xong tự nhiên → chuyển sang bài kế tiếp
  if (playerState.processingState == ProcessingState.completed) {
+ // Báo cho tracker: bài hát phát xong tự nhiên (tracker tự lọc trùng / chưa nghe đủ).
+ _tracker?.onCompleted();
   final nextIdx = _getNextIndex();
   if (nextIdx != null) {
   _currentIndex = nextIdx;
@@ -132,6 +141,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  _player.positionStream.listen((position) {
  if (_isLoadingTrack) return;
+ _tracker?.onPosition(position);
  state = state.whenData((data) => data.copyWith(position: position));
  });
 
@@ -142,6 +152,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  _player.durationStream.listen((duration) {
  if (duration != null) {
+  _tracker?.updateDuration(duration);
   state = state.whenData((data) => data.copyWith(duration: duration));
  }
  });
@@ -159,6 +170,9 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  _isLoadingTrack = true;
 
  final item = _playlist[_currentIndex];
+
+ // Bắt đầu phiên nghe mới (bỏ phiên cũ => skip không bị tính lượt nghe).
+ _tracker?.startTrack(trackId: item.id, duration: item.duration);
 
  // Cập nhật UI ngay lập tức (Optimistic UI)
  state = state.whenData((data) => data.copyWith(

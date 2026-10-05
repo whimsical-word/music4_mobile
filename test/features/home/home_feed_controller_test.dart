@@ -171,6 +171,49 @@ void main() {
       expect(feed.featuredAiTrack, isNull);
     });
 
+    test('silentRefresh swaps in new data without emitting loading', () async {
+      when(() => repository.getRecommendations())
+          .thenAnswer((_) async => [_suggest(1)]);
+      when(() => repository.getTopTrending()).thenAnswer((_) async => []);
+
+      await loadFeed();
+
+      final emitted = <AsyncValue<HomeFeedState>>[];
+      container.listen(homeFeedControllerProvider, (_, next) {
+        emitted.add(next);
+      });
+
+      // The listener now reports a different feed after the refresh.
+      when(() => repository.getRecommendations())
+          .thenAnswer((_) async => [_suggest(2)]);
+
+      await container.read(homeFeedControllerProvider.notifier).silentRefresh();
+
+      expect(emitted.any((s) => s.isLoading), isFalse);
+      expect(
+        container.read(homeFeedControllerProvider).value?.featuredAiTrack?.id,
+        '2',
+      );
+    });
+
+    test('silentRefresh keeps the current data when the request fails', () async {
+      when(() => repository.getRecommendations())
+          .thenAnswer((_) async => [_suggest(1)]);
+      when(() => repository.getTopTrending()).thenAnswer((_) async => []);
+
+      await loadFeed();
+
+      when(() => repository.getRecommendations())
+          .thenAnswer((_) async => throw Exception('Lỗi kết nối máy chủ'));
+
+      await container.read(homeFeedControllerProvider.notifier).silentRefresh();
+
+      final state = container.read(homeFeedControllerProvider);
+      expect(state.hasError, isFalse);
+      expect(state.isLoading, isFalse);
+      expect(state.value?.featuredAiTrack?.id, '1');
+    });
+
     test('API failure becomes AsyncError and refresh() recovers', () async {
       var fail = true;
       when(() => repository.getRecommendations()).thenAnswer((_) async {

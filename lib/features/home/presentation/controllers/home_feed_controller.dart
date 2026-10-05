@@ -89,28 +89,24 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
     state = await AsyncValue.guard(_fetchHomeFeed);
   }
 
-  Future<void> trackPlay(String trackId) async {
+  /// Reloads the feed in the background and swaps the data in place.
+  ///
+  /// No loading/shimmer state is emitted, and existing data is kept if the
+  /// refresh fails. Called after a track was genuinely listened to the end.
+  Future<void> silentRefresh() async {
+    // Create a new generation: an older refresh must not overwrite a newer one.
+    final refreshId = ++_silentRefreshId;
+
     try {
-      // Wait until backend tracking is completed.
-      await ref.read(homeRepositoryProvider).trackHistory(trackId);
-
-      // Create a new generation for the silent refresh.
-      final refreshId = ++_silentRefreshId;
-
       final newState = await _fetchHomeFeed();
 
-      // Ignore an older refresh if a newer one has started.
-      if (refreshId != _silentRefreshId) {
-        return;
-      }
+      if (refreshId != _silentRefreshId) return;
 
-      // Silent refresh:
-      // replace data directly without triggering loading/shimmer.
       if (state.hasValue && !state.isLoading) {
         state = AsyncValue.data(newState);
       }
     } catch (_) {
-      // Tracking/refresh failure must not interrupt playback.
+      // A failed background refresh keeps the current Home content.
     }
   }
 

@@ -50,10 +50,6 @@ class MockTrackDetailRepo extends Mock implements TrackDetailRepository {}
 
 class MockHomeRepository extends HomeRepository {
   MockHomeRepository() : super(DioClient());
-  @override
-  Future<void> trackHistory(String trackId) async {
-    return Future.value();
-  }
 }
 
 class MockHomeFeedController extends HomeFeedController {
@@ -81,14 +77,8 @@ class MockHomeFeedController extends HomeFeedController {
 class FakeHomeRepository extends HomeRepository {
   FakeHomeRepository() : super(DioClient());
 
-  int trackHistoryCalls = 0;
   int recommendationsCalls = 0;
   int trendingCalls = 0;
-
-  @override
-  Future<void> trackHistory(String trackId) async {
-    trackHistoryCalls++;
-  }
 
   @override
   Future<List<TrackSuggestModel>> getRecommendations() async {
@@ -292,7 +282,7 @@ void main() {
     });
 
     testWidgets(
-      'trackPlay performs silent refresh without setting loading state',
+      'silentRefresh reloads the feed without setting loading state',
       (tester) async {
         final fakeRepository = FakeHomeRepository();
 
@@ -332,10 +322,10 @@ void main() {
 
         expect(initialState.isLoading, isFalse);
 
-        // Start tracking without awaiting immediately.
-        final future = controller.trackPlay('123');
+        // Start the background refresh without awaiting immediately.
+        final future = controller.silentRefresh();
 
-        // While tracking/refresh is running, the UI must NOT
+        // While the refresh is running, the UI must NOT
         // enter loading state.
         final stateDuringRefresh = container.read(homeFeedControllerProvider);
 
@@ -343,13 +333,10 @@ void main() {
 
         expect(stateDuringRefresh.isLoading, isFalse);
 
-        // Wait for tracking + silent refresh to complete.
+        // Wait for the silent refresh to complete.
         await future;
 
         final finalState = container.read(homeFeedControllerProvider);
-
-        // Verify tracking API was called.
-        expect(fakeRepository.trackHistoryCalls, 1);
 
         // Verify silent refresh fetched both Home sections.
         expect(fakeRepository.recommendationsCalls, 1);
