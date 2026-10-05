@@ -1,5 +1,5 @@
 ﻿<manifest xmlns:android="http://schemas.android.com/apk/res/android" xmlns:tools="http://schemas.android.com/tools">
-    <application
+    <application android:usesCleartextTraffic="true"
         android:label="music4_mobile"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
@@ -67,4 +67,7 @@
         </intent>
     </queries>
 </manifest>
+
+
+
 
