@@ -17,7 +17,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CAU HINH CHO DIEN THOAI THAT
   // ==========================================
-  static const String _lanIp = '192.168.88.149';
+  static const String _lanIp = '10.64.223.152';
 
   // ==========================================
   // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
@@ -77,6 +77,10 @@ class ApiEndpoints {
   static const String artists = '/api/artists';
   static const String top3Artists = '/api/artists/top3';
   static const String albums = '/api/albums';
+
+  // Comments
+  static const String comments = '/api/comments';
+  static const String trackComments = '/api/comments/track'; // + /{trackId}
 
   // Recommendations & History
   static const String recommendations = '/api/recommendations';
