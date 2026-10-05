@@ -55,7 +55,10 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
   actions: [
   IconButton(
   icon: const Icon(Icons.info_outline),
-  onPressed: () => context.push('/track/1'),
+  onPressed: () {
+              final trackId = playerStateAsync.value?.currentTrackId;
+              if (trackId != null) context.push('/track/$trackId');
+            },
   ),
   ],
  ),
@@ -72,7 +75,8 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
   onRepeat: () => ref.read(playerNotifierProvider.notifier).toggleRepeat(),
   onNext: () => ref.read(playerNotifierProvider.notifier).next(),
   onPrevious: () => ref.read(playerNotifierProvider.notifier).previous(),
-  onSeek: (val) {
+  onFavoriteTap: () => ref.read(playerNotifierProvider.notifier).toggleFavorite(),
+          onSeek: (val) {
   ref.read(playerNotifierProvider.notifier).seek(Duration(seconds: val.toInt()));
   },
   ),
@@ -80,5 +84,6 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
  );
  }
 }
+
 
 

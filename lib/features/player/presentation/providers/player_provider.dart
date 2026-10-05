@@ -6,6 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
+import '../../../../features/track_detail/data/repositories/track_detail_repository.dart';
 
 final audioPlayerProvider = Provider<AudioPlayer>((ref) {
  final player = AudioPlayer();
@@ -15,11 +16,13 @@ final audioPlayerProvider = Provider<AudioPlayer>((ref) {
 
 final playerNotifierProvider = StateNotifierProvider<PlayerNotifier, AsyncValue<PlayerStateData>>((ref) {
  final player = ref.watch(audioPlayerProvider);
- return PlayerNotifier(player);
+ final trackDetailRepo = ref.watch(trackDetailRepositoryProvider);
+ return PlayerNotifier(player, trackDetailRepo);
 });
 
 class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  final AudioPlayer _player;
+ final TrackDetailRepository _trackDetailRepo;
 
  // ── Spotify-style Queue: tự quản lý playlist + index thay vì dùng ConcatenatingAudioSource ──
  // Lý do: ConcatenatingAudioSource.seek(index) trên just_audio_windows_plus gây ra transient states
@@ -94,8 +97,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // Mỗi lần gọi _loadAndPlayCurrentTrack, tăng _loadId lên 1.
  // Nếu một load cũ đang chạy dở mà load mới bắt đầu, load cũ sẽ tự hủy khi thấy _loadId đã thay đổi.
  int _loadId = 0;
-
- PlayerNotifier(this._player) : super(const AsyncData(PlayerStateData())) {
+  PlayerNotifier(this._player, this._trackDetailRepo) : super(const AsyncData(PlayerStateData())) {
  _initStreams();
  }
 
@@ -151,16 +153,25 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  // Cập nhật UI ngay lập tức (Optimistic UI)
  state = state.whenData((data) => data.copyWith(
- currentTrackId: item.id,
- title: item.title,
- artist: item.artist,
- coverUrl: item.coverUrl,
- duration: item.duration,
- hasNext: _getNextIndex() != null,
- hasPrevious: _getPreviousIndex() != null,
- position: Duration.zero,
- bufferedPosition: Duration.zero,
- ));
+      currentTrackId: item.id,
+      title: item.title,
+      artist: item.artist,
+      coverUrl: item.coverUrl,
+      duration: item.duration,
+      hasNext: _getNextIndex() != null,
+      hasPrevious: _getPreviousIndex() != null,
+      position: Duration.zero,
+      bufferedPosition: Duration.zero,
+      isLiked: false, // Tạm thời set false, sẽ check api sau
+    ));
+
+    // Gọi API check isFavorite ngầm (không chặn UI)
+    _trackDetailRepo.checkIsFavorite(int.tryParse(item.id) ?? 0).then((isLiked) {
+      if (mounted && _loadId == myLoadId) {
+        state = state.whenData((data) => data.copyWith(isLiked: isLiked));
+      }
+    }).catchError((_) {});
+
 
  try {
  // Chỉ stop nếu đang có bài hát, tránh lỗi MediaFoundation trên Windows khi stop player rỗng
@@ -305,6 +316,21 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // ══════════════════════════════════════════════════════════
  // Play / Pause / Seek
  // ══════════════════════════════════════════════════════════
+   Future<void> toggleFavorite() async {
+    final currentState = state.value;
+    if (currentState == null || currentState.currentTrackId == null) return;
+    
+    try {
+      final isLiked = await _trackDetailRepo.toggleFavorite(int.tryParse(currentState.currentTrackId!) ?? 0);
+      if (mounted) {
+        state = AsyncValue.data(currentState.copyWith(isLiked: isLiked));
+      }
+    } catch (e) {
+      debugPrint('Lỗi thả tim: ');
+    }
+  }
+
+
  Future<void> play() async {
  try {
  await _player.play();

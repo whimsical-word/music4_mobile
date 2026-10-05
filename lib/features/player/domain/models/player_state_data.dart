@@ -22,6 +22,7 @@ class PlayerStateData {
   final String artist;
   final String? coverUrl;
   final bool isPlaying;
+  final bool isLiked;
   final Duration position;
   final Duration duration;
   final Duration bufferedPosition;
@@ -38,6 +39,7 @@ class PlayerStateData {
     this.artist = 'Unknown Artist',
     this.coverUrl,
     this.isPlaying = false,
+    this.isLiked = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
     this.bufferedPosition = Duration.zero,
@@ -53,6 +55,7 @@ class PlayerStateData {
     String? artist,
     String? coverUrl,
     bool? isPlaying,
+    bool? isLiked,
     Duration? position,
     Duration? duration,
     Duration? bufferedPosition,
@@ -67,6 +70,7 @@ class PlayerStateData {
       artist: artist ?? this.artist,
       coverUrl: coverUrl ?? this.coverUrl,
       isPlaying: isPlaying ?? this.isPlaying,
+      isLiked: isLiked ?? this.isLiked,
       position: position ?? this.position,
       duration: duration ?? this.duration,
       bufferedPosition: bufferedPosition ?? this.bufferedPosition,

@@ -16,6 +16,7 @@ class MusicPlayerBody extends StatelessWidget {
   final VoidCallback onNext;
   final VoidCallback onPrevious;
   final ValueChanged<double> onSeek;
+  final VoidCallback onFavoriteTap;
 
   const MusicPlayerBody({
     super.key,
@@ -29,6 +30,7 @@ class MusicPlayerBody extends StatelessWidget {
     required this.onNext,
     required this.onPrevious,
     required this.onSeek,
+    required this.onFavoriteTap,
   });
 
   @override
@@ -46,6 +48,8 @@ class MusicPlayerBody extends StatelessWidget {
           TrackInfoWidget(
             title: state.title,
             artist: state.artist,
+            isLiked: state.isLiked,
+            onFavoriteTap: onFavoriteTap,
           ),
           ProgressBarWidget(
             currentValue: state.position.inSeconds.toDouble(),
