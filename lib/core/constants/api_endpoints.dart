@@ -9,7 +9,7 @@ class ApiEndpoints {
   // 🔴 1. CẤU HÌNH CHO ĐIỆN THOẠI THẬT
   // Mở cmd gõ 'ipconfig' lấy IPv4 dán vào đây (VD: 192.168.1.45)
   // ==========================================
-  static const String _lanIp = '192.168.1.45';
+  static const String _lanIp = '10.64.225.56';
 
   // ==========================================
   // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
@@ -27,6 +27,9 @@ class ApiEndpoints {
       if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
       if (Platform.isIOS) {
         return 'http://localhost:8080'; // Máy ảo iOS (Simulator)
+      }
+      if (Platform.isMacOS) {
+        return 'http://localhost:8080'; // Ứng dụng macOS
       }
     }
 
