@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String s3BaseUrl = 'https://music4-v3-storage-kenz.s3.ap-southeast-1.amazonaws.com/';
+  static const String s3BaseUrl =
+      'https://music4-v3-storage-kenz.s3.ap-southeast-1.amazonaws.com/';
 
   static String buildImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
@@ -16,7 +17,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CAU HINH CHO DIEN THOAI THAT
   // ==========================================
-  static const String _lanIp = '192.168.38.52';
+  static const String _lanIp = '10.64.223.168';
 
   // ==========================================
   // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
