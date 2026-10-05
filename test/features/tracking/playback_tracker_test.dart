@@ -78,7 +78,15 @@ void main() {
     test('records the view once when the track is fully listened', () async {
       tracker.startTrack(trackId: '5', duration: const Duration(seconds: 100));
 
+      // Listened past the 80% threshold, but the player has not reported
+      // `completed` yet: nothing may be recorded.
       listen(100);
+      await tracker.idle;
+
+      verifyNever(() => repository.recordCompletion(any()));
+      expect(completedCallbacks, 0);
+
+      // Only the player's `completed` event records the view.
       tracker.onCompleted();
       await tracker.idle;
 
@@ -129,16 +137,25 @@ void main() {
       expect(completedCallbacks, 0);
     });
 
-    test('skipping to another track records nothing for the skipped one', () async {
-      tracker.startTrack(trackId: '5', duration: const Duration(seconds: 100));
-      listen(6);
+    test(
+      'skipping to another track records nothing for the skipped one',
+      () async {
+        tracker.startTrack(
+          trackId: '5',
+          duration: const Duration(seconds: 100),
+        );
+        listen(6);
 
-      // Skip: a new session replaces the old one without completion.
-      tracker.startTrack(trackId: '6', duration: const Duration(seconds: 100));
-      await tracker.idle;
+        // Skip: a new session replaces the old one without completion.
+        tracker.startTrack(
+          trackId: '6',
+          duration: const Duration(seconds: 100),
+        );
+        await tracker.idle;
 
-      verifyNothingSent();
-    });
+        verifyNothingSent();
+      },
+    );
 
     test('play, pause and resume alone send nothing', () async {
       tracker.startTrack(trackId: '5', duration: const Duration(seconds: 100));
@@ -153,20 +170,25 @@ void main() {
       verifyNothingSent();
     });
 
-    test('a failed completion request does not throw or refresh Home', () async {
-      when(
-        () => repository.recordCompletion(any()),
-      ).thenAnswer((_) async => throw const TrackingException('Lỗi'));
+    test(
+      'a failed completion request does not throw or refresh Home',
+      () async {
+        when(() => repository.recordCompletion(any()))
+            .thenAnswer((_) async => throw const TrackingException('Lỗi'));
 
-      tracker.startTrack(trackId: '5', duration: const Duration(seconds: 100));
+        tracker.startTrack(
+          trackId: '5',
+          duration: const Duration(seconds: 100),
+        );
 
-      listen(100);
-      tracker.onCompleted();
-      await tracker.idle;
+        listen(100);
+        tracker.onCompleted();
+        await tracker.idle;
 
-      verify(() => repository.recordCompletion(5)).called(1);
-      expect(completedCallbacks, 0);
-    });
+        verify(() => repository.recordCompletion(5)).called(1);
+        expect(completedCallbacks, 0);
+      },
+    );
   });
 
   group('[CE190284] PlaybackTracker - guest / artist / preview', () {
@@ -198,7 +220,10 @@ void main() {
     });
 
     test('an invalid track id is ignored', () async {
-      tracker.startTrack(trackId: 'abc', duration: const Duration(seconds: 100));
+      tracker.startTrack(
+        trackId: 'abc',
+        duration: const Duration(seconds: 100),
+      );
 
       listen(100);
       tracker.onCompleted();
