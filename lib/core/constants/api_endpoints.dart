@@ -32,7 +32,12 @@ class ApiEndpoints {
 
     if (_isEmulator) {
       if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
-      if (Platform.isIOS) return 'http://localhost:8080'; // Máy ảo iOS
+      if (Platform.isIOS) {
+        return 'http://localhost:8080'; // Máy ảo iOS (Simulator)
+      }
+      if (Platform.isMacOS) {
+        return 'http://localhost:8080'; // Ứng dụng macOS
+      }
     }
 
     return 'http://$_lanIp:8080';

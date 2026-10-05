@@ -4,36 +4,36 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 
 class TokenStorage {
-  TokenStorage._();
+  final FlutterSecureStorage _storage;
 
-  static final TokenStorage instance = TokenStorage._();
-
-  final _storage = const FlutterSecureStorage();
+  TokenStorage({FlutterSecureStorage? storage})
+    : _storage = storage ?? const FlutterSecureStorage();
 
   static const _keyAccessToken = 'access_token';
   static const _keyRefreshToken = 'refresh_token';
-  static const _keyUserId = 'user_id';
-  static const _keyRole = 'role';
+  static const _keyCachedUser = 'cached_user';
 
-  Future<String?> getAccessToken() async {
-    return await _storage.read(key: _keyAccessToken);
-  }
+  Future<String?> getAccessToken() async => _storage.read(key: _keyAccessToken);
 
-  Future<String?> getRefreshToken() async {
-    return await _storage.read(key: _keyRefreshToken);
-  }
+  Future<String?> getRefreshToken() async =>
+      _storage.read(key: _keyRefreshToken);
 
-  Future<void> saveToken({
+  Future<void> saveTokens({
     required String accessToken,
-    required String refreshToken,
+    String? refreshToken,
   }) async {
     await _storage.write(key: _keyAccessToken, value: accessToken);
-    await _storage.write(key: _keyRefreshToken, value: refreshToken);
+    if (refreshToken != null && refreshToken.isNotEmpty) {
+      await _storage.write(key: _keyRefreshToken, value: refreshToken);
+    }
   }
 
-  Future<void> clear() async {
-    await _storage.delete(key: _keyAccessToken);
-    await _storage.delete(key: _keyRefreshToken);
+  Future<void> clearSession() async {
+    await Future.wait([
+      _storage.delete(key: _keyAccessToken),
+      _storage.delete(key: _keyRefreshToken),
+      _storage.delete(key: _keyCachedUser),
+    ]);
   }
 
   Future<bool> hasValidSession() async {
@@ -42,16 +42,26 @@ class TokenStorage {
   }
 
   Future<UserEntity?> getUser() async {
-    final userJson = await _storage.read(key: 'cached_user');
+    final userJson = await _storage.read(key: _keyCachedUser);
     if (userJson == null) return null;
 
-    final userMap = jsonDecode(userJson);
-    return UserEntity(
-      id: userMap['id'],
-      displayName: userMap['displayName'],
-      username: userMap['username'],
-      isArtist: userMap['isArtist'],
-    );
+    try {
+      final decoded = jsonDecode(userJson);
+      if (decoded is! Map<String, dynamic>) return null;
+
+      return UserEntity(
+        id: decoded['id'] as int,
+        displayName: decoded['displayName'] as String,
+        username: decoded['username'] as String,
+        email: decoded['email'] as String? ?? '',
+        imageUrl: decoded['imageUrl'] as String?,
+        isArtist: decoded['isArtist'] as bool? ?? false,
+      );
+    } on FormatException {
+      return null;
+    } on TypeError {
+      return null;
+    }
   }
 
   Future<void> saveUser(UserEntity user) async {
@@ -59,8 +69,10 @@ class TokenStorage {
       'id': user.id,
       'displayName': user.displayName,
       'username': user.username,
+      'email': user.email,
+      'imageUrl': user.imageUrl,
       'isArtist': user.isArtist,
     });
-    await _storage.write(key: 'cached_user', value: userJson);
+    await _storage.write(key: _keyCachedUser, value: userJson);
   }
 }

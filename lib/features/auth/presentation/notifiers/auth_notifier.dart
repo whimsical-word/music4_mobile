@@ -12,11 +12,11 @@ import 'auth_state.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 
 final dioClientProvider = Provider<DioClient>((ref) {
-  return DioClient();
+  return DioClient(tokenStorage: ref.read(tokenStorageProvider));
 });
 
 final tokenStorageProvider = Provider<TokenStorage>((ref) {
-  return TokenStorage.instance;
+  return TokenStorage();
 });
 
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {
@@ -42,17 +42,19 @@ class AuthNotifier extends StateNotifier<AuthState> {
   final LoginUseCase loginUseCase;
   final LogoutUseCase logoutUseCase;
   final AuthRepository repository;
+  final TokenStorage tokenStorage;
 
   AuthNotifier({
     required this.loginUseCase,
     required this.logoutUseCase,
     required this.repository,
+    required this.tokenStorage,
   }) : super(const AuthInitial());
 
   Future<void> checkSession() async {
     final isLoggedIn = await repository.isLoggedIn();
     if (isLoggedIn) {
-      final cachedUser = await TokenStorage.instance.getUser();
+      final cachedUser = await tokenStorage.getUser();
       if (cachedUser != null) {
         state = AuthAuthenticated(cachedUser);
         return;
@@ -85,5 +87,6 @@ final authNotifierProvider = StateNotifierProvider<AuthNotifier, AuthState>((
     loginUseCase: ref.read(loginUseCaseProvider),
     logoutUseCase: ref.read(logoutUseCaseProvider),
     repository: ref.read(authRepositoryProvider),
+    tokenStorage: ref.read(tokenStorageProvider),
   );
 });

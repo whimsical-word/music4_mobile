@@ -21,7 +21,7 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
     try {
       final authData = await remoteDataSource.login(username, password);
 
-      await tokenStorage.saveToken(
+      await tokenStorage.saveTokens(
         accessToken: authData.accessToken,
         refreshToken: authData.refreshToken,
       );
@@ -45,7 +45,7 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<void>> logout() async {
-    await tokenStorage.clear();
+    await tokenStorage.clearSession();
     return const Success(null);
   }
 
