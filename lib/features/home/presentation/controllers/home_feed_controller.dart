@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/utils/image_url_helper.dart';
 import '../../data/models/home_track_item.dart';
+import '../../data/models/track_detail_model.dart';
+import '../../data/models/track_suggest_model.dart';
 import '../../data/sources/home_repository.dart';
 import 'home_feed_state.dart';
 
@@ -23,18 +25,21 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
   Future<HomeFeedState> _fetchHomeFeed() async {
     final repo = ref.read(homeRepositoryProvider);
 
-    // Start both requests concurrently.
-    final recommendationsFuture = repo.getRecommendations();
-    final trendingFuture = repo.getTopTrending();
-
-    final recommendations = await recommendationsFuture;
-    final trending = await trendingFuture;
+    // Run both requests concurrently. Future.wait observes every future, so a
+    // failure in one request never leaves the other as an unhandled error.
+    final results = await Future.wait<Object>([
+      repo.getRecommendations(),
+      repo.getTopTrending(),
+    ]);
+    final recommendations = results[0] as List<TrackSuggestModel>;
+    final trending = results[1] as List<TrackDetailModel>;
 
     final aiTracks = recommendations
         .map(
           (e) => HomeTrackItem(
             id: e.id.toString(),
             title: e.name,
+            artistId: e.artists.isNotEmpty ? e.artists.first.id.toString() : null,
             artist: e.artists.isNotEmpty
                 ? e.artists.map((a) => a.name).join(', ')
                 : 'Unknown Artist',
@@ -53,6 +58,7 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
           (e) => HomeTrackItem(
             id: e.id.toString(),
             title: e.name,
+            artistId: e.artists.isNotEmpty ? e.artists.first.id.toString() : null,
             artist: e.artists.isNotEmpty
                 ? e.artists.map((a) => a.name).join(', ')
                 : 'Unknown Artist',

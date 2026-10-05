@@ -5,6 +5,17 @@ import '../../../../core/network/dio_client.dart';
 import '../models/track_detail_model.dart';
 import '../models/track_suggest_model.dart';
 
+/// Readable error raised by [HomeRepository]; its message is shown as-is in
+/// the Home error state (no "Exception: " prefix).
+class HomeException implements Exception {
+  final String message;
+
+  const HomeException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 class HomeRepository {
   final DioClient _dioClient;
 
@@ -32,7 +43,7 @@ class HomeRepository {
 
       return [];
     } on DioException catch (e) {
-      throw Exception(_handleError(e));
+      throw HomeException(_handleError(e));
     }
   }
 
@@ -58,7 +69,7 @@ class HomeRepository {
 
       return [];
     } on DioException catch (e) {
-      throw Exception(_handleError(e));
+      throw HomeException(_handleError(e));
     }
   }
 
@@ -75,7 +86,7 @@ class HomeRepository {
         data: {'trackId': parsedTrackId},
       );
     } on DioException catch (e) {
-      throw Exception(_handleError(e));
+      throw HomeException(_handleError(e));
     }
   }
 
