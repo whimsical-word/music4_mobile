@@ -1,13 +1,10 @@
 import 'package:dio/dio.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  return Dio(BaseOptions(
-    baseUrl: ApiEndpoints.baseUrl,
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
+  return DioClient().dio;
 });
 
 final uploadRepositoryProvider = Provider<UploadRepository>((ref) {

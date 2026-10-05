@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:dio/dio.dart';
+import '../../../../core/network/dio_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/repositories/search_repository.dart';
@@ -11,7 +12,7 @@ final searchTypeProvider = StateProvider<String>((ref) => 'all');
 
 // Provider cung cấp Repository
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
-  return SearchRepository(Dio());
+  return SearchRepository(DioClient().dio);
 });
 
 // Provider quản lý State bằng AsyncValue
