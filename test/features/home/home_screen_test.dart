@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:just_audio/just_audio.dart';
+import 'package:music4_mobile/features/track_detail/data/repositories/track_detail_repository.dart';
+
 
 import 'package:music4_mobile/core/network/dio_client.dart';
 import 'package:music4_mobile/core/theme/app_theme.dart';
@@ -9,6 +13,8 @@ import 'package:music4_mobile/features/home/data/models/track_detail_model.dart'
 import 'package:music4_mobile/features/home/data/models/track_suggest_model.dart';
 import 'package:music4_mobile/features/home/data/sources/home_mock_data.dart';
 import 'package:music4_mobile/features/home/data/sources/home_repository.dart';
+import 'package:music4_mobile/features/player/data/services/app_audio_handler.dart';
+import 'package:music4_mobile/features/player/presentation/providers/player_provider.dart';
 
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_controller.dart';
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_state.dart';
@@ -19,6 +25,28 @@ import 'package:music4_mobile/features/home/presentation/widgets/home_empty_stat
 import 'package:music4_mobile/features/home/presentation/widgets/home_error_state.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/home_shimmer_skeleton.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/trending_section.dart';
+
+
+
+class MockAudioPlayer extends Mock implements AudioPlayer {}
+
+class MockAppAudioHandler extends Mock implements AppAudioHandler {}
+
+AudioPlayer createMockAudioPlayer() {
+  final mock = MockAudioPlayer();
+  when(() => mock.playerStateStream).thenAnswer((_) => Stream.empty());
+  when(() => mock.positionStream).thenAnswer((_) => Stream.empty());
+  when(() => mock.bufferedPositionStream).thenAnswer((_) => Stream.empty());
+  when(() => mock.durationStream).thenAnswer((_) => Stream.empty());
+  when(() => mock.playbackEventStream).thenAnswer((_) => Stream.empty());
+  return mock;
+}
+
+
+class MockPlayerNotifier extends PlayerNotifier {
+  MockPlayerNotifier() : super(createMockAudioPlayer(), MockTrackDetailRepo(), MockAppAudioHandler());
+}
+class MockTrackDetailRepo extends Mock implements TrackDetailRepository {}
 
 class MockHomeRepository extends HomeRepository {
   MockHomeRepository() : super(DioClient());
@@ -79,6 +107,8 @@ Widget createTestWidget({List<Override> overrides = const []}) {
   return ProviderScope(
     overrides: [
       homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+      audioHandlerProvider.overrideWithValue(MockAppAudioHandler()),
+      playerNotifierProvider.overrideWith((ref) => MockPlayerNotifier()),
       homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
       ...overrides,
     ],
@@ -124,6 +154,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+      audioHandlerProvider.overrideWithValue(MockAppAudioHandler()),
+      playerNotifierProvider.overrideWith((ref) => MockPlayerNotifier()),
           homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
         ],
       );
@@ -154,6 +186,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+      audioHandlerProvider.overrideWithValue(MockAppAudioHandler()),
+      playerNotifierProvider.overrideWith((ref) => MockPlayerNotifier()),
           homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
         ],
       );
@@ -198,6 +232,8 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+      audioHandlerProvider.overrideWithValue(MockAppAudioHandler()),
+      playerNotifierProvider.overrideWith((ref) => MockPlayerNotifier()),
           homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
         ],
       );
@@ -263,6 +299,8 @@ void main() {
         final container = ProviderContainer(
           overrides: [
             homeRepositoryProvider.overrideWithValue(MockHomeRepository()),
+      audioHandlerProvider.overrideWithValue(MockAppAudioHandler()),
+      playerNotifierProvider.overrideWith((ref) => MockPlayerNotifier()),
             homeFeedControllerProvider.overrideWith(MockHomeFeedController.new),
             homeRepositoryProvider.overrideWithValue(fakeRepository),
           ],
