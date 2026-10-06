@@ -42,22 +42,16 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     if (avatarUrl != null &&
         !avatarUrl.startsWith('http') &&
         avatarUrl.isNotEmpty) {
-      // Local file -> Use FormData
       requestData = FormData.fromMap({
-        if (displayName != null) 'name': displayName,
-        if (gender != null) 'gender': gender,
+        'name': ?displayName,
+        'gender': ?gender,
         'img': await MultipartFile.fromFile(
           avatarUrl,
           filename: avatarUrl.split('/').last,
         ),
       });
     } else {
-      // No file -> JSON, maybe FormData if API strictly requires it?
-      // Usually FormData can also be sent without files. Let's stick to FormData to be safe since API says multipart/form-data
-      requestData = FormData.fromMap({
-        if (displayName != null) 'name': displayName,
-        if (gender != null) 'gender': gender,
-      });
+      requestData = FormData.fromMap({'name': ?displayName, 'gender': ?gender});
     }
 
     final response = await dioClient.dio.patch(

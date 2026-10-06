@@ -8,12 +8,6 @@ import '../../data/repositories/user_profile_repository_impl.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import '../state/user_profile_state.dart';
 
-// ---------------------------------------------------------------------------
-// Dependency Injection (Providers)
-// ---------------------------------------------------------------------------
-
-// Giả định dioClientProvider đã được khai báo ở đâu đó (thường ở core).
-// Nếu chưa, ta có thể inject trực tiếp. Ở đây tôi sẽ cung cấp 1 instance tạm.
 final dioClientProvider = Provider<DioClient>((ref) => DioClient());
 
 final userProfileRemoteDataSourceProvider =
@@ -28,10 +22,6 @@ final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
     ref.read(userProfileRemoteDataSourceProvider),
   );
 });
-
-// ---------------------------------------------------------------------------
-// Notifier
-// ---------------------------------------------------------------------------
 
 class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
   late UserProfileRepository _repository;
@@ -66,7 +56,6 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
 
   Future<void> updateProfile({
     String? displayName,
-    String? bio,
     bool? gender,
     String? avatarFilePath,
   }) async {
@@ -78,7 +67,6 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
       final updatedProfile = await _repository.updateProfile(
         userId: authState.user.id,
         displayName: displayName,
-        bio: bio,
         gender: gender,
         avatarUrl: avatarFilePath,
       );

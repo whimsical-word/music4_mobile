@@ -23,12 +23,12 @@ class UserProfile {
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
     return UserProfile(
-      id: json['id']?.toString() ?? '',
+      id: (json['id'] ?? '').toString(),
       displayName: json['displayName'] as String? ?? 'Người dùng Music4',
       email: json['email'] as String? ?? '',
       avatarUrl: json['avatarUrl'] as String? ?? '',
       bio: json['bio'] as String? ?? '',
-      gender: json['gender'] as bool? ?? null,
+      gender: json['gender'] as bool?,
       followingCount: json['followingCount'] as int? ?? 0,
       playlistCount: json['playlistCount'] as int? ?? 0,
       likedTracksCount: json['likedTracksCount'] as int? ?? 0,

@@ -21,7 +21,6 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
   Future<UserProfile> updateProfile({
     required int userId,
     String? displayName,
-    String? bio,
     String? avatarUrl,
     bool? gender,
   }) async {
@@ -29,7 +28,6 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
       return await remoteDataSource.updateProfile(
         userId: userId,
         displayName: displayName,
-        bio: bio,
         avatarUrl: avatarUrl,
         gender: gender,
       );
