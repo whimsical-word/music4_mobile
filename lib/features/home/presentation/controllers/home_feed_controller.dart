@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/utils/image_url_helper.dart';
 import '../../data/models/home_track_item.dart';
+import '../../data/models/track_detail_model.dart';
+import '../../data/models/track_suggest_model.dart';
 import '../../data/sources/home_repository.dart';
 import 'home_feed_state.dart';
 
@@ -23,18 +25,21 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
   Future<HomeFeedState> _fetchHomeFeed() async {
     final repo = ref.read(homeRepositoryProvider);
 
-    // Start both requests concurrently.
-    final recommendationsFuture = repo.getRecommendations();
-    final trendingFuture = repo.getTopTrending();
-
-    final recommendations = await recommendationsFuture;
-    final trending = await trendingFuture;
+    // Run both requests concurrently. Future.wait observes every future, so a
+    // failure in one request never leaves the other as an unhandled error.
+    final results = await Future.wait<Object>([
+      repo.getRecommendations(),
+      repo.getTopTrending(),
+    ]);
+    final recommendations = results[0] as List<TrackSuggestModel>;
+    final trending = results[1] as List<TrackDetailModel>;
 
     final aiTracks = recommendations
         .map(
           (e) => HomeTrackItem(
             id: e.id.toString(),
             title: e.name,
+            artistId: e.artists.isNotEmpty ? e.artists.first.id.toString() : null,
             artist: e.artists.isNotEmpty
                 ? e.artists.map((a) => a.name).join(', ')
                 : 'Unknown Artist',
@@ -53,6 +58,7 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
           (e) => HomeTrackItem(
             id: e.id.toString(),
             title: e.name,
+            artistId: e.artists.isNotEmpty ? e.artists.first.id.toString() : null,
             artist: e.artists.isNotEmpty
                 ? e.artists.map((a) => a.name).join(', ')
                 : 'Unknown Artist',
@@ -83,28 +89,24 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
     state = await AsyncValue.guard(_fetchHomeFeed);
   }
 
-  Future<void> trackPlay(String trackId) async {
+  /// Reloads the feed in the background and swaps the data in place.
+  ///
+  /// No loading/shimmer state is emitted, and existing data is kept if the
+  /// refresh fails. Called after a track was genuinely listened to the end.
+  Future<void> silentRefresh() async {
+    // Create a new generation: an older refresh must not overwrite a newer one.
+    final refreshId = ++_silentRefreshId;
+
     try {
-      // Wait until backend tracking is completed.
-      await ref.read(homeRepositoryProvider).trackHistory(trackId);
-
-      // Create a new generation for the silent refresh.
-      final refreshId = ++_silentRefreshId;
-
       final newState = await _fetchHomeFeed();
 
-      // Ignore an older refresh if a newer one has started.
-      if (refreshId != _silentRefreshId) {
-        return;
-      }
+      if (refreshId != _silentRefreshId) return;
 
-      // Silent refresh:
-      // replace data directly without triggering loading/shimmer.
       if (state.hasValue && !state.isLoading) {
         state = AsyncValue.data(newState);
       }
     } catch (_) {
-      // Tracking/refresh failure must not interrupt playback.
+      // A failed background refresh keeps the current Home content.
     }
   }
 
