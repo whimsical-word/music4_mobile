@@ -1,23 +1,51 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
 
-import '../../domain/models/user_profile.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../data/datasources/user_profile_remote_data_source.dart';
+import '../../data/repositories/user_profile_repository_impl.dart';
+import '../../domain/repositories/user_profile_repository.dart';
 import '../state/user_profile_state.dart';
 
-// ---------------------------------------------------------------------------
-// Notifier
-// ---------------------------------------------------------------------------
+final dioClientProvider = Provider<DioClient>((ref) => DioClient());
+
+final userProfileRemoteDataSourceProvider =
+    Provider<UserProfileRemoteDataSource>((ref) {
+      return UserProfileRemoteDataSourceImpl(
+        dioClient: ref.read(dioClientProvider),
+      );
+    });
+
+final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
+  return UserProfileRepositoryImpl(
+    ref.read(userProfileRemoteDataSourceProvider),
+  );
+});
 
 class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
+  late UserProfileRepository _repository;
+
   @override
   Future<UserProfileState> build() async {
-    // TODO: Replace with real API call — userRepository.getProfile()
-    await Future.delayed(const Duration(milliseconds: 1200));
-    return UserProfileState(profile: _mockProfile);
+    _repository = ref.read(userProfileRepositoryProvider);
+    return _fetchProfile();
+  }
+
+  Future<UserProfileState> _fetchProfile() async {
+    final authState = ref.read(authNotifierProvider);
+    int userId = 1; // Fallback
+    if (authState is AuthAuthenticated) {
+      userId = authState.user.id;
+    }
+
+    final profile = await _repository.getProfile(userId);
+    return UserProfileState(profile: profile);
   }
 
   Future<void> retry() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(build);
+    state = await AsyncValue.guard(_fetchProfile);
   }
 
   void toggleEditing() {
@@ -26,34 +54,32 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
     );
   }
 
-  Future<void> logout() async {
-    // TODO: Clear tokens via authRepository.logout()
+  Future<void> updateProfile({
+    String? displayName,
+    bool? gender,
+    String? avatarFilePath,
+  }) async {
+    final authState = ref.read(authNotifierProvider);
+    if (authState is! AuthAuthenticated) return;
+
     state = const AsyncLoading();
-    await Future.delayed(const Duration(milliseconds: 600));
-    // Navigation handled by the caller (UserProfileScreen)
+    state = await AsyncValue.guard(() async {
+      final updatedProfile = await _repository.updateProfile(
+        userId: authState.user.id,
+        displayName: displayName,
+        gender: gender,
+        avatarUrl: avatarFilePath,
+      );
+      return UserProfileState(profile: updatedProfile);
+    });
+  }
+
+  Future<void> logout() async {
+    await ref.read(authNotifierProvider.notifier).logout();
   }
 }
-
-// ---------------------------------------------------------------------------
-// Provider
-// ---------------------------------------------------------------------------
 
 final userProfileProvider =
     AsyncNotifierProvider<UserProfileNotifier, UserProfileState>(
       UserProfileNotifier.new,
     );
-
-// ---------------------------------------------------------------------------
-// Mock (remove when API is ready)
-// ---------------------------------------------------------------------------
-
-const _mockProfile = UserProfile(
-  id: 'user-001',
-  displayName: 'Lê Minh Nhựt',
-  email: 'nhut.ce190737@example.com',
-  avatarUrl: 'https://i.pravatar.cc/200?u=CE190737',
-  bio: 'Yêu âm nhạc, ghét sự im lặng. 🎧',
-  followingCount: 48,
-  playlistCount: 12,
-  likedTracksCount: 237,
-);

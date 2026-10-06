@@ -56,8 +56,6 @@ class UserProfileScreen extends ConsumerWidget {
   }
 }
 
-// ── Body (data state) ──────────────────────────────────────────────────────
-
 class _ProfileBody extends StatelessWidget {
   final UserProfile profile;
 
@@ -68,7 +66,7 @@ class _ProfileBody extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(child: UserProfileHeader(profile: profile)),
-        const SliverToBoxAdapter(child: EditProfileButton()),
+        SliverToBoxAdapter(child: EditProfileButton(profile: profile)),
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
@@ -76,7 +74,6 @@ class _ProfileBody extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(child: AccountSection(profile: profile)),
-        // const SliverToBoxAdapter(child: SettingsSection()),
         const SliverToBoxAdapter(child: LogoutButton()),
       ],
     );

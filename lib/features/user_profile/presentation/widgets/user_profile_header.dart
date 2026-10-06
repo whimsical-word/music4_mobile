@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/user_profile.dart';
 
-/// Collapsible header with cover banner, avatar, name, bio and stats.
-/// Mirrors the pattern of [ArtistHeader] from artist_profile feature.
 class UserProfileHeader extends StatelessWidget {
   final UserProfile profile;
 
@@ -14,12 +13,10 @@ class UserProfileHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        // ── Cover banner + floating avatar ──────────────────────────────
         Stack(
           clipBehavior: Clip.none,
           alignment: Alignment.bottomCenter,
           children: [
-            // Gradient banner (replaces cover image — user has no cover)
             Container(
               height: 160,
               width: double.infinity,
@@ -31,7 +28,6 @@ class UserProfileHeader extends StatelessWidget {
                 ),
               ),
             ),
-            // Avatar
             Positioned(
               bottom: -50,
               child: CircleAvatar(
@@ -41,7 +37,9 @@ class UserProfileHeader extends StatelessWidget {
                   radius: 48,
                   backgroundColor: AppColors.card,
                   backgroundImage: profile.avatarUrl.isNotEmpty
-                      ? NetworkImage(profile.avatarUrl)
+                      ? NetworkImage(
+                          ApiEndpoints.buildImageUrl(profile.avatarUrl),
+                        )
                       : null,
                   onBackgroundImageError: profile.avatarUrl.isNotEmpty
                       ? (_, _) {}
@@ -60,7 +58,6 @@ class UserProfileHeader extends StatelessWidget {
         ),
         const SizedBox(height: 62),
 
-        // ── Name, email, bio ─────────────────────────────────────────────
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
@@ -120,10 +117,6 @@ class UserProfileHeader extends StatelessWidget {
     );
   }
 }
-
-// ---------------------------------------------------------------------------
-// Helper widget
-// ---------------------------------------------------------------------------
 
 class _StatChip extends StatelessWidget {
   final String value;
