@@ -1,23 +1,28 @@
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter/foundation.dart';
+import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
 
 import '../constants/api_endpoints.dart';
 
-class AuthInterceptor extends Interceptor {
-  final FlutterSecureStorage storage;
-  final Dio retryDio;
-  bool _isRefreshing = false;
-  final _pendingRequests =
-      <({RequestOptions options, ErrorInterceptorHandler handler})>[];
+class AuthInterceptor extends QueuedInterceptor {
+  final TokenStorage tokenStorage;
+  final Dio refreshDio;
+  final VoidCallback? onTokenExpired;
 
-  AuthInterceptor({required this.storage, required this.retryDio});
+  Future<String>? _refreshFuture;
+
+  AuthInterceptor({
+    required this.tokenStorage,
+    required this.refreshDio,
+    this.onTokenExpired,
+  });
 
   @override
   void onRequest(
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await storage.read(key: 'access_token');
+    final token = await tokenStorage.getAccessToken();
     if (token != null && token.isNotEmpty) {
       options.headers['Authorization'] = 'Bearer $token';
     }
@@ -26,56 +31,66 @@ class AuthInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) async {
-    if (err.response?.statusCode == 401) {
-      if (_isRefreshing) {
-        _pendingRequests.add((options: err.requestOptions, handler: handler));
-        return;
-      }
+    final isUnauthorized = err.response?.statusCode == 401;
+    final isRefreshCall = err.requestOptions.path.contains(
+      ApiEndpoints.refresh,
+    );
 
-      _isRefreshing = true;
-      try {
-        final refreshToken = await storage.read(key: 'refresh_token');
-        if (refreshToken == null || refreshToken.isEmpty) {
-          handler.reject(err);
-          return;
-        }
-
-        final refreshResponse = await retryDio.post(
-          ApiEndpoints.refresh,
-          data: {'refreshToken': refreshToken},
-        );
-
-        final newAccessToken = refreshResponse.data['accessToken'] as String?;
-        final newRefreshToken = refreshResponse.data['refreshToken'] as String?;
-
-        if (newAccessToken != null) {
-          await storage.write(key: 'access_token', value: newAccessToken);
-          if (newRefreshToken != null) {
-            await storage.write(key: 'refresh_token', value: newRefreshToken);
-          }
-
-          // Retry pending requests
-          for (final pending in _pendingRequests) {
-            pending.options.headers['Authorization'] = 'Bearer $newAccessToken';
-            pending.handler.resolve(await retryDio.fetch(pending.options));
-          }
-          _pendingRequests.clear();
-
-          // Retry the current failed request
-          err.requestOptions.headers['Authorization'] =
-              'Bearer $newAccessToken';
-          handler.resolve(await retryDio.fetch(err.requestOptions));
-          return;
-        }
-      } catch (e) {
-        await storage.deleteAll();
-        handler.reject(err);
-        return;
-      } finally {
-        _isRefreshing = false;
-      }
+    // Không phải 401 hoặc chính API refresh bị 401 -> cho qua luôn
+    if (!isUnauthorized || isRefreshCall) {
+      return handler.next(err);
     }
 
-    handler.next(err);
+    final refreshFuture = _refreshFuture ??= _refreshAccessToken();
+    try {
+      final newAccessToken = await refreshFuture;
+      err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+      final response = await refreshDio.fetch(err.requestOptions);
+      handler.resolve(response);
+    } catch (_) {
+      // Refresh thất bại (hết hạn, revoke, v.v.)
+      await _handleSessionExpired(err, handler);
+    } finally {
+      if (identical(_refreshFuture, refreshFuture)) {
+        _refreshFuture = null;
+      }
+    }
+  }
+
+  Future<String> _refreshAccessToken() async {
+    final refreshToken = await tokenStorage.getRefreshToken();
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw StateError('No refresh token available.');
+    }
+
+    final refreshResponse = await refreshDio.post(
+      ApiEndpoints.refresh,
+      data: {'refreshToken': refreshToken},
+    );
+    final newAccessToken = refreshResponse.data['accessToken'] as String?;
+    final newRefreshToken = refreshResponse.data['refreshToken'] as String?;
+
+    if (newAccessToken == null || newAccessToken.isEmpty) {
+      throw StateError('Refresh response did not contain an access token.');
+    }
+
+    await tokenStorage.saveTokens(
+      accessToken: newAccessToken,
+      refreshToken: newRefreshToken,
+    );
+    return newAccessToken;
+  }
+
+  /// Dọn dẹp session, hủy các request đang chờ và kích hoạt callback logout
+  Future<void> _handleSessionExpired(
+    DioException err,
+    ErrorInterceptorHandler handler,
+  ) async {
+    await tokenStorage.clearSession();
+
+    handler.reject(err);
+
+    // Kích hoạt callback về UI/Bloc/Provider
+    onTokenExpired?.call();
   }
 }

@@ -5,7 +5,8 @@ import 'package:flutter/foundation.dart';
 class ApiEndpoints {
   ApiEndpoints._();
 
-  static const String s3BaseUrl = 'https://music4-v3-storage-kenz.s3.ap-southeast-1.amazonaws.com/';
+  static const String s3BaseUrl =
+      'https://music4-v3-storage-kenz.s3.ap-southeast-1.amazonaws.com/';
 
   static String buildImageUrl(String? path) {
     if (path == null || path.isEmpty) return '';
@@ -16,7 +17,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CAU HINH CHO DIEN THOAI THAT
   // ==========================================
-  static const String _lanIp = '10.64.223.152';
+  static const String _lanIp = '192.168.1.45';
 
   // ==========================================
   // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
@@ -31,7 +32,12 @@ class ApiEndpoints {
 
     if (_isEmulator) {
       if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
-      if (Platform.isIOS) return 'http://localhost:8080'; // Máy ảo iOS
+      if (Platform.isIOS) {
+        return 'http://localhost:8080'; // Máy ảo iOS (Simulator)
+      }
+      if (Platform.isMacOS) {
+        return 'http://localhost:8080'; // Ứng dụng macOS
+      }
     }
 
     return 'http://$_lanIp:8080';
