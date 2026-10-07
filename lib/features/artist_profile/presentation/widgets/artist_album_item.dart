@@ -1,22 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../../core/theme/app_colors.dart';
-import '../../domain/models/track.dart';
 
-class TrackListItem extends StatelessWidget {
-  final Track track;
+import '../../../../core/theme/app_colors.dart';
+import '../../domain/models/artist_album.dart';
+
+class ArtistAlbumItem extends StatelessWidget {
+  final ArtistAlbum album;
   final VoidCallback onTap;
 
-  const TrackListItem({
-    super.key,
-    required this.track,
-    required this.onTap,
-  });
-
-  String _formatDuration(int seconds) {
-    final minutes = seconds ~/ 60;
-    final remainingSeconds = seconds % 60;
-    return '$minutes:${remainingSeconds.toString().padLeft(2, '0')}';
-  }
+  const ArtistAlbumItem({super.key, required this.album, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -29,20 +20,20 @@ class TrackListItem extends StatelessWidget {
           width: 48,
           height: 48,
           color: AppColors.surface,
-          child: track.artworkUrl == null
-              ? const Icon(Icons.music_note, color: AppColors.textMuted)
+          child: album.coverUrl == null
+              ? const Icon(Icons.album, color: AppColors.textMuted)
               : Image.network(
-                  track.artworkUrl!,
+                  album.coverUrl!,
                   fit: BoxFit.cover,
                   errorBuilder: (_, _, _) => const Icon(
-                    Icons.music_note,
+                    Icons.album,
                     color: AppColors.textMuted,
                   ),
                 ),
         ),
       ),
       title: Text(
-        track.title,
+        album.title,
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
               color: AppColors.textPrimary,
             ),
@@ -50,26 +41,14 @@ class TrackListItem extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
-        track.artistName,
+        '${album.trackCount} bài hát',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
             ),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
       ),
-      trailing: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            _formatDuration(track.durationSeconds),
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: AppColors.textMuted,
-                ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(Icons.more_vert, color: AppColors.textSecondary),
-        ],
-      ),
+      trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
     );
   }
 }
