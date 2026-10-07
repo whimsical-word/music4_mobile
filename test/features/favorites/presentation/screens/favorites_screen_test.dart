@@ -1,147 +1,233 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:music4_mobile/core/utils/image_url_helper.dart';
+import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
+import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/favorites/data/models/favorite_response.dart';
+import 'package:music4_mobile/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:music4_mobile/features/favorites/presentation/screens/favorites_screen.dart';
 import 'package:music4_mobile/features/favorites/providers/favorites_provider.dart';
+import 'package:music4_mobile/features/player/presentation/providers/player_provider.dart';
+import 'package:shimmer/shimmer.dart';
+
+import '../../favorites_test_helpers.dart';
 
 void main() {
-  Widget createWidgetUnderTest({List<Override> overrides = const []}) {
+  late MockFavoritesRepository repository;
+  late RecordingPlayerNotifier player;
+
+  void stubList([List<FavoriteResponse>? favorites]) {
+    when(
+      () => repository.getMyFavorites(),
+    ).thenAnswer((_) async => favorites ?? favoriteResponses());
+  }
+
+  /// FavoritesScreen at '/', with stub routes for the screens it opens.
+  Widget buildApp({AuthState auth = const AuthUnauthenticated()}) {
+    final router = GoRouter(
+      routes: [
+        GoRoute(path: '/', builder: (_, _) => const FavoritesScreen()),
+        GoRoute(
+          path: '/player',
+          builder: (_, _) => const Scaffold(body: Text('player-page')),
+        ),
+        GoRoute(
+          path: '/login',
+          builder: (_, _) => const Scaffold(body: Text('login-page')),
+        ),
+      ],
+    );
+
     return ProviderScope(
-      overrides: overrides,
-      child: const MaterialApp(
-        home: FavoritesScreen(),
-      ),
+      overrides: [
+        favoritesRepositoryProvider.overrideWithValue(repository),
+        authNotifierProvider.overrideWith((ref) => FakeAuthNotifier(auth)),
+        playerNotifierProvider.overrideWith((ref) => player),
+      ],
+      child: MaterialApp.router(routerConfig: router),
     );
   }
 
-  testWidgets('FavoritesScreen displays Loading state initially', (WidgetTester tester) async {
-    await tester.pumpWidget(createWidgetUnderTest(overrides: [
-      favoritesProvider.overrideWith(() => _LoadingFavoritesNotifier()),
-    ]));
-
-    // Check if the loading state is displayed (Shimmer is used, so we can find a Row which is part of the skeleton)
-    expect(find.byType(Row), findsWidgets);
-    expect(find.text('Bài hát yêu thích'), findsOneWidget);
-  });
-
-  testWidgets('FavoritesScreen displays Loaded state with tracks', (WidgetTester tester) async {
-    await tester.pumpWidget(createWidgetUnderTest(overrides: [
-      favoritesProvider.overrideWith(() => _LoadedFavoritesNotifier()),
-    ]));
-    
-    // Pump to settle the provider
-    await tester.pumpAndSettle();
-
-    expect(find.text('Track 1'), findsOneWidget);
-    expect(find.text('Artist 1'), findsOneWidget);
-    expect(find.text('Track 2'), findsOneWidget);
-    expect(find.text('Artist 2'), findsOneWidget);
-    
-    // Artwork placeholder icon
-    expect(find.byIcon(Icons.music_note), findsWidgets);
-  });
-
-  testWidgets('FavoritesScreen displays Empty state when no tracks', (WidgetTester tester) async {
-    await tester.pumpWidget(createWidgetUnderTest(overrides: [
-      favoritesProvider.overrideWith(() => _EmptyFavoritesNotifier()),
-    ]));
-    
-    await tester.pumpAndSettle();
-
-    expect(find.text('Chưa có bài hát yêu thích'), findsOneWidget);
-    expect(find.byIcon(Icons.favorite_border), findsOneWidget);
-  });
-
-  testWidgets('FavoritesScreen displays Error state and handles retry', (WidgetTester tester) async {
-    final errorNotifier = _ErrorFavoritesNotifier();
-    await tester.pumpWidget(createWidgetUnderTest(overrides: [
-      favoritesProvider.overrideWith(() => errorNotifier),
-    ]));
-    
-    await tester.pumpAndSettle();
-
-    expect(find.text('Đã xảy ra lỗi'), findsOneWidget);
-    expect(find.text('Không thể tải danh sách yêu thích'), findsOneWidget);
-    
-    // Tap Retry
-    await tester.tap(find.text('Thử lại'));
+  Future<void> pumpLoaded(WidgetTester tester) async {
+    await tester.pumpWidget(buildApp(auth: authenticated(7)));
     await tester.pump();
-    
-    // Should verify retry was called
-    expect(errorNotifier.retryCalled, isTrue);
+    await tester.pump();
+  }
+
+  setUp(() {
+    repository = MockFavoritesRepository();
+    player = RecordingPlayerNotifier();
   });
 
-  testWidgets('FavoritesScreen is responsive without overflow at 360dp', (WidgetTester tester) async {
-    tester.view.physicalSize = const Size(360, 800);
-    tester.view.devicePixelRatio = 1.0;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  group('[CE190284] FavoritesScreen - states', () {
+    testWidgets('1. Loaded favorites render the real data', (tester) async {
+      stubList();
 
-    await tester.pumpWidget(createWidgetUnderTest(overrides: [
-      favoritesProvider.overrideWith(() => _LoadedFavoritesNotifier()),
-    ]));
-    
-    await tester.pumpAndSettle();
+      await pumpLoaded(tester);
 
-    // If there is an overflow, the test would fail during rendering or we can explicitly assert no exceptions
-    expect(tester.takeException(), isNull);
-    expect(find.text('Track 1'), findsOneWidget);
+      expect(find.text('Bài hát yêu thích'), findsOneWidget);
+      expect(find.text('Lạc Trôi'), findsOneWidget);
+      expect(find.text('Sơn Tùng M-TP'), findsOneWidget);
+      expect(find.text('Hai nghệ sĩ'), findsOneWidget);
+      expect(find.text('A, B'), findsOneWidget);
+      // Track 12 has no artist in the backend response.
+      expect(find.text('Không có ảnh'), findsOneWidget);
+      expect(find.text('Không rõ nghệ sĩ'), findsOneWidget);
+      expect(find.byIcon(Icons.favorite), findsNWidgets(3));
+    });
+
+    testWidgets('2. Loading state shows the shimmer', (tester) async {
+      final completer = Completer<List<FavoriteResponse>>();
+      when(() => repository.getMyFavorites()).thenAnswer((_) => completer.future);
+
+      await tester.pumpWidget(buildApp(auth: authenticated(7)));
+      await tester.pump();
+
+      expect(find.byType(Shimmer), findsWidgets);
+    });
+
+    testWidgets('3. Empty list shows the empty state', (tester) async {
+      stubList([]);
+
+      await pumpLoaded(tester);
+
+      expect(find.text('Chưa có bài hát yêu thích'), findsOneWidget);
+      expect(find.byIcon(Icons.favorite_border), findsOneWidget);
+    });
+
+    testWidgets('4. Error state shows the message and Retry reloads', (tester) async {
+      var fail = true;
+      when(() => repository.getMyFavorites()).thenAnswer((_) async {
+        if (fail) throw const FavoritesException('Không thể kết nối đến máy chủ.');
+        return favoriteResponses();
+      });
+
+      await pumpLoaded(tester);
+
+      expect(find.text('Đã xảy ra lỗi'), findsOneWidget);
+      expect(find.text('Không thể kết nối đến máy chủ.'), findsOneWidget);
+
+      fail = false;
+      await tester.tap(find.text('Thử lại'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Lạc Trôi'), findsOneWidget);
+      expect(find.text('Đã xảy ra lỗi'), findsNothing);
+    });
+
+    testWidgets('5. 360dp layout has no overflow with long text', (tester) async {
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      stubList([
+        const FavoriteResponse(
+          favoriteId: 1,
+          trackId: 11,
+          trackName:
+              'Một tên bài hát rất dài để kiểm tra việc hiển thị trên màn hình 360dp không bị tràn',
+          artistName:
+              'Một nghệ sĩ có tên cũng rất dài, ghép nhiều nghệ sĩ lại với nhau để thử tràn',
+        ),
+      ]);
+
+      await pumpLoaded(tester);
+
+      expect(find.byType(ListTile), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
-}
 
-// Mocks for Riverpod Notifiers
+  group('[CE190284] FavoritesScreen - images and navigation', () {
+    testWidgets('6. Cover keys are resolved; a missing cover uses the icon', (tester) async {
+      stubList();
 
-class _LoadingFavoritesNotifier extends FavoritesNotifier {
-  @override
-  Future<List<FavoriteTrack>> build() async {
-    // Return a never completing future so it stays in loading state without creating a timer
-    return Completer<List<FavoriteTrack>>().future;
-  }
-}
+      await pumpLoaded(tester);
 
-class _LoadedFavoritesNotifier extends FavoritesNotifier {
-  @override
-  Future<List<FavoriteTrack>> build() async {
-    return [
-      FavoriteTrack(
-        id: '1',
-        title: 'Track 1',
-        artist: 'Artist 1',
-        artworkUrl: '',
-        duration: '3:00',
-        addedAt: DateTime.now(),
-      ),
-      FavoriteTrack(
-        id: '2',
-        title: 'Track 2',
-        artist: 'Artist 2',
-        artworkUrl: '',
-        duration: '3:30',
-        addedAt: DateTime.now(),
-      ),
-    ];
-  }
-}
+      final urls = tester
+          .widgetList<Image>(find.byType(Image))
+          .map((i) => (i.image as NetworkImage).url)
+          .toSet();
+      expect(urls, {
+        '${ImageUrlHelper.s3BaseUrl}covers/t11.jpg',
+        'https://cdn.example.com/t13.jpg',
+      });
+      // Track 12 has no image: the music-note placeholder is shown.
+      expect(find.byIcon(Icons.music_note), findsWidgets);
+    });
 
-class _EmptyFavoritesNotifier extends FavoritesNotifier {
-  @override
-  Future<List<FavoriteTrack>> build() async {
-    return [];
-  }
-}
+    testWidgets('7. Tapping a track plays the favorites from that track', (tester) async {
+      stubList();
 
-class _ErrorFavoritesNotifier extends FavoritesNotifier {
-  bool retryCalled = false;
+      await pumpLoaded(tester);
 
-  @override
-  Future<List<FavoriteTrack>> build() async {
-    throw Exception('Error loading');
-  }
+      await tester.tap(find.text('Hai nghệ sĩ'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
 
-  @override
-  Future<void> retry() async {
-    retryCalled = true;
-    state = const AsyncValue.loading();
-  }
+      // Newest first: 12, 13, 11. 'Hai nghệ sĩ' (13) is index 1.
+      expect(player.lastQueue?.map((t) => t.id), ['12', '13', '11']);
+      expect(player.lastIndex, 1);
+      expect(player.lastQueue?[1].coverUrl, 'https://cdn.example.com/t13.jpg');
+      expect(player.lastQueue?[1].duration, Duration.zero);
+      expect(find.text('player-page'), findsOneWidget);
+    });
+  });
+
+  group('[CE190284] FavoritesScreen - remove favorite', () {
+    testWidgets('8. Tapping the heart removes the track after the backend confirms', (tester) async {
+      stubList();
+      when(() => repository.toggleFavorite(12)).thenAnswer((_) async => false);
+
+      await pumpLoaded(tester);
+
+      // The first row is the newest like: track 12.
+      await tester.tap(find.byIcon(Icons.favorite).first);
+      await tester.pump();
+      await tester.pump();
+
+      verify(() => repository.toggleFavorite(12)).called(1);
+      expect(find.text('Không có ảnh'), findsNothing);
+      expect(find.text('Lạc Trôi'), findsOneWidget);
+    });
+
+    testWidgets('9. A failed removal keeps the track and tells the user', (tester) async {
+      stubList();
+      when(
+        () => repository.toggleFavorite(12),
+      ).thenAnswer((_) async => throw const FavoritesException('Lỗi'));
+
+      await pumpLoaded(tester);
+
+      await tester.tap(find.byIcon(Icons.favorite).first);
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.text('Không có ảnh'), findsOneWidget);
+      expect(find.text('Không thể bỏ yêu thích. Vui lòng thử lại.'), findsOneWidget);
+    });
+  });
+
+  group('[CE190284] FavoritesScreen - guest', () {
+    testWidgets('10. A guest sees a sign-in prompt and no API call is made', (tester) async {
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      expect(find.text('Đăng nhập để xem yêu thích'), findsOneWidget);
+      verifyNever(() => repository.getMyFavorites());
+
+      await tester.tap(find.text('Đăng nhập'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('login-page'), findsOneWidget);
+    });
+  });
 }
