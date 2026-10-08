@@ -29,17 +29,14 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
   @override
   Future<UserProfileState> build() async {
     _repository = ref.read(userProfileRepositoryProvider);
-    
-    // BẮT BUỘC DÙNG WATCH: Để khi authState thay đổi (chuyển acc khác),
-    // Provider này sẽ tự động chạy lại (rebuild) và tải data mới.
+
     final authState = ref.watch(authNotifierProvider);
-    
-    int userId = 1; // Fallback
-    if (authState is AuthAuthenticated) {
-      userId = authState.user.id;
+
+    if (authState is! AuthAuthenticated) {
+      return const UserProfileState();
     }
 
-    return _fetchProfile(userId);
+    return _fetchProfile(authState.user.id);
   }
 
   Future<UserProfileState> _fetchProfile(int userId) async {
@@ -49,15 +46,15 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
 
   Future<void> retry() async {
     state = const AsyncLoading();
-    
+
     // Dùng read trong hàm async (click event)
     final authState = ref.read(authNotifierProvider);
-    int userId = 1;
-    if (authState is AuthAuthenticated) {
-      userId = authState.user.id;
+    if (authState is! AuthAuthenticated) {
+      state = const AsyncData(UserProfileState());
+      return;
     }
-    
-    state = await AsyncValue.guard(() => _fetchProfile(userId));
+
+    state = await AsyncValue.guard(() => _fetchProfile(authState.user.id));
   }
 
   void toggleEditing() {
@@ -85,7 +82,6 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
       return UserProfileState(profile: updatedProfile);
     });
   }
-
 }
 
 final userProfileProvider =
