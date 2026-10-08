@@ -29,23 +29,35 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
   @override
   Future<UserProfileState> build() async {
     _repository = ref.read(userProfileRepositoryProvider);
-    return _fetchProfile();
-  }
-
-  Future<UserProfileState> _fetchProfile() async {
-    final authState = ref.read(authNotifierProvider);
+    
+    // BẮT BUỘC DÙNG WATCH: Để khi authState thay đổi (chuyển acc khác),
+    // Provider này sẽ tự động chạy lại (rebuild) và tải data mới.
+    final authState = ref.watch(authNotifierProvider);
+    
     int userId = 1; // Fallback
     if (authState is AuthAuthenticated) {
       userId = authState.user.id;
     }
 
+    return _fetchProfile(userId);
+  }
+
+  Future<UserProfileState> _fetchProfile(int userId) async {
     final profile = await _repository.getProfile(userId);
     return UserProfileState(profile: profile);
   }
 
   Future<void> retry() async {
     state = const AsyncLoading();
-    state = await AsyncValue.guard(_fetchProfile);
+    
+    // Dùng read trong hàm async (click event)
+    final authState = ref.read(authNotifierProvider);
+    int userId = 1;
+    if (authState is AuthAuthenticated) {
+      userId = authState.user.id;
+    }
+    
+    state = await AsyncValue.guard(() => _fetchProfile(userId));
   }
 
   void toggleEditing() {
@@ -74,9 +86,6 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
     });
   }
 
-  Future<void> logout() async {
-    await ref.read(authNotifierProvider.notifier).logout();
-  }
 }
 
 final userProfileProvider =
