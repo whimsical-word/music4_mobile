@@ -11,6 +11,7 @@ import '../widgets/home_empty_state.dart';
 import '../widgets/home_error_state.dart';
 import '../widgets/home_header_greeting.dart';
 import '../widgets/home_shimmer_skeleton.dart';
+import '../widgets/home_album_section.dart';
 import '../widgets/trending_section.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -71,6 +72,8 @@ class HomeScreen extends ConsumerWidget {
                       AiRecommendationSection(tracks: state.aiRecommendations),
                       const SizedBox(height: 16),
                       TrendingSection(tracks: state.trendingTracks),
+                      const SizedBox(height: 16),
+                      const HomeAlbumSection(),
                     ],
                   ),
                 );
