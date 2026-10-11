@@ -45,8 +45,20 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<void>> logout() async {
-    await tokenStorage.clearSession();
-    return const Success(null);
+    try {
+      final refreshToken = await tokenStorage.getRefreshToken();
+      await remoteDataSource.logout(refreshToken!);
+      await tokenStorage.clearSession();
+      return const Success(null);
+    } on DioException catch (e) {
+      if (e.type == DioExceptionType.connectionTimeout ||
+          e.type == DioExceptionType.connectionError) {
+        return const Error(NetworkFailure());
+      }
+      return Error(ServerFailure(e.message ?? 'Lỗi không xác định'));
+    } catch (e) {
+      return Error(ServerFailure(e.toString()));
+    }
   }
 
   @override
