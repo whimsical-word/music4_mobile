@@ -29,14 +29,16 @@ class TrackListItem extends StatelessWidget {
           width: 48,
           height: 48,
           color: AppColors.surface,
-          child: Image.network(
-            track.artworkUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => const Icon(
-              Icons.music_note,
-              color: AppColors.textMuted,
-            ),
-          ),
+          child: track.artworkUrl == null
+              ? const Icon(Icons.music_note, color: AppColors.textMuted)
+              : Image.network(
+                  track.artworkUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.music_note,
+                    color: AppColors.textMuted,
+                  ),
+                ),
         ),
       ),
       title: Text(

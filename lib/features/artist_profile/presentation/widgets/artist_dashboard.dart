@@ -209,23 +209,30 @@ class ArtistDashboard extends StatelessWidget {
                     final maxValue = stats.chartViews.reduce((curr, next) => curr > next ? curr : next);
                     final value = stats.chartViews[index];
                     final heightRatio = value / (maxValue > 0 ? maxValue : 1);
-                    return Column(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          width: 24,
-                          height: 120 * heightRatio, // Max height 120
-                          decoration: BoxDecoration(
-                            color: Colors.lightBlue.withValues(alpha: 0.8),
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                    // Expanded: every day gets an equal slot, so the 7 columns
+                    // always fit the width (also at 360dp / large text scale).
+                    return Expanded(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            width: 24,
+                            height: 120 * heightRatio, // Max height 120
+                            decoration: BoxDecoration(
+                              color: Colors.lightBlue.withValues(alpha: 0.8),
+                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                            ),
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'T${index + 2}', // Mock labels T2, T3...
-                          style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-                        )
-                      ],
+                          const SizedBox(height: 8),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(
+                              index < stats.chartLabels.length ? stats.chartLabels[index] : '',
+                              style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
+                            ),
+                          ),
+                        ],
+                      ),
                     );
                   }),
                 ),

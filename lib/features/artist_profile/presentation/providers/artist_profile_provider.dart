@@ -1,99 +1,147 @@
-import 'dart:async';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../domain/models/artist.dart';
-import '../../domain/models/artist_profile_data.dart';
-import '../../domain/models/track.dart';
+import 'dart:math' as math;
 
-class ArtistProfileNotifier extends AutoDisposeAsyncNotifier<ArtistProfileData> {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../home/data/models/track_detail_model.dart';
+import '../../data/mappers/artist_profile_mapper.dart';
+import '../../data/models/artist_response.dart';
+import '../../data/repositories/artist_profile_repository.dart';
+import '../../domain/models/artist_profile_data.dart';
+
+final artistProfileRepositoryProvider = Provider<ArtistProfileRepository>((
+  ref,
+) {
+  return ArtistProfileRepository(ref.read(dioClientProvider));
+});
+
+/// Family key of the profile provider: which artist, and whether the owner's
+/// dashboard (analytics) must be loaded.
+class ArtistProfileParams {
+  final String? artistId;
+  final bool isOwner;
+
+  const ArtistProfileParams({required this.artistId, this.isOwner = false});
+
   @override
-  FutureOr<ArtistProfileData> build() async {
-    return _fetchArtistData();
+  bool operator ==(Object other) =>
+      other is ArtistProfileParams &&
+      other.artistId == artistId &&
+      other.isOwner == isOwner;
+
+  @override
+  int get hashCode => Object.hash(artistId, isOwner);
+}
+
+enum FollowResult { success, needsLogin, failed }
+
+class ArtistProfileNotifier
+    extends AutoDisposeFamilyAsyncNotifier<ArtistProfileData, ArtistProfileParams> {
+  @override
+  Future<ArtistProfileData> build(ArtistProfileParams arg) => _fetchArtistData();
+
+  int? get _artistId => int.tryParse(arg.artistId ?? '');
+
+  int? get _currentUserId {
+    final auth = ref.read(authNotifierProvider);
+    return auth is AuthAuthenticated ? auth.user.id : null;
   }
 
   Future<ArtistProfileData> _fetchArtistData() async {
-    // Giả lập delay mạng
-    await Future.delayed(const Duration(seconds: 1));
+    final artistId = _artistId;
+    if (artistId == null) {
+      throw const ArtistProfileException('Không tìm thấy nghệ sĩ.');
+    }
 
-    // Dữ liệu mock
-    final mockArtist = Artist(
-      id: 'a1',
-      name: 'Ngọt',
-      bio: 'Ban nhạc Indie Pop hàng đầu Việt Nam.',
-      avatarUrl: 'https://example.com/avatar.jpg', // Có thể dùng placeholder Icon ở UI
-      coverUrl: 'https://example.com/cover.jpg',
-      followersCount: 154000,
-    );
+    final repository = ref.read(artistProfileRepositoryProvider);
+    final userId = _currentUserId;
 
-    final mockTracks = [
-      Track(
-        id: 't1',
-        title: 'Lần Cuối',
-        artistName: 'Ngọt',
-        artworkUrl: 'https://example.com/art1.jpg',
-        durationSeconds: 215,
-      ),
-      Track(
-        id: 't2',
-        title: 'Cho Tôi Đi Theo',
-        artistName: 'Ngọt',
-        artworkUrl: 'https://example.com/art2.jpg',
-        durationSeconds: 198,
-      ),
-      Track(
-        id: 't3',
-        title: 'Em Dạo Này',
-        artistName: 'Ngọt',
-        artworkUrl: 'https://example.com/art3.jpg',
-        durationSeconds: 185,
-      ),
-      Track(
-        id: 't4',
-        title: 'Xanh',
-        artistName: 'Ngọt',
-        artworkUrl: 'https://example.com/art4.jpg',
-        durationSeconds: 240,
-      ),
-      Track(
-        id: 't5',
-        title: 'Khắp Xung Quanh',
-        artistName: 'Ngọt',
-        artworkUrl: 'https://example.com/art5.jpg',
-        durationSeconds: 210,
-      ),
-    ];
+    // Optional parts never fail the whole screen.
+    final overviewFuture = _orNull(repository.getOverview(artistId));
+    final followingFuture = userId == null
+        ? Future<bool?>.value(false)
+        : _orNull(repository.isFollowing(userId: userId, artistId: artistId));
 
-    final mockDashboardStats = ArtistDashboardStats(
-      totalViews: 1250400,
-      totalLikes: 84300,
-      totalFollowers: 154000,
-      totalComments: 5200,
-      chartViews: [12000, 15000, 11000, 18000, 22000, 25000, 21000],
-    );
+    // Required parts, requested in parallel. Future.wait observes every future,
+    // so one failure never leaves another as an unhandled error.
+    final results = await Future.wait<Object>([
+      repository.getArtist(artistId),
+      repository.getArtistTracks(artistId),
+      repository.getArtistAlbums(artistId),
+    ]);
+    final artist = results[0] as ArtistResponse;
+    final tracks = results[1] as List<TrackDetailModel>;
+    final albums = results[2] as List<AlbumInfo>;
+
+    final overview = await overviewFuture;
+    final isFollowing = await followingFuture;
 
     return ArtistProfileData(
-      artist: mockArtist,
-      popularTracks: mockTracks,
-      isFollowing: false,
-      dashboardStats: mockDashboardStats,
+      artist: ArtistProfileMapper.toArtist(
+        artist,
+        followersCount: overview?.totalFollowers,
+      ),
+      popularTracks: ArtistProfileMapper.toPopularTracks(
+        tracks,
+        fallbackArtistName: artist.name,
+      ),
+      albums: ArtistProfileMapper.toAlbums(albums),
+      isFollowing: isFollowing ?? false,
+      dashboardStats: arg.isOwner && overview != null
+          ? ArtistProfileMapper.toDashboardStats(overview)
+          : null,
     );
+  }
+
+  Future<T?> _orNull<T>(Future<T> future) async {
+    try {
+      return await future;
+    } catch (_) {
+      return null;
+    }
   }
 
   Future<void> retry() async {
     state = const AsyncValue.loading();
-    state = await AsyncValue.guard(() => _fetchArtistData());
+    state = await AsyncValue.guard(_fetchArtistData);
   }
 
-  Future<void> toggleFollow() async {
-    final currentState = state.valueOrNull;
-    if (currentState == null) return;
+  /// Follows / unfollows through the backend. The UI shows a message for
+  /// [FollowResult.needsLogin] and [FollowResult.failed].
+  Future<FollowResult> toggleFollow() async {
+    final artistId = _artistId;
+    final current = state.valueOrNull;
+    if (artistId == null || current == null) return FollowResult.failed;
 
-    state = AsyncValue.data(
-      currentState.copyWith(isFollowing: !currentState.isFollowing),
-    );
+    final userId = _currentUserId;
+    if (userId == null) return FollowResult.needsLogin;
+
+    try {
+      final following = await ref
+          .read(artistProfileRepositoryProvider)
+          .toggleFollow(userId: userId, artistId: artistId);
+
+      final latest = state.valueOrNull ?? current;
+      final count = latest.artist.followersCount;
+      state = AsyncValue.data(
+        latest.copyWith(
+          isFollowing: following,
+          artist: count == null
+              ? latest.artist
+              : latest.artist.copyWith(
+                  followersCount: math.max(0, count + (following ? 1 : -1)),
+                ),
+        ),
+      );
+      return FollowResult.success;
+    } catch (_) {
+      return FollowResult.failed;
+    }
   }
 }
 
-final artistProfileProvider =
-    AutoDisposeAsyncNotifierProvider<ArtistProfileNotifier, ArtistProfileData>(
-  () => ArtistProfileNotifier(),
-);
+final artistProfileProvider = AsyncNotifierProvider.autoDispose
+    .family<ArtistProfileNotifier, ArtistProfileData, ArtistProfileParams>(
+      ArtistProfileNotifier.new,
+    );
