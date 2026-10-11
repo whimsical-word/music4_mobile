@@ -3,8 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../player/presentation/widgets/mini_player_widget.dart';
 import '../controllers/home_feed_controller.dart';
+import '../utils/profile_destination.dart';
 import '../widgets/ai_recommendation_banner.dart';
 import '../widgets/ai_recommendation_section.dart';
 import '../widgets/home_empty_state.dart';
@@ -33,7 +35,9 @@ class HomeScreen extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push(RouteNames.userProfile),
+            onPressed: () => context.push(
+              profileRouteFor(ref.read(authNotifierProvider)),
+            ),
           ),
         ],
       ),
