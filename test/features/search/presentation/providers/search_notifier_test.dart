@@ -102,10 +102,10 @@ void main() {
       final state = container.read(searchProvider);
       expect(state, isA<AsyncError<SearchResponse?>>());
 
-      // Error message phải chứa nội dung lỗi (đã strip "Exception: " ở Notifier)
+      // Error message phải khớp chính xác nội dung lỗi đã loại bỏ tiền tố "Exception: "
       expect(
         state.error.toString(),
-        contains('Không có kết nối đến máy chủ backend.'),
+        equals('Không có kết nối đến máy chủ backend.'),
       );
 
       verify(() => mockRepo.search('xyz', type: 'all')).called(1);
