@@ -1,4 +1,4 @@
-import 'dart:io';
+﻿import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
@@ -17,7 +17,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CAU HINH CHO DIEN THOAI THAT
   // ==========================================
-  static const String _lanIp = '192.168.1.45';
+  static const String _lanIp = '192.168.1.238';
 
   // ==========================================
   // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
