@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:music4_mobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
+import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 
@@ -65,4 +66,16 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
 
   @override
   Future<bool> isLoggedIn() => tokenStorage.hasValidSession();
+
+  @override
+  Future<Result<void>> register(RegisterRequest request) async {
+    try {
+      await remoteDataSource.register(request);
+      return const Success(null);
+    } catch (e) {
+      return Error(
+        ServerFailure(e.toString().replaceAll('Exception: ', '')),
+      );
+    }
+  }
 }
