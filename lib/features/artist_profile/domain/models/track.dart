@@ -7,11 +7,15 @@ class Track {
   final String? artworkUrl;
   final int durationSeconds;
 
+  /// Total listens of the track (the backend's `viewCount`).
+  final int viewCount;
+
   Track({
     required this.id,
     required this.title,
     required this.artistName,
     this.artworkUrl,
     required this.durationSeconds,
+    this.viewCount = 0,
   });
 }

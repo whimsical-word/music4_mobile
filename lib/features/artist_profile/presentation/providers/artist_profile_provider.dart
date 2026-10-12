@@ -34,7 +34,7 @@ class ArtistProfileParams {
   int get hashCode => Object.hash(artistId, isOwner);
 }
 
-enum FollowResult { success, needsLogin, failed }
+enum FollowResult { success, needsLogin, notSupported, failed }
 
 class ArtistProfileNotifier
     extends AutoDisposeFamilyAsyncNotifier<ArtistProfileData, ArtistProfileParams> {
@@ -43,9 +43,17 @@ class ArtistProfileNotifier
 
   int? get _artistId => int.tryParse(arg.artistId ?? '');
 
+  /// The signed-in LISTENER's id. An artist account has no user id here: its
+  /// id belongs to the artists table, so using it for the follow endpoints
+  /// would read (or change) another user's followings.
   int? get _currentUserId {
     final auth = ref.read(authNotifierProvider);
-    return auth is AuthAuthenticated ? auth.user.id : null;
+    return auth is AuthAuthenticated && !auth.user.isArtist ? auth.user.id : null;
+  }
+
+  bool get _isArtistAccount {
+    final auth = ref.read(authNotifierProvider);
+    return auth is AuthAuthenticated && auth.user.isArtist;
   }
 
   Future<ArtistProfileData> _fetchArtistData() async {
@@ -113,6 +121,8 @@ class ArtistProfileNotifier
     final artistId = _artistId;
     final current = state.valueOrNull;
     if (artistId == null || current == null) return FollowResult.failed;
+
+    if (_isArtistAccount) return FollowResult.notSupported;
 
     final userId = _currentUserId;
     if (userId == null) return FollowResult.needsLogin;

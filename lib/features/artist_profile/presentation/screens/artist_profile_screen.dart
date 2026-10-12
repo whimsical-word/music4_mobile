@@ -1,8 +1,13 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
+import '../../../../core/shared/widgets/settings_bottom_sheet.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/repositories/artist_profile_repository.dart';
@@ -19,7 +24,7 @@ enum ArtistProfileMode {
   owner,
 }
 
-class ArtistProfileScreen extends ConsumerWidget {
+class ArtistProfileScreen extends ConsumerStatefulWidget {
   final String? artistId;
   final ArtistProfileMode mode;
 
@@ -29,11 +34,22 @@ class ArtistProfileScreen extends ConsumerWidget {
     this.mode = ArtistProfileMode.listener, // Default to listener
   });
 
+  @override
+  ConsumerState<ArtistProfileScreen> createState() =>
+      _ArtistProfileScreenState();
+}
+
+class _ArtistProfileScreenState extends ConsumerState<ArtistProfileScreen> {
+  /// Tracks and albums show this many items; "Xem tất cả" reveals the rest.
+  static const int _previewCount = 5;
+
+  bool _showAllTracks = false;
+  bool _showAllAlbums = false;
+
   /// Plays the artist's tracks through the existing Player flow, starting at
   /// the tapped track.
   void _playTrack(
     BuildContext context,
-    WidgetRef ref,
     ArtistProfileData data,
     int index,
   ) {
@@ -55,7 +71,6 @@ class ArtistProfileScreen extends ConsumerWidget {
 
   Future<void> _toggleFollow(
     BuildContext context,
-    WidgetRef ref,
     ArtistProfileParams params,
   ) async {
     final messenger = ScaffoldMessenger.of(context);
@@ -70,6 +85,12 @@ class ArtistProfileScreen extends ConsumerWidget {
         messenger.showSnackBar(
           const SnackBar(content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ.')),
         );
+      case FollowResult.notSupported:
+        messenger.showSnackBar(
+          const SnackBar(
+            content: Text('Tài khoản nghệ sĩ không thể theo dõi nghệ sĩ khác.'),
+          ),
+        );
       case FollowResult.failed:
         messenger.showSnackBar(
           const SnackBar(
@@ -80,10 +101,18 @@ class ArtistProfileScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    // An artist opening their OWN profile is the owner: they get the
+    // dashboard and the settings (logout), and no Follow button.
+    final authState = ref.watch(authNotifierProvider);
+    final isOwnProfile = authState is AuthAuthenticated &&
+        authState.user.isArtist &&
+        authState.user.id.toString() == widget.artistId;
+    final isOwnerMode = widget.mode == ArtistProfileMode.owner || isOwnProfile;
+
     final params = ArtistProfileParams(
-      artistId: artistId,
-      isOwner: mode == ArtistProfileMode.owner,
+      artistId: widget.artistId,
+      isOwner: isOwnerMode,
     );
     final profileState = ref.watch(artistProfileProvider(params));
 
@@ -92,11 +121,18 @@ class ArtistProfileScreen extends ConsumerWidget {
         title: const Text('Hồ sơ Nghệ sĩ'),
         elevation: 0,
         backgroundColor: Colors.transparent,
+        actions: [
+          if (isOwnerMode)
+            IconButton(
+              icon: const Icon(Icons.settings_outlined),
+              tooltip: 'Cài đặt',
+              onPressed: () => showSettingsBottomSheet(context),
+            ),
+        ],
       ),
       extendBodyBehindAppBar: true,
       body: profileState.when(
         data: (data) {
-          final isOwnerMode = mode == ArtistProfileMode.owner;
           return CustomScrollView(
             slivers: [
               SliverToBoxAdapter(
@@ -104,7 +140,7 @@ class ArtistProfileScreen extends ConsumerWidget {
                   artist: data.artist,
                   isFollowing: data.isFollowing,
                   showFollowButton: !isOwnerMode,
-                  onToggleFollow: () => _toggleFollow(context, ref, params),
+                  onToggleFollow: () => _toggleFollow(context, params),
                 ),
               ),
               const SliverToBoxAdapter(
@@ -132,19 +168,33 @@ class ArtistProfileScreen extends ConsumerWidget {
                     ),
                   ),
                 )
-              else
+              else ...[
                 SliverList(
                   delegate: SliverChildBuilderDelegate(
                     (context, index) {
                       final track = data.popularTracks[index];
+                      // The queue is the whole list, so playback continues
+                      // past the visible items.
                       return TrackListItem(
                         track: track,
-                        onTap: () => _playTrack(context, ref, data, index),
+                        onTap: () => _playTrack(context, data, index),
                       );
                     },
-                    childCount: data.popularTracks.length,
+                    childCount: _showAllTracks
+                        ? data.popularTracks.length
+                        : math.min(data.popularTracks.length, _previewCount),
                   ),
                 ),
+                if (data.popularTracks.length > _previewCount)
+                  SliverToBoxAdapter(
+                    child: _ShowAllButton(
+                      total: data.popularTracks.length,
+                      expanded: _showAllTracks,
+                      onPressed: () =>
+                          setState(() => _showAllTracks = !_showAllTracks),
+                    ),
+                  ),
+              ],
 
               // Albums (only when the artist has some)
               if (data.albums.isNotEmpty) ...[
@@ -170,9 +220,20 @@ class ArtistProfileScreen extends ConsumerWidget {
                         onTap: () => context.push('/album/${album.id}'),
                       );
                     },
-                    childCount: data.albums.length,
+                    childCount: _showAllAlbums
+                        ? data.albums.length
+                        : math.min(data.albums.length, _previewCount),
                   ),
                 ),
+                if (data.albums.length > _previewCount)
+                  SliverToBoxAdapter(
+                    child: _ShowAllButton(
+                      total: data.albums.length,
+                      expanded: _showAllAlbums,
+                      onPressed: () =>
+                          setState(() => _showAllAlbums = !_showAllAlbums),
+                    ),
+                  ),
               ],
 
               // Artist Dashboard (Owner Only)
@@ -221,6 +282,33 @@ class ArtistProfileScreen extends ConsumerWidget {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// "Xem tất cả (N)" / "Thu gọn": reveals or hides the items after the first 5.
+class _ShowAllButton extends StatelessWidget {
+  final int total;
+  final bool expanded;
+  final VoidCallback onPressed;
+
+  const _ShowAllButton({
+    required this.total,
+    required this.expanded,
+    required this.onPressed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+        child: TextButton(
+          onPressed: onPressed,
+          child: Text(expanded ? 'Thu gọn' : 'Xem tất cả ($total)'),
+        ),
       ),
     );
   }

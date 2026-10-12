@@ -2,23 +2,36 @@ import 'artist.dart';
 import 'artist_album.dart';
 import 'track.dart';
 
+/// One day of activity, from the backend's `chartData`. The backend only
+/// returns days that had activity, within the last 30 days.
+class DailyActivity {
+  final DateTime date;
+  final int views;
+  final int likes;
+
+  const DailyActivity({
+    required this.date,
+    required this.views,
+    required this.likes,
+  });
+}
+
 class ArtistDashboardStats {
   final int totalViews;
   final int totalLikes;
   final int totalFollowers;
   final int totalComments;
 
-  /// Daily views of the most recent days (at most 7) and their labels.
-  final List<int> chartViews;
-  final List<String> chartLabels;
+  /// Daily activity of the last 30 days, oldest first (days without activity
+  /// are absent).
+  final List<DailyActivity> daily;
 
   ArtistDashboardStats({
     required this.totalViews,
     required this.totalLikes,
     required this.totalFollowers,
     required this.totalComments,
-    required this.chartViews,
-    this.chartLabels = const [],
+    this.daily = const [],
   });
 }
 
