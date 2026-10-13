@@ -49,7 +49,11 @@ class AiRecommendationSection extends StatelessWidget {
             itemCount: tracks.length,
             separatorBuilder: (_, _) => const SizedBox(width: 12),
             itemBuilder: (context, index) {
-              return AiRecommendationCard(track: tracks[index]);
+              return AiRecommendationCard(
+                track: tracks[index],
+                playlist: tracks,
+                initialIndex: index,
+              );
             },
           ),
         ),

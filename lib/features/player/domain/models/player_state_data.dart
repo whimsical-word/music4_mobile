@@ -1,12 +1,39 @@
+enum RepeatState { off, all, one }
+
+class TrackQueueItem {
+  final String id;
+  final String title;
+  final String artist;
+  final String? coverUrl;
+  final Duration duration;
+
+  const TrackQueueItem({
+    required this.id,
+    required this.title,
+    required this.artist,
+    this.coverUrl,
+    required this.duration,
+  });
+}
+
 class PlayerStateData {
   final String? currentTrackId;
   final String title;
   final String artist;
   final String? coverUrl;
   final bool isPlaying;
+  final bool isLiked;
   final Duration position;
   final Duration duration;
   final Duration bufferedPosition;
+
+  final bool hasNext;
+  final bool hasPrevious;
+
+  final bool isShuffle;
+  final RepeatState repeatMode;
+  final bool isPreview;
+  final bool showLoginPrompt;
 
   const PlayerStateData({
     this.currentTrackId,
@@ -14,9 +41,16 @@ class PlayerStateData {
     this.artist = 'Unknown Artist',
     this.coverUrl,
     this.isPlaying = false,
+    this.isLiked = false,
     this.position = Duration.zero,
     this.duration = Duration.zero,
     this.bufferedPosition = Duration.zero,
+    this.hasNext = false,
+    this.hasPrevious = false,
+    this.isShuffle = false,
+    this.repeatMode = RepeatState.off,
+    this.isPreview = false,
+    this.showLoginPrompt = false,
   });
 
   PlayerStateData copyWith({
@@ -25,9 +59,16 @@ class PlayerStateData {
     String? artist,
     String? coverUrl,
     bool? isPlaying,
+    bool? isLiked,
     Duration? position,
     Duration? duration,
     Duration? bufferedPosition,
+    bool? hasNext,
+    bool? hasPrevious,
+    bool? isShuffle,
+    RepeatState? repeatMode,
+    bool? isPreview,
+    bool? showLoginPrompt,
   }) {
     return PlayerStateData(
       currentTrackId: currentTrackId ?? this.currentTrackId,
@@ -35,9 +76,16 @@ class PlayerStateData {
       artist: artist ?? this.artist,
       coverUrl: coverUrl ?? this.coverUrl,
       isPlaying: isPlaying ?? this.isPlaying,
+      isLiked: isLiked ?? this.isLiked,
       position: position ?? this.position,
       duration: duration ?? this.duration,
       bufferedPosition: bufferedPosition ?? this.bufferedPosition,
+      hasNext: hasNext ?? this.hasNext,
+      hasPrevious: hasPrevious ?? this.hasPrevious,
+      isShuffle: isShuffle ?? this.isShuffle,
+      repeatMode: repeatMode ?? this.repeatMode,
+      isPreview: isPreview ?? this.isPreview,
+      showLoginPrompt: showLoginPrompt ?? this.showLoginPrompt,
     );
   }
 

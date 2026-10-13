@@ -1,13 +1,9 @@
-import 'package:dio/dio.dart';
-import '../../../../core/constants/api_endpoints.dart';
+﻿import 'package:dio/dio.dart';
+import '../../../../core/network/dio_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 final dioProvider = Provider<Dio>((ref) {
-  return Dio(BaseOptions(
-    baseUrl: ApiEndpoints.baseUrl,
-    connectTimeout: const Duration(seconds: 15),
-    receiveTimeout: const Duration(seconds: 15),
-  ));
+  return DioClient().dio;
 });
 
 final uploadRepositoryProvider = Provider<UploadRepository>((ref) {
@@ -48,17 +44,18 @@ class UploadRepository {
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Mạng quá yếu, thử lại sau.");
+        throw Exception("Máº¡ng quÃ¡ yáº¿u, thá»­ láº¡i sau.");
       }
       if (e.response?.statusCode == 400) {
-        throw Exception("Dữ liệu không hợp lệ. Vui lòng kiểm tra lại.");
+        throw Exception("Dá»¯ liá»‡u khÃ´ng há»£p lá»‡. Vui lÃ²ng kiá»ƒm tra láº¡i.");
       }
       if (e.response?.statusCode == 413) {
-        throw Exception("File quá lớn.");
+        throw Exception("File quÃ¡ lá»›n.");
       }
-      throw Exception("Lỗi hệ thống: ${e.message}");
+      throw Exception("Lá»—i há»‡ thá»‘ng: ${e.message}");
     } catch (e) {
-      throw Exception("Lỗi không xác định: $e");
+      throw Exception("Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh: $e");
     }
   }
 }
+

@@ -1,18 +1,27 @@
 import 'package:flutter/material.dart';
+import '../../../artist_profile/presentation/widgets/artist_name_link.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
-import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../player/domain/models/player_state_data.dart';
+
 class AiRecommendationCard extends ConsumerWidget {
   final HomeTrackItem track;
+  final List<HomeTrackItem> playlist;
+  final int initialIndex;
 
-  const AiRecommendationCard({super.key, required this.track});
+  const AiRecommendationCard({
+    super.key,
+    required this.track,
+    required this.playlist,
+    required this.initialIndex,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -24,13 +33,17 @@ class AiRecommendationCard extends ConsumerWidget {
         borderRadius: BorderRadius.circular(12),
         onTap: () {
           HapticFeedback.lightImpact();
-          ref.read(playerNotifierProvider.notifier).playTrack(
-            trackId: track.id,
-            title: track.title,
-            artist: track.artist,
-            coverUrl: track.coverUrl,
-          );
-          ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
+          
+          final queue = playlist.map((t) => TrackQueueItem(
+            id: t.id,
+            title: t.title,
+            artist: t.artist,
+            coverUrl: t.coverUrl,
+            duration: Duration(seconds: t.durationSeconds),
+          )).toList();
+          
+          ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
+          
           context.push(RouteNames.player);
         },
         child: Container(
@@ -93,10 +106,9 @@ class AiRecommendationCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      track.artist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ArtistNameLink(
+                      text: track.artist,
+                      artistId: track.artistId,
                       style: textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 11,

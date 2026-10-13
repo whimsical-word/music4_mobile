@@ -5,6 +5,7 @@ class HomeTrackItem {
   final String? artistId;
   final String? genre;
   final String duration;
+  final int durationSeconds;
   final String? playsCount;
   final int? matchPercentage;
   final String? coverUrl;
@@ -16,6 +17,7 @@ class HomeTrackItem {
     this.artistId,
     this.genre,
     this.duration = '3:30',
+    this.durationSeconds = 0,
     this.playsCount,
     this.matchPercentage,
     this.coverUrl,

@@ -5,11 +5,15 @@ import '../../../../core/theme/app_colors.dart';
 class TrackInfoWidget extends StatelessWidget {
   final String title;
   final String artist;
+  final bool isLiked;
+  final VoidCallback onFavoriteTap;
 
   const TrackInfoWidget({
     super.key,
     required this.title,
     required this.artist,
+    required this.isLiked,
+    required this.onFavoriteTap,
   });
 
   @override
@@ -28,9 +32,12 @@ class TrackInfoWidget extends StatelessWidget {
           ),
         ),
         IconButton(
-          icon: const Icon(Icons.favorite_border),
-          color: AppColors.primary,
-          onPressed: () => HapticFeedback.lightImpact(),
+          icon: Icon(isLiked ? Icons.favorite : Icons.favorite_border),
+          color: isLiked ? AppColors.primary : Colors.white,
+          onPressed: () {
+            HapticFeedback.lightImpact();
+            onFavoriteTap();
+          },
         ),
       ],
     );

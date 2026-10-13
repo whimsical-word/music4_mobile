@@ -49,6 +49,8 @@ class TrendingSection extends StatelessWidget {
             return TrendingTrackTile(
               rank: index + 1,
               track: tracks[index],
+              playlist: tracks,
+              initialIndex: index,
             );
           },
         ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 
-class ProgressBarWidget extends StatelessWidget {
+class ProgressBarWidget extends StatefulWidget {
   final double currentValue;
   final double maxValue;
   final String positionText;
@@ -18,10 +18,29 @@ class ProgressBarWidget extends StatelessWidget {
   });
 
   @override
+  State<ProgressBarWidget> createState() => _ProgressBarWidgetState();
+}
+
+class _ProgressBarWidgetState extends State<ProgressBarWidget> {
+  double? _dragValue;
+
+  @override
   Widget build(BuildContext context) {
-    // Ensure currentValue is not greater than maxValue and maxValue > 0
-    final safeMax = maxValue > 0 ? maxValue : 1.0;
-    final safeCurrent = currentValue.clamp(0.0, safeMax);
+    // Đảm bảo maxValue luôn hợp lệ
+    final safeMax = widget.maxValue > 0 ? widget.maxValue : 1.0;
+    
+    // Nếu đang kéo (_dragValue != null) thì dùng giá trị kéo, ngược lại dùng giá trị từ Stream
+    double displayValue = _dragValue ?? widget.currentValue;
+    final safeCurrent = displayValue.clamp(0.0, safeMax);
+
+    // Tính toán lại text hiển thị thời gian khi đang kéo để UI cập nhật tức thì
+    String displayPositionText = widget.positionText;
+    if (_dragValue != null) {
+      final positionDuration = Duration(seconds: _dragValue!.toInt());
+      final min = positionDuration.inMinutes;
+      final sec = (positionDuration.inSeconds % 60).toString().padLeft(2, '0');
+      displayPositionText = '$min:$sec';
+    }
 
     return Column(
       children: [
@@ -36,7 +55,19 @@ class ProgressBarWidget extends StatelessWidget {
             max: safeMax,
             activeColor: AppColors.primary,
             inactiveColor: AppColors.divider,
-            onChanged: onChanged,
+            onChanged: (val) {
+              // Cập nhật giao diện nội bộ khi đang kéo Slider
+              setState(() {
+                _dragValue = val;
+              });
+            },
+            onChangeEnd: (val) {
+              // Chỉ gọi hàm seek thật (Gửi xuống Riverpod) khi người dùng thả tay
+              widget.onChanged(val);
+              setState(() {
+                _dragValue = null;
+              });
+            },
           ),
         ),
         Padding(
@@ -45,11 +76,11 @@ class ProgressBarWidget extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                positionText,
+                displayPositionText,
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
               ),
               Text(
-                durationText,
+                widget.durationText,
                 style: const TextStyle(color: AppColors.textMuted, fontSize: 12),
               ),
             ],

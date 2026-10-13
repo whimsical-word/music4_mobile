@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:music4_mobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
+import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 
@@ -21,12 +22,14 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
     try {
       final authData = await remoteDataSource.login(username, password);
 
-      await tokenStorage.saveToken(
+      await tokenStorage.saveTokens(
         accessToken: authData.accessToken,
         refreshToken: authData.refreshToken,
       );
+      final entity = authData.toEntity();
+      await tokenStorage.saveUser(entity);
 
-      return Success(authData.toEntity());
+      return Success(entity);
     } on DioException catch (e) {
       if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
         return const Error(InvalidCredentialsFailure());
@@ -43,10 +46,36 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<void>> logout() async {
-    await tokenStorage.clear();
-    return const Success(null);
+    try {
+      final refreshToken = await tokenStorage.getRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        try {
+          await remoteDataSource.logout(refreshToken);
+        } catch (_) {
+          // Bỏ qua lỗi backend khi logout (ví dụ: token hết hạn hoặc mất mạng),
+          // client vẫn bắt buộc phải xóa session local
+        }
+      }
+      return const Success(null);
+    } catch (e) {
+      return Error(ServerFailure(e.toString()));
+    } finally {
+      await tokenStorage.clearSession();
+    }
   }
 
   @override
   Future<bool> isLoggedIn() => tokenStorage.hasValidSession();
+
+  @override
+  Future<Result<void>> register(RegisterRequest request) async {
+    try {
+      await remoteDataSource.register(request);
+      return const Success(null);
+    } catch (e) {
+      return Error(
+        ServerFailure(e.toString().replaceAll('Exception: ', '')),
+      );
+    }
+  }
 }

@@ -6,7 +6,7 @@ import '../../domain/models/user_profile.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/account_section.dart';
 import '../widgets/edit_profile_button.dart';
-import '../widgets/logout_button.dart';
+import '../../../../core/shared/widgets/settings_bottom_sheet.dart';
 import '../widgets/profile_error_view.dart';
 import '../widgets/user_profile_header.dart';
 import '../widgets/user_profile_shimmer.dart';
@@ -21,7 +21,7 @@ class UserProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(context),
       body: profileAsync.when(
         loading: () => const UserProfileShimmer(),
         error: (error, _) => ProfileErrorView(
@@ -38,7 +38,7 @@ class UserProfileScreen extends ConsumerWidget {
     );
   }
 
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       title: const Text('Hồ sơ cá nhân'),
       backgroundColor: Colors.transparent,
@@ -48,15 +48,13 @@ class UserProfileScreen extends ConsumerWidget {
           icon: const Icon(Icons.settings_outlined),
           tooltip: 'Cài đặt',
           onPressed: () {
-            // TODO: navigate to Settings
+            showSettingsBottomSheet(context);
           },
         ),
       ],
     );
   }
 }
-
-// ── Body (data state) ──────────────────────────────────────────────────────
 
 class _ProfileBody extends StatelessWidget {
   final UserProfile profile;
@@ -68,7 +66,7 @@ class _ProfileBody extends StatelessWidget {
     return CustomScrollView(
       slivers: [
         SliverToBoxAdapter(child: UserProfileHeader(profile: profile)),
-        const SliverToBoxAdapter(child: EditProfileButton()),
+        SliverToBoxAdapter(child: EditProfileButton(profile: profile)),
         const SliverToBoxAdapter(
           child: Padding(
             padding: EdgeInsets.symmetric(vertical: 12),
@@ -76,8 +74,6 @@ class _ProfileBody extends StatelessWidget {
           ),
         ),
         SliverToBoxAdapter(child: AccountSection(profile: profile)),
-        // const SliverToBoxAdapter(child: SettingsSection()),
-        const SliverToBoxAdapter(child: LogoutButton()),
       ],
     );
   }

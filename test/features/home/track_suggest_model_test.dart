@@ -97,5 +97,100 @@ void main() {
         verify(() => mockDio.get(ApiEndpoints.recommendations)).called(1);
       },
     );
+
+    test(
+      'Should fetch and parse top5-views JSON to List<TrackDetailModel>',
+      () async {
+        // Arrange: match the REAL /api/tracks/top5-views response shape.
+        final jsonResponse = [
+          {
+            'id': 5,
+            'name': 'Trend 1',
+            'img': 'covers/trend1.jpg',
+            'duration': 185,
+            'filePath': 'audio/trend1.mp3',
+            'previewPath': 'preview/trend1.mp3',
+            'uploadDate': '2026-01-15',
+            'viewCount': 1500,
+            'album': {
+              'id': 3,
+              'name': 'Album X',
+              'img': 'covers/album.jpg',
+              'uploadDate': '2026-01-01',
+              'trackTotal': 8,
+              'artistId': 10,
+            },
+            'artists': [
+              {'id': 10, 'name': 'Artist A', 'role': 'MAIN'},
+            ],
+            'categories': [
+              {'id': 1, 'name': 'Pop'},
+            ],
+          },
+          {
+            'id': 6,
+            'name': 'Trend 2 (Single)',
+            'img': null,
+            'duration': 120,
+            'viewCount': 900,
+            'album': null,
+            'artists': [],
+            'categories': [],
+          },
+        ];
+
+        when(() => mockDio.get(ApiEndpoints.top5Tracks)).thenAnswer(
+          (_) async => Response(
+            requestOptions: RequestOptions(path: ApiEndpoints.top5Tracks),
+            data: jsonResponse,
+            statusCode: 200,
+          ),
+        );
+
+        // Act
+        final result = await repository.getTopTrending();
+
+        // Assert
+        expect(result, hasLength(2));
+
+        expect(result[0].id, 5);
+        expect(result[0].name, 'Trend 1');
+        expect(result[0].img, 'covers/trend1.jpg');
+        expect(result[0].duration, 185);
+        expect(result[0].viewCount, 1500);
+        expect(result[0].album?.title, 'Album X');
+        expect(result[0].album?.coverUrl, 'covers/album.jpg');
+        expect(result[0].artists.single.name, 'Artist A');
+
+        expect(result[1].id, 6);
+        expect(result[1].img, isNull);
+        expect(result[1].album, isNull);
+        expect(result[1].artists, isEmpty);
+
+        verify(() => mockDio.get(ApiEndpoints.top5Tracks)).called(1);
+      },
+    );
+
+    test('Should wrap DioException into a readable Exception', () async {
+      when(() => mockDio.get(ApiEndpoints.top5Tracks)).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: ApiEndpoints.top5Tracks),
+          type: DioExceptionType.badResponse,
+          response: Response(
+            requestOptions: RequestOptions(path: ApiEndpoints.top5Tracks),
+            statusCode: 404,
+          ),
+        ),
+      );
+
+      expect(
+        repository.getTopTrending(),
+        throwsA(
+          predicate(
+            (e) => e is HomeException && e.toString() == 'Không tìm thấy dữ liệu',
+          ),
+        ),
+      );
+    });
   });
 }

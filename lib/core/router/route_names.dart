@@ -19,5 +19,5 @@ class RouteNames {
   static const String notifications = '/notifications';
   static const String categoryDetail = '/category/:id';
   static const String admin = '/admin';
-  static const String userProfile = '/user-profile';
+  static const String userProfile = '/api/users/:id';
 }

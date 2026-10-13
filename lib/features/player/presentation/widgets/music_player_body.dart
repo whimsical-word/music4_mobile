@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../domain/models/player_state_data.dart';
 import 'player_controls_widget.dart';
 import 'progress_bar_widget.dart';
@@ -9,22 +9,28 @@ class MusicPlayerBody extends StatelessWidget {
   final PlayerStateData state;
   final AnimationController spinController;
   final bool isShuffle;
-  final bool isRepeat;
+  final RepeatState repeatMode;
   final VoidCallback onPlayPause;
   final VoidCallback onShuffle;
   final VoidCallback onRepeat;
+  final VoidCallback onNext;
+  final VoidCallback onPrevious;
   final ValueChanged<double> onSeek;
+  final VoidCallback onFavoriteTap;
 
   const MusicPlayerBody({
     super.key,
     required this.state,
     required this.spinController,
     required this.isShuffle,
-    required this.isRepeat,
+    required this.repeatMode,
     required this.onPlayPause,
     required this.onShuffle,
     required this.onRepeat,
+    required this.onNext,
+    required this.onPrevious,
     required this.onSeek,
+    required this.onFavoriteTap,
   });
 
   @override
@@ -42,6 +48,8 @@ class MusicPlayerBody extends StatelessWidget {
           TrackInfoWidget(
             title: state.title,
             artist: state.artist,
+            isLiked: state.isLiked,
+            onFavoriteTap: onFavoriteTap,
           ),
           ProgressBarWidget(
             currentValue: state.position.inSeconds.toDouble(),
@@ -53,13 +61,18 @@ class MusicPlayerBody extends StatelessWidget {
           PlayerControlsWidget(
             isPlaying: state.isPlaying,
             isShuffle: isShuffle,
-            isRepeat: isRepeat,
+            repeatMode: repeatMode,
+            hasNext: state.hasNext,
+            hasPrevious: state.hasPrevious,
             onPlayPause: onPlayPause,
             onShuffle: onShuffle,
             onRepeat: onRepeat,
+            onNext: onNext,
+            onPrevious: onPrevious,
           ),
         ],
       ),
     );
   }
 }
+

@@ -11,7 +11,7 @@ class SearchRepository {
   Future<SearchResponse> search(String query, {String type = 'all'}) async {
     try {
       final response = await _dio.get(
-        '${ApiEndpoints.baseUrl}/api/search',
+        ApiEndpoints.search,
         queryParameters: {'q': query, 'type': type},
       );
       return SearchResponse.fromJson(response.data);
