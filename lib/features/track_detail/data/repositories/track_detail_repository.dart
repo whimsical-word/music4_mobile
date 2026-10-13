@@ -87,8 +87,6 @@ class TrackDetailRepository {
   Future<int?> _resolveUserId([int? userId]) async {
     if (userId != null) return userId;
     try {
-      final user = await TokenStorage.instance.getUser();
-      if (user?.id != null) return user!.id;
       final token = await TokenStorage.instance.getAccessToken();
       return JwtHelper.getUserId(token);
     } catch (_) {
@@ -107,6 +105,25 @@ class TrackDetailRepository {
       throw Exception(_handleDioError(e));
     } catch (e) {
       throw Exception('Không thể thêm bài hát vào playlist: $e');
+    }
+  }
+
+  /// Lấy danh sách ID các bài hát trong playlist (GET /api/playlists/{playlistId}/tracks)
+  Future<List<int>> getPlaylistTrackIds(int playlistId) async {
+    try {
+      final response = await _dio.get('${ApiEndpoints.playlists}/$playlistId/tracks');
+      final List<dynamic> data = response.data;
+      return data
+          .map((json) {
+            if (json is Map<String, dynamic> && json['id'] != null) {
+              return (json['id'] as num).toInt();
+            }
+            return null;
+          })
+          .whereType<int>()
+          .toList();
+    } catch (_) {
+      return [];
     }
   }
 
@@ -184,7 +201,7 @@ class TrackDetailRepository {
         ApiEndpoints.comments,
         data: {
           'trackId': trackId,
-          if (effectiveUserId != null) 'userId': effectiveUserId,
+          'userId': ?effectiveUserId,
           'content': content,
         },
       );

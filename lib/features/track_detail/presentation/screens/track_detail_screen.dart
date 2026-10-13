@@ -91,10 +91,14 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
     }
   }
 
-  void _addToPlaylist(List<PlaylistModel> playlists) {
+  void _addToPlaylist(
+    List<PlaylistModel> playlists,
+    Set<int> playlistsContainingTrack,
+  ) {
     SelectPlaylistModal.show(
       context,
       playlists: playlists,
+      playlistsContainingTrack: playlistsContainingTrack,
       onSelected: (playlist) async {
         try {
           await ref
@@ -109,11 +113,14 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
           );
         } catch (e) {
           if (!mounted) return;
+          final errorText = e.toString();
+          final message = errorText.contains('đã tồn tại') ||
+                  errorText.contains('Duplicate')
+              ? 'Bài hát này đã có trong "${playlist.name}" rồi.'
+              : 'Thêm vào playlist thất bại: ${errorText.replaceAll("Exception: ", "")}';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                'Thêm vào playlist thất bại: ${e.toString().replaceAll("Exception: ", "")}',
-              ),
+              content: Text(message),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
@@ -336,7 +343,10 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                   isLiked: state.isLiked,
                   rating: state.userRating,
                   onLikeToggle: _toggleLike,
-                  onAddToPlaylist: () => _addToPlaylist(state.userPlaylists),
+                  onAddToPlaylist: () => _addToPlaylist(
+                    state.userPlaylists,
+                    state.playlistsContainingTrack,
+                  ),
                   onShare: _shareTrack,
                   onRatingChanged: (newRating) async {
                     try {

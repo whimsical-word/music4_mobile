@@ -18,6 +18,8 @@ void main() {
         .thenAnswer((_) async => <TrackCommentModel>[]);
     when(() => mockRepository.getUserRating(any()))
         .thenAnswer((_) async => null);
+    when(() => mockRepository.getPlaylistTrackIds(any()))
+        .thenAnswer((_) async => <int>[]);
   });
 
   ProviderContainer makeProviderContainer(MockTrackDetailRepository repo) {
@@ -62,7 +64,9 @@ void main() {
       expect(state, isA<AsyncData<TrackDetailState>>());
       expect(state.value?.track.name, 'Bài hát Test');
       expect(state.value?.isLiked, true);
+      expect(state.value?.userRating, 0);
       expect(state.value?.userPlaylists.length, 1);
+      expect(state.value?.playlistsContainingTrack, isEmpty);
     });
 
     test('Tải thông tin thất bại -> State chuyển thành AsyncError', () async {
@@ -180,6 +184,7 @@ void main() {
       await controller.addTrackToPlaylist(10);
 
       verify(() => mockRepository.addTrackToPlaylist(10, trackId)).called(1);
+      expect(controller.state.value?.playlistsContainingTrack.contains(10), true);
     });
 
     test('addComment gọi repository và cập nhật danh sách comments trong state', () async {

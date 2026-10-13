@@ -322,5 +322,26 @@ void main() {
       );
       verify(() => mockDio.delete('${ApiEndpoints.comments}/$commentId')).called(1);
     });
+
+    test('getPlaylistTrackIds trả về danh sách trackId khi API thành công', () async {
+      const playlistId = 10;
+      when(
+        () => mockDio.get('${ApiEndpoints.playlists}/$playlistId/tracks'),
+      ).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(
+            path: '${ApiEndpoints.playlists}/$playlistId/tracks',
+          ),
+          statusCode: 200,
+          data: [
+            {'id': 1, 'name': 'Track 1'},
+            {'id': 2, 'name': 'Track 2'},
+          ],
+        ),
+      );
+
+      final trackIds = await repository.getPlaylistTrackIds(playlistId);
+      expect(trackIds, [1, 2]);
+    });
   });
 }
