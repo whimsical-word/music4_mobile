@@ -14,6 +14,7 @@ import '../widgets/home_error_state.dart';
 import '../widgets/home_header_greeting.dart';
 import '../widgets/home_shimmer_skeleton.dart';
 import '../widgets/home_album_section.dart';
+import '../widgets/home_artist_section.dart';
 import '../widgets/trending_section.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -36,9 +37,8 @@ class HomeScreen extends ConsumerWidget {
           ),
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push(
-              profileRouteFor(ref.read(authNotifierProvider)),
-            ),
+            onPressed: () =>
+                context.push(profileRouteFor(ref.read(authNotifierProvider))),
           ),
         ],
       ),
@@ -78,6 +78,8 @@ class HomeScreen extends ConsumerWidget {
                       TrendingSection(tracks: state.trendingTracks),
                       const SizedBox(height: 16),
                       const HomeAlbumSection(),
+                      const SizedBox(height: 16),
+                      const HomeArtistSection(),
                     ],
                   ),
                 );
