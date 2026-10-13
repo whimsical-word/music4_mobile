@@ -18,10 +18,21 @@ class TokenStorage {
   static const _keyRefreshToken = 'refresh_token';
   static const _keyCachedUser = 'cached_user';
 
-  Future<String?> getAccessToken() async => _storage.read(key: _keyAccessToken);
+  Future<String?> getAccessToken() async {
+    try {
+      return await _storage.read(key: _keyAccessToken);
+    } catch (_) {
+      return null;
+    }
+  }
 
-  Future<String?> getRefreshToken() async =>
-      _storage.read(key: _keyRefreshToken);
+  Future<String?> getRefreshToken() async {
+    try {
+      return await _storage.read(key: _keyRefreshToken);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> saveTokens({
     required String accessToken,

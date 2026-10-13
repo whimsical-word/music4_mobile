@@ -11,8 +11,6 @@ import '../models/artist_response.dart';
 class ArtistProfileMapper {
   ArtistProfileMapper._();
 
-  static const int maxChartDays = 7;
-
   static Artist toArtist(ArtistResponse response, {int? followersCount}) {
     return Artist(
       id: response.id.toString(),
@@ -45,6 +43,7 @@ class ArtistProfileMapper {
                 : fallbackArtistName,
             artworkUrl: ImageUrlHelper.resolve(t.img),
             durationSeconds: t.duration ?? 0,
+            viewCount: t.viewCount,
           ),
         )
         .toList();
@@ -70,23 +69,26 @@ class ArtistProfileMapper {
   static ArtistDashboardStats toDashboardStats(
     ArtistOverviewResponse overview,
   ) {
-    final days = overview.chartData.length > maxChartDays
-        ? overview.chartData.sublist(overview.chartData.length - maxChartDays)
-        : overview.chartData;
+    final daily = <DailyActivity>[];
+    for (final point in overview.chartData) {
+      final date = DateTime.tryParse(point.day ?? '');
+      if (date == null) continue;
+      daily.add(
+        DailyActivity(
+          date: DateTime(date.year, date.month, date.day),
+          views: point.views,
+          likes: point.likes,
+        ),
+      );
+    }
+    daily.sort((a, b) => a.date.compareTo(b.date));
 
     return ArtistDashboardStats(
       totalViews: overview.totalViews,
       totalLikes: overview.totalFavorites,
       totalFollowers: overview.totalFollowers,
       totalComments: overview.totalComments,
-      chartViews: days.map((d) => d.views).toList(),
-      chartLabels: days.map((d) => _dayLabel(d.day)).toList(),
+      daily: daily,
     );
-  }
-
-  /// 'yyyy-MM-dd' -> 'dd/MM'.
-  static String _dayLabel(String? isoDate) {
-    if (isoDate == null || isoDate.length < 10) return '';
-    return '${isoDate.substring(8, 10)}/${isoDate.substring(5, 7)}';
   }
 }

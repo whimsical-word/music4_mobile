@@ -6,6 +6,8 @@ import 'package:path_provider/path_provider.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../../../features/track_detail/data/repositories/track_detail_repository.dart';
 import '../../data/services/app_audio_handler.dart';
 import '../../../tracking/application/playback_tracker.dart';
@@ -26,7 +28,17 @@ final playerNotifierProvider = StateNotifierProvider<PlayerNotifier, AsyncValue<
  final player = ref.watch(audioPlayerProvider);
  final trackDetailRepo = ref.watch(trackDetailRepositoryProvider);
  final tracker = ref.watch(playbackTrackerProvider);
- return PlayerNotifier(player, trackDetailRepo, audioHandler, tracker: tracker);
+ final notifier = PlayerNotifier(player, trackDetailRepo, audioHandler, tracker: tracker);
+
+ ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+   if (next is AuthAuthenticated) {
+     notifier.onUserAuthenticated();
+   } else if (next is AuthUnauthenticated) {
+     notifier.onUserLoggedOut();
+   }
+ });
+
+ return notifier;
 });
 
 class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
@@ -124,8 +136,17 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  // Auto-advance: bài hát phát xong tự nhiên → chuyển sang bài kế tiếp
  if (playerState.processingState == ProcessingState.completed) {
- // Báo cho tracker: bài hát phát xong tự nhiên (tracker tự lọc trùng / chưa nghe đủ).
- _tracker?.onCompleted();
+  _tracker?.onCompleted();
+
+  final isPreview = state.value?.isPreview ?? false;
+  if (isPreview) {
+    _player.pause();
+    state = state.whenData((data) => data.copyWith(
+      isPlaying: false,
+      showLoginPrompt: true,
+    ));
+    return;
+  }
   final nextIdx = _getNextIndex();
   if (nextIdx != null) {
   _currentIndex = nextIdx;
@@ -142,6 +163,22 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  _player.positionStream.listen((position) {
  if (_isLoadingTrack) return;
  _tracker?.onPosition(position);
+
+ final isPreview = state.value?.isPreview ?? false;
+ if (isPreview && position >= const Duration(seconds: 30)) {
+   if (_player.playing) {
+     _player.pause();
+   }
+   if (state.value?.showLoginPrompt != true || state.value?.isPlaying == true || state.value?.position != const Duration(seconds: 30)) {
+     state = state.whenData((data) => data.copyWith(
+       position: const Duration(seconds: 30),
+       isPlaying: false,
+       showLoginPrompt: true,
+     ));
+   }
+   return;
+ }
+
  state = state.whenData((data) => data.copyWith(position: position));
  });
 
@@ -153,7 +190,10 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  _player.durationStream.listen((duration) {
  if (duration != null) {
   _tracker?.updateDuration(duration);
-  state = state.whenData((data) => data.copyWith(duration: duration));
+  final isPreview = state.value?.isPreview ?? false;
+  state = state.whenData((data) => data.copyWith(
+    duration: isPreview ? const Duration(seconds: 30) : duration,
+  ));
  }
  });
  }
@@ -174,18 +214,23 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // Bắt đầu phiên nghe mới (bỏ phiên cũ => skip không bị tính lượt nghe).
  _tracker?.startTrack(trackId: item.id, duration: item.duration);
 
+ final token = await TokenStorage.instance.getAccessToken();
+ final bool isPreview = token == null || token.isEmpty;
+
  // Cập nhật UI ngay lập tức (Optimistic UI)
  state = state.whenData((data) => data.copyWith(
       currentTrackId: item.id,
       title: item.title,
       artist: item.artist,
       coverUrl: item.coverUrl,
-      duration: item.duration,
+      duration: isPreview ? const Duration(seconds: 30) : item.duration,
       hasNext: _getNextIndex() != null,
       hasPrevious: _getPreviousIndex() != null,
       position: Duration.zero,
       bufferedPosition: Duration.zero,
       isLiked: false, // Tạm thời set false, sẽ check api sau
+      isPreview: isPreview,
+      showLoginPrompt: false,
     ));
     
     // Cập nhật lên Notification / Lockscreen
@@ -212,11 +257,17 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  }
  if (_loadId != myLoadId) return; // Load đã bị supersede
 
- final token = await TokenStorage.instance.getAccessToken();
- final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=${token ?? ""}';
+ final String streamUrl;
+ if (!isPreview) {
+   streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=$token';
+ } else {
+   streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/preview/${item.id}';
+ }
+
+ debugPrint('[AUDIO_STREAM] Track: ${item.id} | Mode: ${isPreview ? "PREVIEW 30s (Guest)" : "FULL (Logged in)"} | URL: $streamUrl');
 
  AudioSource source;
- if (Platform.isWindows) {
+ if (Platform.isWindows || isPreview) {
   source = AudioSource.uri(Uri.parse(streamUrl), tag: item);
  } else {
   final cacheDir = await getApplicationDocumentsDirectory();
@@ -292,7 +343,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  title: item.title,
  artist: item.artist,
  coverUrl: item.coverUrl,
- duration: item.duration,
+ duration: (state.value?.isPreview ?? false) ? const Duration(seconds: 30) : item.duration,
  hasNext: _getNextIndex() != null,
  hasPrevious: true,
  position: Duration.zero,
@@ -331,7 +382,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  title: item.title,
  artist: item.artist,
  coverUrl: item.coverUrl,
- duration: item.duration,
+ duration: (state.value?.isPreview ?? false) ? const Duration(seconds: 30) : item.duration,
  hasNext: true,
  hasPrevious: _currentIndex > 0,
  position: Duration.zero,
@@ -363,7 +414,124 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
   }
 
 
+  Future<void> onUserLoggedOut() async {
+    try {
+      _loadId++;
+      _tracker?.onCompleted();
+      await _player.stop();
+      _playlist = [];
+      _currentIndex = 0;
+      state = const AsyncData(PlayerStateData());
+      await _audioHandler.stop();
+    } catch (e) {
+      debugPrint("Lỗi dừng nhạc khi đăng xuất: $e");
+    }
+  }
+
+  Future<void> onUserAuthenticated() async {
+    final isPreview = state.value?.isPreview ?? false;
+    if (isPreview && _playlist.isNotEmpty && _currentIndex >= 0 && _currentIndex < _playlist.length) {
+      final currentPos = state.value?.position ?? Duration.zero;
+      await _upgradeToFullStream(resumePosition: currentPos);
+    }
+  }
+
+  Future<void> _upgradeToFullStream({Duration? resumePosition}) async {
+    if (_playlist.isEmpty || _currentIndex < 0 || _currentIndex >= _playlist.length) return;
+    final item = _playlist[_currentIndex];
+    final token = await TokenStorage.instance.getAccessToken();
+    if (token == null || token.isEmpty) return;
+
+    final seekTo = resumePosition ?? state.value?.position ?? Duration.zero;
+
+    _loadId++;
+    final myLoadId = _loadId;
+    _isLoadingTrack = true;
+
+    state = state.whenData((data) => data.copyWith(
+      duration: item.duration,
+      isPreview: false,
+      showLoginPrompt: false,
+      isPlaying: true,
+    ));
+
+    _audioHandler.updateCurrentMediaItem(
+      id: item.id,
+      title: item.title,
+      artist: item.artist,
+      artUri: item.coverUrl,
+      duration: item.duration,
+    );
+
+    try {
+      if (_player.audioSource != null) {
+        await _player.stop();
+      }
+      if (_loadId != myLoadId) return;
+
+      final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=$token';
+      debugPrint('[AUDIO_STREAM] UPGRADE TO FULL: Track ${item.id} -> $streamUrl (resuming at $seekTo)');
+
+      AudioSource source;
+      if (Platform.isWindows) {
+        source = AudioSource.uri(Uri.parse(streamUrl), tag: item);
+      } else {
+        final cacheDir = await getApplicationDocumentsDirectory();
+        if (_loadId != myLoadId) return;
+        // ignore: experimental_member_use
+        source = LockCachingAudioSource(
+          Uri.parse(streamUrl),
+          tag: item,
+          cacheFile: File('${cacheDir.path}/music4_cache_${item.id}.mp3'),
+        );
+      }
+
+      await _player.setAudioSource(source, initialPosition: seekTo);
+      if (_loadId != myLoadId) return;
+
+      _player.play().catchError((e) {
+        debugPrint("Lỗi auto-play sau khi upgrade full: $e");
+      });
+
+      if (Platform.isWindows) {
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (_loadId == myLoadId && !_player.playing) {
+            _player.play();
+          }
+        });
+      }
+    } catch (e, st) {
+      if (_loadId == myLoadId) {
+        state = AsyncError("Không thể tiếp tục phát bản full.", st);
+      }
+    } finally {
+      if (_loadId == myLoadId) {
+        _isLoadingTrack = false;
+      }
+    }
+  }
+
  Future<void> play() async {
+   final isPreview = state.value?.isPreview ?? false;
+   final token = await TokenStorage.instance.getAccessToken();
+   final hasToken = token != null && token.isNotEmpty;
+
+   // Nếu trước đó đang nghe Preview (30s) mà bây giờ đã đăng nhập có token:
+   // Tự động nâng cấp sang bản Full và phát tiếp từ điểm đang nghe dở!
+   if (isPreview && hasToken) {
+     final currentPos = state.value?.position ?? Duration.zero;
+     await _upgradeToFullStream(resumePosition: currentPos);
+     return;
+   }
+
+   final currentPos = state.value?.position ?? Duration.zero;
+   if (isPreview && currentPos >= const Duration(seconds: 30)) {
+     state = state.whenData((data) => data.copyWith(
+       isPlaying: false,
+       showLoginPrompt: true,
+     ));
+     return;
+   }
  try {
  await _player.play();
  } catch (e, st) {
@@ -379,7 +547,34 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  }
  }
 
+ void dismissLoginPrompt() {
+   state = state.whenData((data) => data.copyWith(showLoginPrompt: false));
+ }
+
  Future<void> seek(Duration position) async {
+   final isPreview = state.value?.isPreview ?? false;
+   final token = await TokenStorage.instance.getAccessToken();
+   final hasToken = token != null && token.isNotEmpty;
+
+   // Nếu trước đó là Preview mà giờ đã có token -> nâng cấp sang Full stream và tua tới vị trí mong muốn
+   if (isPreview && hasToken) {
+     await _upgradeToFullStream(resumePosition: position);
+     return;
+   }
+
+   if (isPreview && position >= const Duration(seconds: 30)) {
+     if (_player.playing) {
+       await _player.pause();
+     }
+     await _player.seek(const Duration(seconds: 30));
+     state = state.whenData((data) => data.copyWith(
+       position: const Duration(seconds: 30),
+       isPlaying: false,
+       showLoginPrompt: true,
+     ));
+     return;
+   }
+
  try {
  await _player.seek(position);
  } catch (e, st) {

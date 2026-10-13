@@ -7,6 +7,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
+import '../../../artist_profile/presentation/widgets/artist_name_link.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../data/models/history_track_response.dart';
@@ -133,13 +134,14 @@ class HistoryScreen extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      artistName,
+                    ArtistNameLink(
+                      text: artistName,
+                      artistId: item.artists.isNotEmpty
+                          ? item.artists.first.id.toString()
+                          : null,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.textSecondary,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Text(

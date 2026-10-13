@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../router/route_names.dart';
 import '../../theme/app_colors.dart';
 import '../../../features/auth/presentation/notifiers/auth_notifier.dart';
+import '../../../features/player/presentation/providers/player_provider.dart';
+import '../../../features/auth/data/datasources/token_storage.dart';
 
 Future<void> showLogoutDialog(BuildContext context) {
   return showDialog<void>(
@@ -38,12 +40,16 @@ Future<void> showLogoutDialog(BuildContext context) {
                 ),
               ),
               onPressed: () async {
-                // Đọc notifier TRƯỚC KHI đóng dialog (trước khi ref bị dispose)
+                // Đọc notifiers TRƯỚC KHI đóng dialog (trước khi ref bị dispose)
                 final authNotifier = ref.read(authNotifierProvider.notifier);
+                final playerNotifier = ref.read(playerNotifierProvider.notifier);
                 
                 Navigator.pop(ctx); // Đóng dialog
                 
+                // Dừng nhạc và reset trạng thái phát ngay lập tức khi đăng xuất
+                await playerNotifier.onUserLoggedOut();
                 await authNotifier.logout();
+                await TokenStorage.instance.clearSession();
                 if (context.mounted) context.go(RouteNames.login);
               },
               child: const Text('Đăng xuất'),

@@ -78,6 +78,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
     try {
       await logoutUseCase();
     } finally {
+      await tokenStorage.clearSession();
       state = const AuthUnauthenticated();
     }
   }

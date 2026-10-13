@@ -70,7 +70,9 @@ void main() {
       expect(overview.totalFollowers, 42);
       expect(overview.totalComments, 9);
       expect(overview.chartData, hasLength(9));
-      expect(overview.chartData.first.day, '2026-10-01');
+      // The fixture's chart ends today; the oldest of its 9 days is 8 days ago.
+      final oldest = DateTime.now().subtract(const Duration(days: 8));
+      expect(overview.chartData.first.day, startsWith('${oldest.year}-'));
       expect(overview.chartData.first.views, 10);
     });
   });
@@ -114,6 +116,7 @@ void main() {
       expect(tracks[2].artworkUrl, 'https://cdn.example.com/t13.jpg');
       expect(tracks[0].artworkUrl, isNull);
       expect(tracks[1].durationSeconds, 215);
+      expect(tracks.map((t) => t.viewCount), [900, 100, 100]);
     });
 
     test('toPopularTracks joins artists and falls back to the artist name', () {
@@ -144,7 +147,7 @@ void main() {
       expect(albums[0].trackCount, 8);
     });
 
-    test('toDashboardStats keeps the last 7 days with dd/MM labels', () {
+    test('toDashboardStats maps the totals and the daily activity', () {
       final stats = ArtistProfileMapper.toDashboardStats(
         ArtistOverviewResponse.fromJson(realOverviewJson),
       );
@@ -153,16 +156,29 @@ void main() {
       expect(stats.totalLikes, 120); // totalFavorites
       expect(stats.totalFollowers, 42);
       expect(stats.totalComments, 9);
-      expect(stats.chartViews, [30, 40, 50, 60, 70, 80, 90]);
-      expect(stats.chartLabels, [
-        '03/10',
-        '04/10',
-        '05/10',
-        '06/10',
-        '07/10',
-        '08/10',
-        '09/10',
-      ]);
+
+      // Nine days, oldest first, ending today.
+      expect(stats.daily, hasLength(9));
+      expect(stats.daily.map((d) => d.views), [10, 20, 30, 40, 50, 60, 70, 80, 90]);
+      expect(stats.daily.map((d) => d.likes), [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+      final now = DateTime.now();
+      expect(stats.daily.last.date, DateTime(now.year, now.month, now.day));
+    });
+
+    test('toDashboardStats sorts the days and skips an unreadable day', () {
+      final stats = ArtistProfileMapper.toDashboardStats(
+        const ArtistOverviewResponse(
+          chartData: [
+            DailyAnalyticsResponse(day: '2026-10-06', views: 5, likes: 1),
+            DailyAnalyticsResponse(day: 'not-a-date', views: 99, likes: 99),
+            DailyAnalyticsResponse(day: '2026-10-03', views: 19, likes: 0),
+            DailyAnalyticsResponse(views: 7, likes: 7),
+          ],
+        ),
+      );
+
+      expect(stats.daily.map((d) => d.views), [19, 5]);
+      expect(stats.daily.first.date, DateTime(2026, 10, 3));
     });
 
     test('toDashboardStats handles an empty chart', () {
@@ -170,8 +186,7 @@ void main() {
         const ArtistOverviewResponse(),
       );
 
-      expect(stats.chartViews, isEmpty);
-      expect(stats.chartLabels, isEmpty);
+      expect(stats.daily, isEmpty);
     });
   });
 }

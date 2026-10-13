@@ -7,8 +7,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../notifiers/auth_notifier.dart';
 import '../notifiers/auth_state.dart';
 
-/// ConsumerStatefulWidget — giống StatefulWidget nhưng có thêm `ref`
-/// để truy cập Riverpod providers.
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
 
@@ -30,10 +28,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Future<void> _onLogin() async {
-    // 1. Validate form trước — nếu không hợp lệ thì dừng
     if (!_formKey.currentState!.validate()) return;
 
-    // 2. Gọi AuthNotifier.login() — notifier sẽ chuyển state sang Loading → Authenticated/Error
     await ref
         .read(authNotifierProvider.notifier)
         .login(_usernameController.text.trim(), _passwordController.text);
@@ -41,12 +37,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ref.listen — lắng nghe state thay đổi để thực hiện side-effect
-    // (navigate, show snackbar). KHÔNG dùng để render UI.
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       switch (next) {
         case AuthAuthenticated():
-          // Đăng nhập thành công → vào home, xóa hết back stack
           context.go(RouteNames.home);
         case AuthError(:final message):
           ScaffoldMessenger.of(context).showSnackBar(
@@ -60,10 +53,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     });
 
-    // ref.watch — lắng nghe state để rebuild UI (chỉ lấy isLoading)
     final isLoading = ref.watch(authNotifierProvider) is AuthLoading;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          tooltip: 'Quay lại Trang chủ',
+          onPressed: () => context.go(RouteNames.home),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
@@ -100,7 +101,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
                   ),
                   const SizedBox(height: 8),
-                  // TextFormField thay vì TextField — tích hợp với Form để validate
                   TextFormField(
                     controller: _usernameController,
                     keyboardType: TextInputType.text,

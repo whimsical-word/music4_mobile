@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../artist_profile/presentation/widgets/artist_name_link.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -105,10 +106,9 @@ class AiRecommendationCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      track.artist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ArtistNameLink(
+                      text: track.artist,
+                      artistId: track.artistId,
                       style: textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 11,

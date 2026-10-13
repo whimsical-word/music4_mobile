@@ -1,11 +1,13 @@
 import 'package:dio/dio.dart';
 import 'package:music4_mobile/core/network/dio_client.dart';
+import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 
 import '../models/auth_response_model.dart';
 
 abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> login(String username, String password);
   Future<void> logout(String refreshToken);
+  Future<void> register(RegisterRequest request);
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -39,6 +41,35 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     } on DioException catch (e) {
       final message =
           e.response?.data['message'] ?? 'Đăng xuất không thành công';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> register(RegisterRequest request) async {
+    try {
+      final formData = FormData.fromMap({
+        'name': request.name,
+        'email': request.email,
+        'username': request.username,
+        'password': request.password,
+        if (request.img != null)
+          'img': await MultipartFile.fromFile(
+            request.img!.path,
+            filename: request.img!.path.split('/').last,
+          ),
+      });
+
+      await dioClient.dio.post(
+        '/api/auth/register',
+        queryParameters: {'role': request.role},
+        data: formData,
+      );
+    } on DioException catch (e) {
+      final message =
+          e.response?.data['message'] ??
+          e.response?.data?['error'] ??
+          'Đăng ký không thành công';
       throw Exception(message);
     }
   }

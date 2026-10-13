@@ -1,6 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/artist_profile_data.dart';
+import '../../domain/models/dashboard_period.dart';
+import '../utils/count_format.dart';
 
 class DashboardStatCard extends StatelessWidget {
   final String title;
@@ -68,22 +72,32 @@ class DashboardStatCard extends StatelessWidget {
   }
 }
 
-class ArtistDashboard extends StatelessWidget {
+class ArtistDashboard extends StatefulWidget {
   final ArtistDashboardStats stats;
 
-  const ArtistDashboard({super.key, required this.stats});
+  /// The last day of the chart window; defaults to the device date.
+  final DateTime? today;
 
-  String _formatNumber(int number) {
-    if (number >= 1000000) {
-      return '${(number / 1000000).toStringAsFixed(1)}M';
-    } else if (number >= 1000) {
-      return '${(number / 1000).toStringAsFixed(1)}K';
-    }
-    return number.toString();
-  }
+  const ArtistDashboard({super.key, required this.stats, this.today});
+
+  @override
+  State<ArtistDashboard> createState() => _ArtistDashboardState();
+}
+
+class _ArtistDashboardState extends State<ArtistDashboard> {
+  static const double _chartHeight = 120;
+
+  DashboardPeriod _period = DashboardPeriod.week;
 
   @override
   Widget build(BuildContext context) {
+    final stats = widget.stats;
+    final view = buildPeriodView(
+      stats.daily,
+      _period,
+      today: widget.today ?? DateTime.now(),
+    );
+
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
@@ -112,11 +126,13 @@ class ArtistDashboard extends StatelessWidget {
                 ),
           ),
           const SizedBox(height: 16),
-          
-          // KPIs Grid
+
+          // KPIs grid. padding: zero, otherwise the grid adds the status-bar /
+          // app-bar inset above itself and leaves a blank gap.
           GridView.count(
             crossAxisCount: 2,
             shrinkWrap: true,
+            padding: EdgeInsets.zero,
             physics: const NeverScrollableScrollPhysics(),
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
@@ -124,34 +140,34 @@ class ArtistDashboard extends StatelessWidget {
             children: [
               DashboardStatCard(
                 title: 'Lượt nghe',
-                value: _formatNumber(stats.totalViews),
+                value: formatCount(stats.totalViews),
                 icon: Icons.headphones,
                 color: Colors.lightBlue,
               ),
               DashboardStatCard(
                 title: 'Lượt thích',
-                value: _formatNumber(stats.totalLikes),
+                value: formatCount(stats.totalLikes),
                 icon: Icons.favorite,
                 color: Colors.pinkAccent,
               ),
               DashboardStatCard(
                 title: 'Người theo dõi',
-                value: _formatNumber(stats.totalFollowers),
+                value: formatCount(stats.totalFollowers),
                 icon: Icons.people,
                 color: Colors.amber,
               ),
               DashboardStatCard(
                 title: 'Bình luận',
-                value: _formatNumber(stats.totalComments),
+                value: formatCount(stats.totalComments),
                 icon: Icons.comment,
                 color: Colors.greenAccent,
               ),
             ],
           ),
-          
+
           const SizedBox(height: 24),
-          
-          // Chart Section
+
+          // Chart section
           Container(
             padding: const EdgeInsets.all(16.0),
             decoration: BoxDecoration(
@@ -171,7 +187,7 @@ class ArtistDashboard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Lượt tương tác',
+                          'Lượt nghe',
                           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                 color: AppColors.textPrimary,
                                 fontWeight: FontWeight.bold,
@@ -179,86 +195,206 @@ class ArtistDashboard extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          '7 ngày gần nhất',
+                          '${_period.days} ngày gần nhất',
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 color: AppColors.textMuted,
                               ),
                         ),
                       ],
                     ),
-                    // Mock Period Selector
                     Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        _buildPeriodTab('7N', true),
-                        const SizedBox(width: 4),
-                        _buildPeriodTab('14N', false),
-                        const SizedBox(width: 4),
-                        _buildPeriodTab('30N', false),
+                        for (final period in DashboardPeriod.values) ...[
+                          if (period != DashboardPeriod.values.first)
+                            const SizedBox(width: 4),
+                          _buildPeriodTab(period),
+                        ],
                       ],
-                    )
+                    ),
                   ],
                 ),
+                const SizedBox(height: 12),
+                _buildSummary(context, view),
                 const SizedBox(height: 16),
-                
-                // Mock Chart representation (Bar Chart via Containers)
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: List.generate(stats.chartViews.length, (index) {
-                    final maxValue = stats.chartViews.reduce((curr, next) => curr > next ? curr : next);
-                    final value = stats.chartViews[index];
-                    final heightRatio = value / (maxValue > 0 ? maxValue : 1);
-                    // Expanded: every day gets an equal slot, so the 7 columns
-                    // always fit the width (also at 360dp / large text scale).
-                    return Expanded(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          Container(
-                            width: 24,
-                            height: 120 * heightRatio, // Max height 120
-                            decoration: BoxDecoration(
-                              color: Colors.lightBlue.withValues(alpha: 0.8),
-                              borderRadius: const BorderRadius.vertical(top: Radius.circular(4)),
+                if (view.hasActivity)
+                  _buildBars(view)
+                else
+                  SizedBox(
+                    height: _chartHeight,
+                    child: Center(
+                      child: Text(
+                        'Chưa có lượt nghe trong ${_period.days} ngày qua.',
+                        textAlign: TextAlign.center,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: AppColors.textMuted,
                             ),
-                          ),
-                          const SizedBox(height: 8),
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              index < stats.chartLabels.length ? stats.chartLabels[index] : '',
-                              style: const TextStyle(fontSize: 10, color: AppColors.textMuted),
-                            ),
-                          ),
-                        ],
                       ),
-                    );
-                  }),
-                ),
+                    ),
+                  ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildPeriodTab(String label, bool isSelected) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: isSelected ? Colors.lightBlue.withValues(alpha: 0.15) : Colors.transparent,
-        border: Border.all(
-          color: isSelected ? Colors.lightBlue.withValues(alpha: 0.3) : AppColors.textMuted.withValues(alpha: 0.2),
+  /// "420 lượt nghe" plus how it compares with the previous window.
+  Widget _buildSummary(BuildContext context, DashboardPeriodView view) {
+    final textTheme = Theme.of(context).textTheme;
+    final chip = _buildGrowthChip(view);
+
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 8,
+      runSpacing: 4,
+      children: [
+        Text(
+          '${formatCount(view.totalViews)} lượt nghe',
+          style: textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: AppColors.textPrimary,
+          ),
         ),
-        borderRadius: BorderRadius.circular(8),
+        if (chip != null) ...[
+          chip,
+          Text(
+            'so với ${view.period.days} ngày trước',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.textMuted),
+          ),
+        ],
+      ],
+    );
+  }
+
+  /// ▲ 25% / ▼ 10% / "Mới". Null when there is nothing to compare with
+  /// (30N has no earlier 30-day window in the data the backend returns).
+  Widget? _buildGrowthChip(DashboardPeriodView view) {
+    if (view.isNewActivity) {
+      return _chip(Icons.arrow_upward, 'Mới', Colors.greenAccent);
+    }
+
+    final growth = view.growthPercent;
+    if (growth == null) return null;
+
+    final percent = '${growth.abs().toStringAsFixed(0)}%';
+    if (growth > 0) return _chip(Icons.arrow_upward, percent, Colors.greenAccent);
+    if (growth < 0) return _chip(Icons.arrow_downward, percent, Colors.redAccent);
+    return _chip(Icons.remove, percent, AppColors.textMuted);
+  }
+
+  Widget _chip(IconData icon, String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          color: isSelected ? Colors.lightBlue : AppColors.textMuted,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 2),
+          Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBars(DashboardPeriodView view) {
+    final maxViews = view.points.fold<int>(0, (m, p) => math.max(m, p.views));
+    final count = view.points.length;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        for (var i = 0; i < count; i++)
+          // Expanded: every day gets an equal slot, so 7, 14 or 30 columns
+          // always fit the width (also at 360dp / large text scale).
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FractionallySizedBox(
+                  widthFactor: 0.6,
+                  child: Container(
+                    height: view.points[i].views == 0
+                        ? 2
+                        : math.max(4, _chartHeight * view.points[i].views / maxViews),
+                    decoration: BoxDecoration(
+                      color: view.points[i].views == 0
+                          ? AppColors.textMuted.withValues(alpha: 0.3)
+                          : Colors.lightBlue.withValues(alpha: 0.8),
+                      borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 14,
+                  child: _showLabel(i, count)
+                      ? OverflowBox(
+                          maxWidth: 48,
+                          child: Text(
+                            _dayLabel(view.points[i].date),
+                            maxLines: 1,
+                            softWrap: false,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                        )
+                      : null,
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Counted from the newest day, so today is always labelled and a long
+  /// range does not print 30 labels.
+  bool _showLabel(int index, int count) {
+    if (count <= 7) return true;
+    final step = count <= 14 ? 2 : 5;
+    return (count - 1 - index) % step == 0;
+  }
+
+  String _dayLabel(DateTime date) {
+    String two(int n) => n.toString().padLeft(2, '0');
+    return '${two(date.day)}/${two(date.month)}';
+  }
+
+  Widget _buildPeriodTab(DashboardPeriod period) {
+    final isSelected = period == _period;
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => setState(() => _period = period),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? Colors.lightBlue.withValues(alpha: 0.15) : Colors.transparent,
+          border: Border.all(
+            color: isSelected ? Colors.lightBlue.withValues(alpha: 0.3) : AppColors.textMuted.withValues(alpha: 0.2),
+          ),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(
+          period.label,
+          style: TextStyle(
+            fontSize: 12,
+            color: isSelected ? Colors.lightBlue : AppColors.textMuted,
+          ),
         ),
       ),
     );

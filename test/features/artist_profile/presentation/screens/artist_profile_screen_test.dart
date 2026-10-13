@@ -12,6 +12,7 @@ import 'package:music4_mobile/features/artist_profile/data/models/artist_respons
 import 'package:music4_mobile/features/artist_profile/data/repositories/artist_profile_repository.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/providers/artist_profile_provider.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/screens/artist_profile_screen.dart';
+import 'package:music4_mobile/features/artist_profile/presentation/widgets/artist_album_item.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/widgets/artist_dashboard.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/widgets/artist_header.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/widgets/artist_profile_shimmer.dart';
@@ -57,6 +58,34 @@ class _RecordingPlayerNotifier extends PlayerNotifier {
     lastIndex = initialIndex;
   }
 }
+
+/// `n` tracks; Bài 0 has the most views (so it is first), Bài n-1 the fewest.
+List<Map<String, dynamic>> manyTracksJson(int n) => [
+  for (var i = 0; i < n; i++)
+    {
+      'id': 100 + i,
+      'name': 'Bài $i',
+      'albumName': 'Single',
+      'img': null,
+      'duration': 180,
+      'viewCount': (n - i) * 10,
+      'playbackPosition': null,
+      'artists': [],
+    },
+];
+
+/// `n` albums (n <= 9); Album n-1 is the newest (so it is first).
+List<Map<String, dynamic>> manyAlbumsJson(int n) => [
+  for (var i = 0; i < n; i++)
+    {
+      'id': 200 + i,
+      'name': 'Album $i',
+      'img': null,
+      'uploadDate': '2026-01-0${i + 1}',
+      'trackTotal': 3,
+      'artistId': 3,
+    },
+];
 
 void main() {
   late MockArtistProfileRepository repository;
@@ -132,7 +161,7 @@ void main() {
 
   /// Tall view so the whole profile is built without scrolling.
   void useTallView(WidgetTester tester) {
-    tester.view.physicalSize = const Size(400, 1600);
+    tester.view.physicalSize = const Size(400, 2400);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -182,11 +211,30 @@ void main() {
 
       expect(find.byType(ArtistDashboard), findsOneWidget);
       expect(find.text('Tổng quan dữ liệu của bạn'), findsOneWidget);
-      // Real chart labels (dd/MM of the last 7 days), no fake T2/T3.
-      expect(find.text('09/10'), findsOneWidget);
+      // Real chart labels: the last 7 days end today, no fake T2/T3.
+      final now = DateTime.now();
+      String two(int n) => n.toString().padLeft(2, '0');
+      expect(find.text('${two(now.day)}/${two(now.month)}'), findsOneWidget);
       expect(find.text('T2'), findsNothing);
+      // 7 days: 30 + 40 + ... + 90 views, versus 30 in the 7 days before.
+      expect(find.text('420 lượt nghe'), findsOneWidget);
+      expect(find.text('1300%'), findsOneWidget);
       expect(find.text('Theo dõi'), findsNothing);
       expect(find.text('Đang theo dõi'), findsNothing);
+    });
+
+    testWidgets('2b. Each track shows its play count next to the artist', (tester) async {
+      useTallView(tester);
+      stubSuccess();
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pump();
+
+      // Track 12 has no artist in the backend response: the profile's name is used.
+      expect(find.text('Ngọt • 900 lượt nghe'), findsOneWidget);
+      expect(find.text('Ngọt • 100 lượt nghe'), findsOneWidget);
+      expect(find.text('Ngọt, Guest • 100 lượt nghe'), findsOneWidget);
     });
 
     testWidgets('3. Empty content shows the empty tracks message and no album section', (tester) async {
@@ -215,6 +263,153 @@ void main() {
       expect(inHeader('No images'), findsOneWidget);
       expect(find.byIcon(Icons.person), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('[CE190284] ArtistProfileScreen - top 5 and view all', () {
+    testWidgets('17. More than 5 tracks: top 5 plus Xem tất cả, which expands', (tester) async {
+      useTallView(tester);
+      stubSuccess(tracksJson: manyTracksJson(7));
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(TrackListItem), findsNWidgets(5));
+      expect(find.text('Bài 4'), findsOneWidget);
+      expect(find.text('Bài 5'), findsNothing);
+      expect(find.text('Xem tất cả (7)'), findsOneWidget);
+
+      await tester.tap(find.text('Xem tất cả (7)'));
+      await tester.pump();
+
+      expect(find.byType(TrackListItem), findsNWidgets(7));
+      expect(find.text('Bài 6'), findsOneWidget);
+      expect(find.text('Thu gọn'), findsOneWidget);
+
+      await tester.tap(find.text('Thu gọn'));
+      await tester.pump();
+
+      expect(find.byType(TrackListItem), findsNWidgets(5));
+      expect(find.text('Xem tất cả (7)'), findsOneWidget);
+    });
+
+    testWidgets('18. Exactly 5 tracks: no Xem tất cả button', (tester) async {
+      useTallView(tester);
+      stubSuccess(tracksJson: manyTracksJson(5));
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(TrackListItem), findsNWidgets(5));
+      expect(find.textContaining('Xem tất cả'), findsNothing);
+    });
+
+    testWidgets('19. More than 5 albums: newest 5 plus Xem tất cả', (tester) async {
+      useTallView(tester);
+      stubSuccess(albumsJson: manyAlbumsJson(6));
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(ArtistAlbumItem), findsNWidgets(5));
+      expect(find.text('Album 5'), findsOneWidget); // newest
+      expect(find.text('Album 0'), findsNothing); // oldest, hidden
+      expect(find.text('Xem tất cả (6)'), findsOneWidget);
+
+      await tester.tap(find.text('Xem tất cả (6)'));
+      await tester.pump();
+
+      expect(find.byType(ArtistAlbumItem), findsNWidgets(6));
+      expect(find.text('Album 0'), findsOneWidget);
+    });
+
+    testWidgets('20. Playing from the preview queues the whole track list', (tester) async {
+      useTallView(tester);
+      stubSuccess(tracksJson: manyTracksJson(7));
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.text('Bài 2'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(player.lastQueue, hasLength(7));
+      expect(player.lastIndex, 2);
+    });
+  });
+
+  group('[CE190284] ArtistProfileScreen - artist accounts', () {
+    testWidgets('13. An artist opening their own profile gets owner mode and settings', (tester) async {
+      useTallView(tester);
+      stubSuccess();
+
+      // Route /artist/3 with NO explicit mode, signed in as artist 3.
+      await tester.pumpWidget(buildApp(auth: authenticatedArtist(3)));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(ArtistDashboard), findsOneWidget);
+      expect(find.text('Theo dõi'), findsNothing);
+      expect(find.byIcon(Icons.settings_outlined), findsOneWidget);
+      // The artist's own profile never asks for a followings list.
+      verifyNever(
+        () => repository.isFollowing(
+          userId: any(named: 'userId'),
+          artistId: any(named: 'artistId'),
+        ),
+      );
+    });
+
+    testWidgets('14. The settings icon opens the settings sheet (logout lives there)', (tester) async {
+      useTallView(tester);
+      stubSuccess();
+
+      await tester.pumpWidget(buildApp(auth: authenticatedArtist(3)));
+      await tester.pump();
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.settings_outlined));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Cài đặt'), findsWidgets);
+    });
+
+    testWidgets('15. An artist viewing ANOTHER artist stays in listener mode', (tester) async {
+      useTallView(tester);
+      stubSuccess();
+
+      await tester.pumpWidget(buildApp(auth: authenticatedArtist(9)));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byType(ArtistDashboard), findsNothing);
+      expect(find.byIcon(Icons.settings_outlined), findsNothing);
+
+      await tester.tap(find.text('Theo dõi'));
+      await tester.pump();
+      await tester.pump();
+
+      expect(
+        find.text('Tài khoản nghệ sĩ không thể theo dõi nghệ sĩ khác.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('16. A listener never sees the settings icon', (tester) async {
+      useTallView(tester);
+      stubSuccess();
+
+      await tester.pumpWidget(buildApp(auth: authenticated(7)));
+      await tester.pump();
+      await tester.pump();
+
+      expect(find.byIcon(Icons.settings_outlined), findsNothing);
     });
   });
 

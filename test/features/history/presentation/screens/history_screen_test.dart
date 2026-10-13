@@ -44,6 +44,11 @@ void main() {
               Scaffold(body: Text('track-page-${state.pathParameters['id']}')),
         ),
         GoRoute(
+          path: '/artist/:id',
+          builder: (_, state) =>
+              Scaffold(body: Text('artist-page-${state.pathParameters['id']}')),
+        ),
+        GoRoute(
           path: '/login',
           builder: (_, _) => const Scaffold(body: Text('login-page')),
         ),
@@ -231,6 +236,33 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
 
       expect(find.text('track-page-5'), findsOneWidget);
+    });
+
+    testWidgets('7b. Tapping the artist name opens that artist profile', (tester) async {
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [
+            historyTrack(
+              5,
+              name: 'Lạc Trôi',
+              artists: const [
+                TrackArtistInfo(id: 10, name: 'Sơn Tùng M-TP', role: 'MAIN'),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      await tester.tap(find.text('Sơn Tùng M-TP'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('artist-page-10'), findsOneWidget);
+      expect(find.text('track-page-5'), findsNothing);
     });
 
     testWidgets('8. Scrolling to the bottom loads the next page', (tester) async {

@@ -102,7 +102,7 @@ void main() {
       start(params: ownerParams);
       final owner = await load(ownerParams);
       expect(owner.dashboardStats?.totalViews, 1500);
-      expect(owner.dashboardStats?.chartViews, hasLength(7));
+      expect(owner.dashboardStats?.daily, hasLength(9));
     });
 
     test('empty tracks and albums are a valid data state', () async {
@@ -146,6 +146,39 @@ void main() {
 
       verify(() => repository.isFollowing(userId: 7, artistId: 3)).called(1);
       expect(data.isFollowing, isTrue);
+    });
+  });
+
+  group('[CE190284] ArtistProfileNotifier - artist accounts', () {
+    test('an artist account never requests a followings list by its artist id', () async {
+      stubSuccess();
+      start(auth: authenticatedArtist(3));
+
+      final data = await load();
+
+      verifyNever(
+        () => repository.isFollowing(
+          userId: any(named: 'userId'),
+          artistId: any(named: 'artistId'),
+        ),
+      );
+      expect(data.isFollowing, isFalse);
+    });
+
+    test('an artist account cannot follow: no request is made', () async {
+      stubSuccess();
+      start(auth: authenticatedArtist(9));
+      await load();
+
+      final result = await notifier().toggleFollow();
+
+      expect(result, FollowResult.notSupported);
+      verifyNever(
+        () => repository.toggleFollow(
+          userId: any(named: 'userId'),
+          artistId: any(named: 'artistId'),
+        ),
+      );
     });
   });
 

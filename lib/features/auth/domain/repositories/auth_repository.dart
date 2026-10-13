@@ -1,3 +1,4 @@
+import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 
 abstract class AuthRepository {
@@ -7,4 +8,5 @@ abstract class AuthRepository {
   });
   Future<Result<void>> logout();
   Future<bool> isLoggedIn();
+  Future<Result<void>> register(RegisterRequest request);
 }

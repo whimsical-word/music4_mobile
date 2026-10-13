@@ -38,6 +38,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(Duration.zero);
+    registerFallbackValue(AudioSource.uri(Uri.parse('http://example.com')));
   });
 
   setUp(() {
@@ -60,6 +61,10 @@ void main() {
     when(() => player.play()).thenAnswer((_) async {});
     when(() => player.pause()).thenAnswer((_) async {});
     when(() => player.seek(any())).thenAnswer((_) async {});
+    when(() => player.audioSource).thenReturn(null);
+    when(() => player.playing).thenReturn(false);
+    when(() => player.setAudioSource(any(), initialPosition: any(named: 'initialPosition')))
+        .thenAnswer((_) async => null);
 
     final trackDetailRepo = MockTrackDetailRepo();
     when(() => trackDetailRepo.checkIsFavorite(any()))
