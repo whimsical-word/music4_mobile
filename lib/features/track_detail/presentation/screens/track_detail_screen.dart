@@ -338,16 +338,30 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                   onLikeToggle: _toggleLike,
                   onAddToPlaylist: () => _addToPlaylist(state.userPlaylists),
                   onShare: _shareTrack,
-                  onRatingChanged: (newRating) {
-                    ref
-                        .read(trackDetailControllerProvider(_id).notifier)
-                        .setRating(newRating);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('⭐ Đã đánh giá $newRating sao'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                  onRatingChanged: (newRating) async {
+                    try {
+                      await ref
+                          .read(trackDetailControllerProvider(_id).notifier)
+                          .setRating(newRating);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('⭐ Đã đánh giá $newRating sao thành công!'),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Không thể lưu đánh giá: ${e.toString().replaceAll("Exception: ", "")}',
+                          ),
+                          backgroundColor: AppColors.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 16),

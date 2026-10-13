@@ -125,13 +125,17 @@ void main() {
       expect(result.first.id, 10);
     });
 
-    test('addTrackToPlaylist gọi đúng endpoint POST', () async {
+    test('addTrackToPlaylist gọi đúng endpoint POST với body json', () async {
       const playlistId = 10;
-      when(() => mockDio.post('${ApiEndpoints.playlists}/$playlistId/tracks/$trackId'))
-          .thenAnswer(
+      when(
+        () => mockDio.post(
+          '${ApiEndpoints.playlists}/$playlistId/tracks',
+          data: {'trackId': trackId},
+        ),
+      ).thenAnswer(
         (_) async => Response(
           requestOptions: RequestOptions(
-            path: '${ApiEndpoints.playlists}/$playlistId/tracks/$trackId',
+            path: '${ApiEndpoints.playlists}/$playlistId/tracks',
           ),
           statusCode: 200,
         ),
@@ -141,7 +145,62 @@ void main() {
         repository.addTrackToPlaylist(playlistId, trackId),
         completes,
       );
-      verify(() => mockDio.post('${ApiEndpoints.playlists}/$playlistId/tracks/$trackId')).called(1);
+      verify(
+        () => mockDio.post(
+          '${ApiEndpoints.playlists}/$playlistId/tracks',
+          data: {'trackId': trackId},
+        ),
+      ).called(1);
+    });
+
+    test('submitRating gọi POST /api/ratings thành công', () async {
+      when(
+        () => mockDio.post(
+          ApiEndpoints.ratings,
+          data: {
+            'trackId': trackId,
+            'userId': 99,
+            'ratingValue': 5,
+          },
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ApiEndpoints.ratings),
+          statusCode: 200,
+        ),
+      );
+
+      await expectLater(
+        repository.submitRating(trackId: trackId, ratingValue: 5, userId: 99),
+        completes,
+      );
+      verify(
+        () => mockDio.post(
+          ApiEndpoints.ratings,
+          data: {
+            'trackId': trackId,
+            'userId': 99,
+            'ratingValue': 5,
+          },
+        ),
+      ).called(1);
+    });
+
+    test('getUserRating trả về số sao khi API thành công', () async {
+      when(
+        () => mockDio.get('${ApiEndpoints.ratings}/track/$trackId/user/99'),
+      ).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(
+            path: '${ApiEndpoints.ratings}/track/$trackId/user/99',
+          ),
+          statusCode: 200,
+          data: {'success': true, 'rating': 4},
+        ),
+      );
+
+      final rating = await repository.getUserRating(trackId, userId: 99);
+      expect(rating, 4);
     });
 
     test('getComments trả về danh sách TrackCommentModel khi API thành công', () async {

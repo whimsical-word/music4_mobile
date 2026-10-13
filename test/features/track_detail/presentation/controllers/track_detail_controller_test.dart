@@ -16,6 +16,8 @@ void main() {
     mockRepository = MockTrackDetailRepository();
     when(() => mockRepository.getComments(any()))
         .thenAnswer((_) async => <TrackCommentModel>[]);
+    when(() => mockRepository.getUserRating(any()))
+        .thenAnswer((_) async => null);
   });
 
   ProviderContainer makeProviderContainer(MockTrackDetailRepository repo) {
@@ -129,23 +131,35 @@ void main() {
       expect(state.value?.isLiked, false);
     });
 
-    test('setRating cập nhật userRating trong state', () async {
+    test('setRating cập nhật userRating trong state và gọi submitRating', () async {
       when(() => mockRepository.getTrackDetail(trackId))
           .thenAnswer((_) async => mockTrack);
       when(() => mockRepository.checkIsFavorite(trackId))
           .thenAnswer((_) async => false);
       when(() => mockRepository.getUserPlaylists())
           .thenAnswer((_) async => mockPlaylists);
+      when(
+        () => mockRepository.submitRating(
+          trackId: trackId,
+          ratingValue: 4,
+        ),
+      ).thenAnswer((_) async {});
 
       final container = makeProviderContainer(mockRepository);
       final controller =
           container.read(trackDetailControllerProvider(trackId).notifier);
 
       await controller.loadTrackDetail();
-      controller.setRating(4);
+      await controller.setRating(4);
 
       final state = container.read(trackDetailControllerProvider(trackId));
       expect(state.value?.userRating, 4);
+      verify(
+        () => mockRepository.submitRating(
+          trackId: trackId,
+          ratingValue: 4,
+        ),
+      ).called(1);
     });
 
     test('addTrackToPlaylist gọi đúng repository', () async {

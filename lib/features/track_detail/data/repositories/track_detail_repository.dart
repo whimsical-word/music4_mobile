@@ -83,14 +83,78 @@ class TrackDetailRepository {
     }
   }
 
-  /// Thêm bài hát vào playlist (POST /api/playlists/{playlistId}/tracks/{trackId})
+  /// Helper xác định User ID từ session hoặc token
+  Future<int?> _resolveUserId([int? userId]) async {
+    if (userId != null) return userId;
+    try {
+      final user = await TokenStorage.instance.getUser();
+      if (user?.id != null) return user!.id;
+      final token = await TokenStorage.instance.getAccessToken();
+      return JwtHelper.getUserId(token);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Thêm bài hát vào playlist (POST /api/playlists/{playlistId}/tracks)
   Future<void> addTrackToPlaylist(int playlistId, int trackId) async {
     try {
-      await _dio.post('${ApiEndpoints.playlists}/$playlistId/tracks/$trackId');
+      await _dio.post(
+        '${ApiEndpoints.playlists}/$playlistId/tracks',
+        data: {'trackId': trackId},
+      );
     } on DioException catch (e) {
       throw Exception(_handleDioError(e));
     } catch (e) {
       throw Exception('Không thể thêm bài hát vào playlist: $e');
+    }
+  }
+
+  /// Lấy đánh giá của người dùng cho bài hát (GET /api/ratings/track/{trackId}/user/{userId})
+  Future<int?> getUserRating(int trackId, {int? userId}) async {
+    try {
+      final effectiveUserId = await _resolveUserId(userId);
+      if (effectiveUserId == null) return null;
+
+      final response = await _dio.get(
+        '${ApiEndpoints.ratings}/track/$trackId/user/$effectiveUserId',
+      );
+      final data = response.data;
+      if (data is Map<String, dynamic> && data['rating'] != null) {
+        final rating = data['rating'] as num;
+        final ratingInt = rating.toInt();
+        return ratingInt > 0 ? ratingInt : null;
+      }
+      return null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Gửi đánh giá sao cho bài hát (POST /api/ratings)
+  Future<void> submitRating({
+    required int trackId,
+    required int ratingValue,
+    int? userId,
+  }) async {
+    try {
+      final effectiveUserId = await _resolveUserId(userId);
+      if (effectiveUserId == null) {
+        throw Exception('Vui lòng đăng nhập để đánh giá bài hát.');
+      }
+
+      await _dio.post(
+        ApiEndpoints.ratings,
+        data: {
+          'trackId': trackId,
+          'userId': effectiveUserId,
+          'ratingValue': ratingValue,
+        },
+      );
+    } on DioException catch (e) {
+      throw Exception(_handleDioError(e));
+    } catch (e) {
+      throw Exception('Không thể gửi đánh giá: $e');
     }
   }
 
@@ -114,19 +178,13 @@ class TrackDetailRepository {
     int? userId,
   }) async {
     try {
-      int? effectiveUserId = userId;
-      if (effectiveUserId == null) {
-        try {
-          final token = await TokenStorage.instance.getAccessToken();
-          effectiveUserId = JwtHelper.getUserId(token);
-        } catch (_) {}
-      }
+      final effectiveUserId = await _resolveUserId(userId);
 
       await _dio.post(
         ApiEndpoints.comments,
         data: {
           'trackId': trackId,
-          'userId': ?effectiveUserId,
+          if (effectiveUserId != null) 'userId': effectiveUserId,
           'content': content,
         },
       );

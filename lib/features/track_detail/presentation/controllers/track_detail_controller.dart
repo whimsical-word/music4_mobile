@@ -62,17 +62,20 @@ class TrackDetailController
         _repository.checkIsFavorite(_trackId),
         _repository.getUserPlaylists().catchError((_) => <PlaylistModel>[]),
         _repository.getComments(_trackId).catchError((_) => <TrackCommentModel>[]),
+        _repository.getUserRating(_trackId).catchError((_) => null),
       ]);
 
       final track = results[0] as TrackDetailModel;
       final isLiked = results[1] as bool;
       final userPlaylists = results[2] as List<PlaylistModel>;
       final comments = results[3] as List<TrackCommentModel>;
+      final userRating = results[4] as int?;
 
       state = AsyncValue.data(
         TrackDetailState(
           track: track,
           isLiked: isLiked,
+          userRating: userRating ?? 5,
           userPlaylists: userPlaylists,
           comments: comments,
         ),
@@ -144,11 +147,28 @@ class TrackDetailController
     }
   }
 
-  /// Cập nhật số sao đánh giá
-  void setRating(int rating) {
-    state.whenData((current) {
-      state = AsyncValue.data(current.copyWith(userRating: rating));
-    });
+  /// Cập nhật số sao đánh giá (lưu vào backend qua POST /api/ratings)
+  Future<void> setRating(int rating) async {
+    final previousState = state;
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    // 1. Cập nhật UI ngay lập tức (Optimistic UI)
+    state = AsyncValue.data(currentState.copyWith(userRating: rating));
+
+    try {
+      // 2. Gửi API lưu đánh giá
+      await _repository.submitRating(
+        trackId: _trackId,
+        ratingValue: rating,
+      );
+    } catch (e) {
+      // 3. Hoàn tác nếu API thất bại
+      if (mounted) {
+        state = previousState;
+      }
+      rethrow;
+    }
   }
 
   /// Thêm bài hát này vào một playlist cụ thể
