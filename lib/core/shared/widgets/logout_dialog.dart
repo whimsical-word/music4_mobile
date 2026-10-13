@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:music4_mobile/core/router/app_router.dart';
 
 import '../../router/route_names.dart';
 import '../../theme/app_colors.dart';
@@ -15,7 +16,9 @@ Future<void> showLogoutDialog(BuildContext context) {
       builder: (context, ref, child) {
         return AlertDialog(
           backgroundColor: AppColors.card,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text(
             'Đăng xuất',
             style: TextStyle(color: AppColors.textPrimary),
@@ -40,17 +43,20 @@ Future<void> showLogoutDialog(BuildContext context) {
                 ),
               ),
               onPressed: () async {
-                // Đọc notifiers TRƯỚC KHI đóng dialog (trước khi ref bị dispose)
                 final authNotifier = ref.read(authNotifierProvider.notifier);
-                final playerNotifier = ref.read(playerNotifierProvider.notifier);
-                
-                Navigator.pop(ctx); // Đóng dialog
-                
-                // Dừng nhạc và reset trạng thái phát ngay lập tức khi đăng xuất
+                final playerNotifier = ref.read(
+                  playerNotifierProvider.notifier,
+                );
+
+                Navigator.pop(ctx);
+
                 await playerNotifier.onUserLoggedOut();
                 await authNotifier.logout();
                 await TokenStorage.instance.clearSession();
-                if (context.mounted) context.go(RouteNames.login);
+                final navContext = rootNavigatorKey.currentContext;
+                if (navContext != null && navContext.mounted) {
+                  navContext.go(RouteNames.login);
+                }
               },
               child: const Text('Đăng xuất'),
             ),
