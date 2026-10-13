@@ -1,3 +1,5 @@
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music4_mobile/features/track_detail/data/repositories/track_detail_repository.dart';
 import 'package:music4_mobile/features/player/data/services/app_audio_handler.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -12,6 +14,8 @@ class MockTrackDetailRepo extends Mock implements TrackDetailRepository {}
 class MockAppAudioHandler extends Mock implements AppAudioHandler {}
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  FlutterSecureStorage.setMockInitialValues({});
   group('[CE190036] PlayerNotifier & Audio Streaming Logic Tests', () {
     late MockAudioPlayer mockAudioPlayer;
     late MockTrackDetailRepo mockTrackDetailRepo;
@@ -40,6 +44,8 @@ void main() {
       
       when(() => mockAudioPlayer.play()).thenAnswer((_) async {});
       when(() => mockAudioPlayer.pause()).thenAnswer((_) async {});
+      when(() => mockAudioPlayer.seek(any())).thenAnswer((_) async {});
+      when(() => mockAudioPlayer.playing).thenReturn(true);
       
       playerNotifier = PlayerNotifier(mockAudioPlayer, mockTrackDetailRepo, mockAppAudioHandler);
     });
@@ -92,6 +98,48 @@ void main() {
       await Future.delayed(Duration.zero);
       
       expect(playerNotifier.state.value!.isPlaying, isFalse);
+    });
+    test('preview mode reaching 30 seconds triggers login prompt and pauses', () async {
+      // Set state to preview mode
+      playerNotifier.state = AsyncData(
+        playerNotifier.state.value!.copyWith(isPreview: true, isPlaying: true),
+      );
+
+      // Emit position >= 30 seconds
+      positionController.add(const Duration(seconds: 30));
+      await Future.delayed(Duration.zero);
+
+      verify(() => mockAudioPlayer.pause()).called(1);
+      expect(playerNotifier.state.value!.isPlaying, isFalse);
+      expect(playerNotifier.state.value!.showLoginPrompt, isTrue);
+
+      // Dismiss prompt
+      playerNotifier.dismissLoginPrompt();
+      expect(playerNotifier.state.value!.showLoginPrompt, isFalse);
+    });
+
+    test('seek past 30s in preview mode should pause and trigger login prompt', () async {
+      when(() => mockAudioPlayer.seek(any())).thenAnswer((_) async {});
+      playerNotifier.state = AsyncData(
+        playerNotifier.state.value!.copyWith(isPreview: true, isPlaying: true),
+      );
+
+      await playerNotifier.seek(const Duration(seconds: 45));
+
+      verify(() => mockAudioPlayer.seek(const Duration(seconds: 30))).called(1);
+      verify(() => mockAudioPlayer.pause()).called(1);
+      expect(playerNotifier.state.value!.showLoginPrompt, isTrue);
+    });
+
+    test('durationStream clamps to 30 seconds in preview mode', () async {
+      playerNotifier.state = AsyncData(
+        playerNotifier.state.value!.copyWith(isPreview: true),
+      );
+
+      durationController.add(const Duration(minutes: 3, seconds: 45));
+      await Future.delayed(Duration.zero);
+
+      expect(playerNotifier.state.value!.duration, const Duration(seconds: 30));
     });
   });
 }

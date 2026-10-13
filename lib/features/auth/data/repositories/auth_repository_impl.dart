@@ -48,17 +48,19 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
   Future<Result<void>> logout() async {
     try {
       final refreshToken = await tokenStorage.getRefreshToken();
-      await remoteDataSource.logout(refreshToken!);
-      await tokenStorage.clearSession();
-      return const Success(null);
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        return const Error(NetworkFailure());
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        try {
+          await remoteDataSource.logout(refreshToken);
+        } catch (_) {
+          // Bỏ qua lỗi backend khi logout (ví dụ: token hết hạn hoặc mất mạng),
+          // client vẫn bắt buộc phải xóa session local
+        }
       }
-      return Error(ServerFailure(e.message ?? 'Lỗi không xác định'));
+      return const Success(null);
     } catch (e) {
       return Error(ServerFailure(e.toString()));
+    } finally {
+      await tokenStorage.clearSession();
     }
   }
 

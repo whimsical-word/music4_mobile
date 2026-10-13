@@ -56,6 +56,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     final isLoading = ref.watch(authNotifierProvider) is AuthLoading;
 
     return Scaffold(
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          tooltip: 'Quay lại Trang chủ',
+          onPressed: () => context.go(RouteNames.home),
+        ),
+      ),
       body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
