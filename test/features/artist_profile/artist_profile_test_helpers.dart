@@ -41,6 +41,16 @@ AuthAuthenticated authenticated(int id) => AuthAuthenticated(
   ),
 );
 
+/// A signed-in ARTIST account: its id belongs to the artists table.
+AuthAuthenticated authenticatedArtist(int id) => AuthAuthenticated(
+  UserEntity(
+    id: id,
+    displayName: 'Artist $id',
+    username: 'artist$id',
+    isArtist: true,
+  ),
+);
+
 // ─── Real backend response shapes ─────────────────────────────────────────
 
 /// `GET /api/artists/3` (ArtistResponseDTO). The backend also sends `email`
@@ -122,16 +132,28 @@ const List<Map<String, dynamic>> realAlbumsJson = [
   },
 ];
 
-/// `GET /api/analytics/artist/3/overview` (ArtistOverviewResponse): nine
-/// days of chart data, only the last seven are shown.
+String _isoDaysAgo(int daysAgo) {
+  final now = DateTime.now();
+  final d = DateTime(now.year, now.month, now.day - daysAgo);
+  String two(int n) => n.toString().padLeft(2, '0');
+  return '${d.year}-${two(d.month)}-${two(d.day)}';
+}
+
+/// `GET /api/analytics/artist/3/overview` (ArtistOverviewResponse): nine days
+/// of chart data ending TODAY (the backend only returns days with activity).
+/// Day `daysAgo` has `(9 - daysAgo) * 10` views, so today has 90.
 final Map<String, dynamic> realOverviewJson = {
   'totalViews': 1500,
   'totalFavorites': 120,
   'totalFollowers': 42,
   'totalComments': 9,
   'chartData': [
-    for (var d = 1; d <= 9; d++)
-      {'day': '2026-10-0$d', 'views': d * 10, 'likes': d},
+    for (var daysAgo = 8; daysAgo >= 0; daysAgo--)
+      {
+        'day': _isoDaysAgo(daysAgo),
+        'views': (9 - daysAgo) * 10,
+        'likes': 9 - daysAgo,
+      },
   ],
   'topTracks': [
     {'id': 11, 'name': 'Lần Cuối', 'viewCount': 100, 'favoriteCount': 5},

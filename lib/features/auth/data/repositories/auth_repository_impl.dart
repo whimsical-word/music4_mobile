@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:music4_mobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
+import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 
@@ -47,20 +48,34 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
   Future<Result<void>> logout() async {
     try {
       final refreshToken = await tokenStorage.getRefreshToken();
-      await remoteDataSource.logout(refreshToken!);
-      await tokenStorage.clearSession();
-      return const Success(null);
-    } on DioException catch (e) {
-      if (e.type == DioExceptionType.connectionTimeout ||
-          e.type == DioExceptionType.connectionError) {
-        return const Error(NetworkFailure());
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        try {
+          await remoteDataSource.logout(refreshToken);
+        } catch (_) {
+          // Bỏ qua lỗi backend khi logout (ví dụ: token hết hạn hoặc mất mạng),
+          // client vẫn bắt buộc phải xóa session local
+        }
       }
-      return Error(ServerFailure(e.message ?? 'Lỗi không xác định'));
+      return const Success(null);
     } catch (e) {
       return Error(ServerFailure(e.toString()));
+    } finally {
+      await tokenStorage.clearSession();
     }
   }
 
   @override
   Future<bool> isLoggedIn() => tokenStorage.hasValidSession();
+
+  @override
+  Future<Result<void>> register(RegisterRequest request) async {
+    try {
+      await remoteDataSource.register(request);
+      return const Success(null);
+    } catch (e) {
+      return Error(
+        ServerFailure(e.toString().replaceAll('Exception: ', '')),
+      );
+    }
+  }
 }
