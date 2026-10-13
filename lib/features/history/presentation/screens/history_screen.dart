@@ -81,6 +81,37 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
+  /// The ⋮ menu (view-only): the track detail page and the artist profile.
+  void _showItemMenu(BuildContext context, HistoryTrackResponse item) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('Xem chi tiết bài hát'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/track/${item.id}');
+              },
+            ),
+            if (item.artists.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Xem hồ sơ nghệ sĩ'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  context.push('/artist/${item.artists.first.id}');
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildHistoryItem(BuildContext context, HistoryTrackResponse item) {
     final artistName = item.artists.isNotEmpty
         ? item.artists.map((e) => e.name).join(', ')
@@ -156,9 +187,8 @@ class HistoryScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-                onPressed: () {
-                  // TODO: Show context menu
-                },
+                tooltip: 'Tùy chọn',
+                onPressed: () => _showItemMenu(context, item),
               ),
             ],
           ),
