@@ -6,11 +6,42 @@ part of 'search_models.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-_SearchItem _$SearchItemFromJson(Map<String, dynamic> json) =>
-    _SearchItem(id: (json['id'] as num).toInt(), name: json['name'] as String);
+_SearchArtistInfo _$SearchArtistInfoFromJson(Map<String, dynamic> json) =>
+    _SearchArtistInfo(
+      id: (json['id'] as num).toInt(),
+      name: json['name'] as String,
+      role: json['role'] as String?,
+    );
+
+Map<String, dynamic> _$SearchArtistInfoToJson(_SearchArtistInfo instance) =>
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'role': instance.role,
+    };
+
+_SearchItem _$SearchItemFromJson(Map<String, dynamic> json) => _SearchItem(
+  id: (json['id'] as num).toInt(),
+  name: json['name'] as String,
+  img: json['img'] as String?,
+  albumName: json['albumName'] as String?,
+  duration: (json['duration'] as num?)?.toInt(),
+  artists:
+      (json['artists'] as List<dynamic>?)
+          ?.map((e) => SearchArtistInfo.fromJson(e as Map<String, dynamic>))
+          .toList() ??
+      const <SearchArtistInfo>[],
+);
 
 Map<String, dynamic> _$SearchItemToJson(_SearchItem instance) =>
-    <String, dynamic>{'id': instance.id, 'name': instance.name};
+    <String, dynamic>{
+      'id': instance.id,
+      'name': instance.name,
+      'img': instance.img,
+      'albumName': instance.albumName,
+      'duration': instance.duration,
+      'artists': instance.artists,
+    };
 
 _SearchPage _$SearchPageFromJson(Map<String, dynamic> json) => _SearchPage(
   content:
