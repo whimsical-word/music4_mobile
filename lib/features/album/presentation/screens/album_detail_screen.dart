@@ -168,17 +168,8 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
                 artist: album.artistName ?? 'Chưa rõ nghệ sĩ',
                 metadata: metadata,
                 imageUrl: album.coverUrl,
-                isFavorite: state.isFavorite,
                 onPlay: () => _playAllTracks(tracks, album.coverUrl, shuffle: false),
                 onShuffle: () => _playAllTracks(tracks, album.coverUrl, shuffle: true),
-                onToggleFavorite: () {
-                  ref.read(albumDetailControllerProvider(_id).notifier).toggleFavorite();
-                  _showNotification(
-                    !state.isFavorite
-                        ? 'Đã lưu album vào Thư viện yêu thích'
-                        : 'Đã xóa album khỏi Thư viện',
-                  );
-                },
                 onShare: () => _showNotification('Đã sao chép liên kết album: music4://album/$_id'),
               ),
               const SizedBox(height: 24),
