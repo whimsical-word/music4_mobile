@@ -72,6 +72,9 @@ class ApiEndpoints {
   static const String top3Artists = '/api/artists/top3';
   static const String albums = '/api/albums';
 
+  // Ratings
+  static const String ratings = '/api/ratings';
+
   // Comments
   static const String comments = '/api/comments';
   static const String trackComments = '/api/comments/track'; // + /{trackId}
