@@ -63,6 +63,7 @@ class TrackActionBar extends StatelessWidget {
           children: [
             const Text('Đánh giá: ', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
             ...List.generate(5, (index) {
+              final isFilled = rating > 0 && index < rating;
               return GestureDetector(
                 onTap: () {
                   HapticFeedback.lightImpact();
@@ -71,13 +72,22 @@ class TrackActionBar extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2.0),
                   child: Icon(
-                    index < rating ? Icons.star_rounded : Icons.star_outline_rounded,
-                    color: index < rating ? AppColors.warning : AppColors.textMuted,
+                    isFilled ? Icons.star_rounded : Icons.star_outline_rounded,
+                    color: isFilled ? AppColors.warning : AppColors.textMuted,
                     size: 24,
                   ),
                 ),
               );
             }),
+            const SizedBox(width: 6),
+            Text(
+              rating > 0 ? '$rating/5' : 'Chưa đánh giá',
+              style: TextStyle(
+                fontSize: 12,
+                color: rating > 0 ? AppColors.warning : AppColors.textMuted,
+                fontWeight: rating > 0 ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
           ],
         ),
       ],
