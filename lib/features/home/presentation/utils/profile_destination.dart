@@ -8,7 +8,11 @@ import '../../../auth/presentation/notifiers/auth_state.dart';
 ///   to the artists table, so it would load the wrong user.
 /// - Listener or guest -> the listener profile.
 String profileRouteFor(AuthState auth) {
-  if (auth is AuthAuthenticated && auth.user.isArtist) {
+  if (auth is! AuthAuthenticated) {
+    return RouteNames.login;
+  }
+
+  if (auth.user.isArtist) {
     return RouteNames.artistProfile.replaceFirst(
       ':id',
       auth.user.id.toString(),

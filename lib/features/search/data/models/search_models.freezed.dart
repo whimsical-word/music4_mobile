@@ -14,9 +14,279 @@ part of 'search_models.dart';
 T _$identity<T>(T value) => value;
 
 /// @nodoc
+mixin _$SearchArtistInfo {
+
+ int get id; String get name; String? get role;
+/// Create a copy of SearchArtistInfo
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$SearchArtistInfoCopyWith<SearchArtistInfo> get copyWith => _$SearchArtistInfoCopyWithImpl<SearchArtistInfo>(this as SearchArtistInfo, _$identity);
+
+  /// Serializes this SearchArtistInfo to a JSON map.
+  Map<String, dynamic> toJson();
+
+
+@override
+bool operator ==(Object other) {
+  final _this = this as SearchArtistInfo;
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchArtistInfo&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.role, _this.role) || other.role == _this.role));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+  final _this = this as SearchArtistInfo;
+  return Object.hash(runtimeType,_this.id,_this.name,_this.role);
+}
+
+@override
+String toString() {
+  final _this = this as SearchArtistInfo;
+  return 'SearchArtistInfo(id: ${_this.id}, name: ${_this.name}, role: ${_this.role})';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $SearchArtistInfoCopyWith<$Res>  {
+  factory $SearchArtistInfoCopyWith(SearchArtistInfo value, $Res Function(SearchArtistInfo) _then) = _$SearchArtistInfoCopyWithImpl;
+@useResult
+$Res call({
+ int id, String name, String? role
+});
+
+
+
+
+}
+/// @nodoc
+class _$SearchArtistInfoCopyWithImpl<$Res>
+    implements $SearchArtistInfoCopyWith<$Res> {
+  _$SearchArtistInfoCopyWithImpl(this._self, this._then);
+
+  final SearchArtistInfo _self;
+  final $Res Function(SearchArtistInfo) _then;
+
+/// Create a copy of SearchArtistInfo
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? role = freezed,}) {
+  return _then(SearchArtistInfo(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,role: freezed == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+}
+
+
+/// Adds pattern-matching-related methods to [SearchArtistInfo].
+extension SearchArtistInfoPatterns on SearchArtistInfo {
+/// A variant of `map` that fallback to returning `orElse`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>(TResult Function( _SearchArtistInfo value)?  $default,{required TResult orElse(),}){
+final _that = this;
+switch (_that) {
+case _SearchArtistInfo() when $default != null:
+return $default(_that);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// Callbacks receives the raw object, upcasted.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case final Subclass2 value:
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult map<TResult extends Object?>(TResult Function( _SearchArtistInfo value)  $default,){
+final _that = this;
+switch (_that) {
+case _SearchArtistInfo():
+return $default(_that);}
+}
+/// A variant of `map` that fallback to returning `null`.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case final Subclass value:
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>(TResult? Function( _SearchArtistInfo value)?  $default,){
+final _that = this;
+switch (_that) {
+case _SearchArtistInfo() when $default != null:
+return $default(_that);case _:
+  return null;
+
+}
+}
+/// A variant of `when` that fallback to an `orElse` callback.
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return orElse();
+/// }
+/// ```
+
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String name,  String? role)?  $default,{required TResult orElse(),}) {final _that = this;
+switch (_that) {
+case _SearchArtistInfo() when $default != null:
+return $default(_that.id,_that.name,_that.role);case _:
+  return orElse();
+
+}
+}
+/// A `switch`-like method, using callbacks.
+///
+/// As opposed to `map`, this offers destructuring.
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case Subclass2(:final field2):
+///     return ...;
+/// }
+/// ```
+
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String name,  String? role)  $default,) {final _that = this;
+switch (_that) {
+case _SearchArtistInfo():
+return $default(_that.id,_that.name,_that.role);}
+}
+/// A variant of `when` that fallback to returning `null`
+///
+/// It is equivalent to doing:
+/// ```dart
+/// switch (sealedClass) {
+///   case Subclass(:final field):
+///     return ...;
+///   case _:
+///     return null;
+/// }
+/// ```
+
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String name,  String? role)?  $default,) {final _that = this;
+switch (_that) {
+case _SearchArtistInfo() when $default != null:
+return $default(_that.id,_that.name,_that.role);case _:
+  return null;
+
+}
+}
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class _SearchArtistInfo implements SearchArtistInfo {
+  const _SearchArtistInfo({required this.id, required this.name, this.role});
+  factory _SearchArtistInfo.fromJson(Map<String, dynamic> json) => _$SearchArtistInfoFromJson(json);
+
+@override final  int id;
+@override final  String name;
+@override final  String? role;
+
+/// Create a copy of SearchArtistInfo
+/// with the given fields replaced by the non-null parameter values.
+@override @JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+_$SearchArtistInfoCopyWith<_SearchArtistInfo> get copyWith => __$SearchArtistInfoCopyWithImpl<_SearchArtistInfo>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$SearchArtistInfoToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchArtistInfo&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.role, role) || other.role == role));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode {
+    return Object.hash(runtimeType,id,name,role);
+}
+
+@override
+String toString() {
+    return 'SearchArtistInfo(id: $id, name: $name, role: $role)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class _$SearchArtistInfoCopyWith<$Res> implements $SearchArtistInfoCopyWith<$Res> {
+  factory _$SearchArtistInfoCopyWith(_SearchArtistInfo value, $Res Function(_SearchArtistInfo) _then) = __$SearchArtistInfoCopyWithImpl;
+@override @useResult
+$Res call({
+ int id, String name, String? role
+});
+
+
+
+
+}
+/// @nodoc
+class __$SearchArtistInfoCopyWithImpl<$Res>
+    implements _$SearchArtistInfoCopyWith<$Res> {
+  __$SearchArtistInfoCopyWithImpl(this._self, this._then);
+
+  final _SearchArtistInfo _self;
+  final $Res Function(_SearchArtistInfo) _then;
+
+/// Create a copy of SearchArtistInfo
+/// with the given fields replaced by the non-null parameter values.
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? role = freezed,}) {
+  return _then(_SearchArtistInfo(
+id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
+as int,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String,role: freezed == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+
+/// @nodoc
 mixin _$SearchItem {
 
- int get id; String get name;
+ int get id; String get name; String? get img; String? get albumName; int? get duration; List<SearchArtistInfo> get artists;
 /// Create a copy of SearchItem
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +300,20 @@ $SearchItemCopyWith<SearchItem> get copyWith => _$SearchItemCopyWithImpl<SearchI
 @override
 bool operator ==(Object other) {
   final _this = this as SearchItem;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchItem&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.name, _this.name) || other.name == _this.name)&&(identical(other.img, _this.img) || other.img == _this.img)&&(identical(other.albumName, _this.albumName) || other.albumName == _this.albumName)&&(identical(other.duration, _this.duration) || other.duration == _this.duration)&&const DeepCollectionEquality().equals(other.artists, _this.artists));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as SearchItem;
-  return Object.hash(runtimeType,_this.id,_this.name);
+  return Object.hash(runtimeType,_this.id,_this.name,_this.img,_this.albumName,_this.duration,const DeepCollectionEquality().hash(_this.artists));
 }
 
 @override
 String toString() {
   final _this = this as SearchItem;
-  return 'SearchItem(id: ${_this.id}, name: ${_this.name})';
+  return 'SearchItem(id: ${_this.id}, name: ${_this.name}, img: ${_this.img}, albumName: ${_this.albumName}, duration: ${_this.duration}, artists: ${_this.artists})';
 }
 
 
@@ -54,7 +324,7 @@ abstract mixin class $SearchItemCopyWith<$Res>  {
   factory $SearchItemCopyWith(SearchItem value, $Res Function(SearchItem) _then) = _$SearchItemCopyWithImpl;
 @useResult
 $Res call({
- int id, String name
+ int id, String name, String? img, String? albumName, int? duration, List<SearchArtistInfo> artists
 });
 
 
@@ -71,11 +341,15 @@ class _$SearchItemCopyWithImpl<$Res>
 
 /// Create a copy of SearchItem
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? name = null,Object? img = freezed,Object? albumName = freezed,Object? duration = freezed,Object? artists = null,}) {
   return _then(SearchItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,
+as String,img: freezed == img ? _self.img : img // ignore: cast_nullable_to_non_nullable
+as String?,albumName: freezed == albumName ? _self.albumName : albumName // ignore: cast_nullable_to_non_nullable
+as String?,duration: freezed == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
+as int?,artists: null == artists ? _self.artists : artists // ignore: cast_nullable_to_non_nullable
+as List<SearchArtistInfo>,
   ));
 }
 
@@ -157,10 +431,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String name)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  String name,  String? img,  String? albumName,  int? duration,  List<SearchArtistInfo> artists)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SearchItem() when $default != null:
-return $default(_that.id,_that.name);case _:
+return $default(_that.id,_that.name,_that.img,_that.albumName,_that.duration,_that.artists);case _:
   return orElse();
 
 }
@@ -178,10 +452,10 @@ return $default(_that.id,_that.name);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String name)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  String name,  String? img,  String? albumName,  int? duration,  List<SearchArtistInfo> artists)  $default,) {final _that = this;
 switch (_that) {
 case _SearchItem():
-return $default(_that.id,_that.name);}
+return $default(_that.id,_that.name,_that.img,_that.albumName,_that.duration,_that.artists);}
 }
 /// A variant of `when` that fallback to returning `null`
 ///
@@ -195,10 +469,10 @@ return $default(_that.id,_that.name);}
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String name)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  String name,  String? img,  String? albumName,  int? duration,  List<SearchArtistInfo> artists)?  $default,) {final _that = this;
 switch (_that) {
 case _SearchItem() when $default != null:
-return $default(_that.id,_that.name);case _:
+return $default(_that.id,_that.name,_that.img,_that.albumName,_that.duration,_that.artists);case _:
   return null;
 
 }
@@ -210,11 +484,21 @@ return $default(_that.id,_that.name);case _:
 @JsonSerializable()
 
 class _SearchItem implements SearchItem {
-  const _SearchItem({required this.id, required this.name});
+  const _SearchItem({required this.id, required this.name, this.img, this.albumName, this.duration,  List<SearchArtistInfo> artists = const <SearchArtistInfo>[]}): _artists = artists;
   factory _SearchItem.fromJson(Map<String, dynamic> json) => _$SearchItemFromJson(json);
 
 @override final  int id;
 @override final  String name;
+@override final  String? img;
+@override final  String? albumName;
+@override final  int? duration;
+ final  List<SearchArtistInfo> _artists;
+@override@JsonKey() List<SearchArtistInfo> get artists {
+  if (_artists is EqualUnmodifiableListView) return _artists;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_artists);
+}
+
 
 /// Create a copy of SearchItem
 /// with the given fields replaced by the non-null parameter values.
@@ -229,18 +513,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchItem&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchItem&&(identical(other.id, id) || other.id == id)&&(identical(other.name, name) || other.name == name)&&(identical(other.img, img) || other.img == img)&&(identical(other.albumName, albumName) || other.albumName == albumName)&&(identical(other.duration, duration) || other.duration == duration)&&const DeepCollectionEquality().equals(other.artists, _artists));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,name);
+    return Object.hash(runtimeType,id,name,img,albumName,duration,const DeepCollectionEquality().hash(_artists));
 }
 
 @override
 String toString() {
-    return 'SearchItem(id: $id, name: $name)';
+    return 'SearchItem(id: $id, name: $name, img: $img, albumName: $albumName, duration: $duration, artists: $artists)';
 }
 
 
@@ -251,7 +535,7 @@ abstract mixin class _$SearchItemCopyWith<$Res> implements $SearchItemCopyWith<$
   factory _$SearchItemCopyWith(_SearchItem value, $Res Function(_SearchItem) _then) = __$SearchItemCopyWithImpl;
 @override @useResult
 $Res call({
- int id, String name
+ int id, String name, String? img, String? albumName, int? duration, List<SearchArtistInfo> artists
 });
 
 
@@ -268,11 +552,15 @@ class __$SearchItemCopyWithImpl<$Res>
 
 /// Create a copy of SearchItem
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? name = null,Object? img = freezed,Object? albumName = freezed,Object? duration = freezed,Object? artists = null,}) {
   return _then(_SearchItem(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as int,name: null == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
-as String,
+as String,img: freezed == img ? _self.img : img // ignore: cast_nullable_to_non_nullable
+as String?,albumName: freezed == albumName ? _self.albumName : albumName // ignore: cast_nullable_to_non_nullable
+as String?,duration: freezed == duration ? _self.duration : duration // ignore: cast_nullable_to_non_nullable
+as int?,artists: null == artists ? _self._artists : artists // ignore: cast_nullable_to_non_nullable
+as List<SearchArtistInfo>,
   ));
 }
 

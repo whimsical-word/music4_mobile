@@ -79,8 +79,29 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
         gender: gender,
         avatarUrl: avatarFilePath,
       );
+      await ref
+          .read(authNotifierProvider.notifier)
+          .updateUser(
+            displayName: updatedProfile.displayName,
+            imageUrl: updatedProfile.avatarUrl,
+          );
       return UserProfileState(profile: updatedProfile);
     });
+  }
+
+  Future<void> refresh() async {
+    final authState = ref.read(authNotifierProvider);
+    if (authState is! AuthAuthenticated) return;
+
+    try {
+      final updatedProfile = await _fetchProfile(authState.user.id);
+      state = AsyncData(UserProfileState(profile: updatedProfile.profile));
+    } catch (e, st) {
+      // Nếu có dữ liệu cũ thì giữ nguyên, không làm crash giao diện
+      if (!state.hasValue) {
+        state = AsyncError(e, st);
+      }
+    }
   }
 }
 
