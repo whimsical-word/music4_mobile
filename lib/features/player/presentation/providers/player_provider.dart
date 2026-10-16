@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:dio/dio.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../../core/constants/api_endpoints.dart';
 import '../../data/services/audio_cache_service.dart';
 import '../../domain/models/player_state_data.dart';
@@ -299,7 +300,9 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  if (_loadId == myLoadId) {
   debugPrint('[PLAYER_ERROR] Lỗi phát nhạc: $e\n$st');
   final errStr = e.toString();
-  final errorMsg = errStr.contains('SocketException') || errStr.contains('Failed host lookup')
+  final errorMsg = errStr.contains('SocketException') ||
+          errStr.contains('Failed host lookup') ||
+          errStr.contains('Mất kết nối mạng')
       ? "Mất kết nối mạng. Bài hát này chưa được lưu để nghe offline."
       : "Không thể tải bài hát.";
   state = AsyncError(errorMsg, st);
@@ -322,12 +325,29 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
     final cacheFile = await AudioCacheService.instance.getCacheFile(item.id);
     final isCached = await AudioCacheService.instance.isTrackCached(item.id);
 
-    if (isCached) {
-      debugPrint('[AUDIO_CACHE] Phát từ file cache cục bộ (hoàn toàn offline): ${cacheFile.path}');
-      state = state.whenData((data) => data.copyWith(isOfflineCached: true));
-      return AudioSource.file(cacheFile.path, tag: item);
+    // Kiểm tra kết nối mạng thực tế
+    bool isOnline = true;
+    try {
+      final connectivity = await Connectivity().checkConnectivity();
+      isOnline = connectivity.any((r) => r != ConnectivityResult.none);
+    } catch (_) {
+      isOnline = true;
     }
 
+    // Trường hợp 1: Không có kết nối mạng (mất mạng từ đầu)
+    if (!isOnline) {
+      if (isCached) {
+        debugPrint('[AUDIO_CACHE] Đang mất mạng: Phát từ file cache cục bộ (offline mode): ${cacheFile.path}');
+        state = state.whenData((data) => data.copyWith(isOfflineCached: true));
+        return AudioSource.file(cacheFile.path, tag: item);
+      } else {
+        debugPrint('[AUDIO_CACHE] Mất kết nối mạng và bài hát chưa được lưu vào cache.');
+        state = state.whenData((data) => data.copyWith(isOfflineCached: false));
+        throw 'Mất kết nối mạng. Bài hát này chưa được lưu để nghe offline.';
+      }
+    }
+
+    // Trường hợp 2: Có mạng bình thường (Online Streaming) -> Tuyệt đối không gắn nhãn Offline
     state = state.whenData((data) => data.copyWith(isOfflineCached: false));
 
     // Bóc tách S3 Presigned URL từ backend 307 TEMPORARY_REDIRECT (nếu là luồng Full có token)

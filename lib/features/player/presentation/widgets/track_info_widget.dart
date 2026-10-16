@@ -51,7 +51,7 @@ class TrackInfoWidget extends StatelessWidget {
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.download_done_rounded, size: 12, color: AppColors.primary),
+                          Icon(Icons.wifi_off_rounded, size: 12, color: AppColors.primary),
                           SizedBox(width: 4),
                           Text(
                             'Offline',
