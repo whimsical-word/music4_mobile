@@ -8,70 +8,35 @@ class NotificationRepository {
 
   NotificationRepository(this._dio);
 
-  Future<List<NotificationModel>> getNotifications(String userId) async {
-    try {
-      final response = await _dio.get(
-        '${ApiEndpoints.baseUrl}/api/notifications/user/$userId',
-      );
-
-      // Dữ liệu thô từ API
-
-      final dynamic rawData = response.data;
-      final List<dynamic> data = rawData is List
-          ? rawData
-          : (rawData['data'] ?? rawData['content'] ?? []);
-
-      return data.map((json) {
-        // Xử lý ngày tháng từ Spring Boot (có thể là chuỗi ISO hoặc Mảng [năm, tháng, ngày, giờ...])
-        DateTime parsedDate = DateTime.now();
-        if (json['createdAt'] != null) {
-          final rawDate = json['createdAt'];
-          if (rawDate is List && rawDate.length >= 3) {
-            parsedDate = DateTime(
-              rawDate[0], // Year
-              rawDate[1], // Month
-              rawDate[2], // Day
-              rawDate.length > 3 ? rawDate[3] : 0, // Hour
-              rawDate.length > 4 ? rawDate[4] : 0, // Minute
-              rawDate.length > 5 ? rawDate[5] : 0, // Second
-            );
-          } else {
-            parsedDate =
-                DateTime.tryParse(rawDate.toString()) ?? DateTime.now();
-          }
-        }
-
-        // Backend của bạn trả về: artistName, trackName, content thay vì title/message
-        final artist = json['artistName'];
-        final track = json['trackName'];
-        final content = json['content'] ?? 'Bạn có một thông báo mới.';
-
-        final finalTitle = artist != null
-            ? 'Từ: $artist'
-            : 'Thông báo hệ thống';
-        final finalMessage = track != null ? '$content ($track)' : content;
-
-        return NotificationModel(
-          id: json['id'].toString(), // Ép an toàn kiểu int -> String
-          title: finalTitle,
-          message: finalMessage,
-          isRead: json['isRead'] ?? false,
-          createdAt: parsedDate,
-        );
-      }).toList();
-    } on DioException catch (e) {
-      throw Exception(_handleDioError(e));
-    } catch (e) {
-      throw Exception('Lỗi không xác định: $e');
-    }
+  /// GET /api/notifications/user/{userId}
+  Future<List<NotificationModel>> getNotifications(int userId) async {
+    return _guard(() async {
+      final response = await _dio.get('${ApiEndpoints.notifications}/$userId');
+      final raw = response.data;
+      final List<dynamic> data = raw is List
+          ? raw
+          : (raw['data'] ?? raw['content'] ?? const []) as List<dynamic>;
+      return data
+          .map((e) => NotificationModel.fromJson(e as Map<String, dynamic>))
+          .toList();
+    });
   }
 
-  Future<void> subscribe(String userId, String fcmToken) async {
+  /// PUT /api/notifications/{id}/read
+  Future<void> markAsRead(int id) =>
+      _guard(() => _dio.put('${ApiEndpoints.notificationBase}/$id/read'));
+
+  /// DELETE /api/notifications/{id}
+  Future<void> deleteNotification(int id) =>
+      _guard(() => _dio.delete('${ApiEndpoints.notificationBase}/$id'));
+
+  /// DELETE /api/notifications/clear-all (BE lấy user từ JWT)
+  Future<void> clearAll() =>
+      _guard(() => _dio.delete('${ApiEndpoints.notificationBase}/clear-all'));
+
+  Future<T> _guard<T>(Future<T> Function() request) async {
     try {
-      await _dio.post(
-        '${ApiEndpoints.baseUrl}/api/notifications/subscribe/$userId',
-        data: {'fcmToken': fcmToken},
-      );
+      return await request();
     } on DioException catch (e) {
       throw Exception(_handleDioError(e));
     } catch (e) {

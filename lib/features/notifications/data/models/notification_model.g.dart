@@ -8,18 +8,26 @@ part of 'notification_model.dart';
 
 _NotificationModel _$NotificationModelFromJson(Map<String, dynamic> json) =>
     _NotificationModel(
-      id: json['id'] as String,
-      title: json['title'] as String,
-      message: json['message'] as String,
+      id: (json['id'] as num).toInt(),
+      trackId: (json['trackId'] as num?)?.toInt(),
+      trackName: json['trackName'] as String?,
+      albumId: (json['albumId'] as num?)?.toInt(),
+      albumName: json['albumName'] as String?,
+      artistName: json['artistName'] as String?,
+      content: json['content'] as String? ?? '',
       isRead: json['isRead'] as bool? ?? false,
-      createdAt: DateTime.parse(json['createdAt'] as String),
+      createdAt: parseNotificationDate(json['createdAt']),
     );
 
 Map<String, dynamic> _$NotificationModelToJson(_NotificationModel instance) =>
     <String, dynamic>{
       'id': instance.id,
-      'title': instance.title,
-      'message': instance.message,
+      'trackId': instance.trackId,
+      'trackName': instance.trackName,
+      'albumId': instance.albumId,
+      'albumName': instance.albumName,
+      'artistName': instance.artistName,
+      'content': instance.content,
       'isRead': instance.isRead,
-      'createdAt': instance.createdAt.toIso8601String(),
+      'createdAt': _dateToJson(instance.createdAt),
     };
