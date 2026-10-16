@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/utils/image_url_helper.dart';
+import '../../../artist_profile/presentation/utils/count_format.dart';
 import '../../data/models/home_track_item.dart';
 import '../../data/models/track_detail_model.dart';
 import '../../data/models/track_suggest_model.dart';
@@ -65,7 +66,7 @@ class HomeFeedController extends AutoDisposeAsyncNotifier<HomeFeedState> {
             coverUrl: ImageUrlHelper.resolve(e.img),
             duration: _formatDuration(e.duration ?? 0),
             durationSeconds: e.duration ?? 0,
-            playsCount: e.viewCount.toString(),
+            playsCount: formatCount(e.viewCount),
           ),
         )
         .toList();
