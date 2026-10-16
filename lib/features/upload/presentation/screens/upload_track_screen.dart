@@ -5,6 +5,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../providers/upload_provider.dart';
 import '../widgets/file_picker_area.dart';
 import '../widgets/image_crop_dialog.dart';
@@ -193,6 +195,54 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
+
+    if (!isArtist) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Artist Studio - Upload Nhạc'),
+          centerTitle: true,
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.lock_outline,
+                  size: 64,
+                  color: AppColors.textMuted,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Chỉ dành cho Nghệ sĩ',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Tính năng Tải lên bài hát chỉ dành riêng cho tài khoản Nghệ sĩ (Artist). Vui lòng đăng nhập bằng tài khoản Nghệ sĩ để truy cập.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.of(context).maybePop(),
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Quay lại'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final uploadState = ref.watch(uploadNotifierProvider);
     final isUploading = uploadState.isLoading || _isValidatingAudio;
 
