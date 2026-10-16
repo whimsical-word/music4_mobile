@@ -216,8 +216,12 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // Bắt đầu phiên nghe mới (bỏ phiên cũ => skip không bị tính lượt nghe).
  _tracker?.startTrack(trackId: item.id, duration: item.duration);
 
- final token = await TokenStorage.instance.getAccessToken();
- final cachedUser = await TokenStorage.instance.getUser();
+ String? token;
+ dynamic cachedUser;
+ try {
+  token = await TokenStorage.instance.getAccessToken();
+  cachedUser = await TokenStorage.instance.getUser();
+ } catch (_) {}
  final bool isPreview = token == null || token.isEmpty;
  final bool isArtist = cachedUser?.isArtist ?? false;
 
