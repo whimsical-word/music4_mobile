@@ -2,8 +2,8 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/constants/api_endpoints.dart';
-import '../../../../core/network/dio_client.dart';
 import '../../data/services/audio_cache_service.dart';
 import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
@@ -216,7 +216,9 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  _tracker?.startTrack(trackId: item.id, duration: item.duration);
 
  final token = await TokenStorage.instance.getAccessToken();
+ final cachedUser = await TokenStorage.instance.getUser();
  final bool isPreview = token == null || token.isEmpty;
+ final bool isArtist = cachedUser?.isArtist ?? false;
 
  // Cập nhật UI ngay lập tức (Optimistic UI)
  state = state.whenData((data) => data.copyWith(
@@ -243,12 +245,14 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
       duration: item.duration,
     );
 
-    // Gọi API check isFavorite ngầm (không chặn UI)
-    _trackDetailRepo.checkIsFavorite(int.tryParse(item.id) ?? 0).then((isLiked) {
-      if (mounted && _loadId == myLoadId) {
-        state = state.whenData((data) => data.copyWith(isLiked: isLiked));
-      }
-    }).catchError((_) {});
+    // Gọi API check isFavorite ngầm (chỉ gọi cho Listener/User, Artist không có Favorite)
+    if (!isArtist) {
+      _trackDetailRepo.checkIsFavorite(int.tryParse(item.id) ?? 0).then((isLiked) {
+        if (mounted && _loadId == myLoadId) {
+          state = state.whenData((data) => data.copyWith(isLiked: isLiked));
+        }
+      }).catchError((_) {});
+    }
 
 
  try {
@@ -293,6 +297,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  } catch (e, st) {
  // Chỉ báo lỗi nếu đây vẫn là lần load hiện hành (không bị supersede)
  if (_loadId == myLoadId) {
+  debugPrint('[PLAYER_ERROR] Lỗi phát nhạc: $e\n$st');
   final errStr = e.toString();
   final errorMsg = errStr.contains('SocketException') || errStr.contains('Failed host lookup')
       ? "Mất kết nối mạng. Bài hát này chưa được lưu để nghe offline."
@@ -325,26 +330,55 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
     state = state.whenData((data) => data.copyWith(isOfflineCached: false));
 
+    // Bóc tách S3 Presigned URL từ backend 307 TEMPORARY_REDIRECT (nếu là luồng Full có token)
+    final finalUrl = isPreview ? streamUrl : await _resolveRedirectUrl(streamUrl);
+
     if (Platform.isWindows || isPreview) {
       if (Platform.isWindows && !isPreview) {
-        _cacheTrackForWindows(item.id, streamUrl, cacheFile);
+        _cacheTrackForWindows(item.id, finalUrl, cacheFile);
       }
-      return AudioSource.uri(Uri.parse(streamUrl), tag: item);
+      return AudioSource.uri(Uri.parse(finalUrl), tag: item);
     }
 
     // Android / iOS: Dùng LockCachingAudioSource vừa stream vừa ghi cache an toàn
     // ignore: experimental_member_use
     return LockCachingAudioSource(
-      Uri.parse(streamUrl),
+      Uri.parse(finalUrl),
       tag: item,
       cacheFile: cacheFile,
     );
   }
 
+  /// Bóc tách URL S3 Presigned từ mã chuyển hướng HTTP 307 của Backend
+  /// Giúp trình phát nhạc kết nối trực tiếp S3 mà không bị lỗi cross-protocol redirect.
+  Future<String> _resolveRedirectUrl(String url) async {
+    try {
+      final client = HttpClient();
+      final uri = Uri.parse(url);
+      final request = await client.getUrl(uri);
+      request.followRedirects = false;
+      final response = await request.close();
+      if (response.isRedirect ||
+          response.statusCode == HttpStatus.temporaryRedirect ||
+          response.statusCode == HttpStatus.movedTemporarily ||
+          response.statusCode == HttpStatus.seeOther) {
+        final location = response.headers.value(HttpHeaders.locationHeader);
+        if (location != null && location.isNotEmpty) {
+          debugPrint('[AUDIO_STREAM] Resolved S3 Presigned URL thành công.');
+          return location;
+        }
+      }
+    } catch (e) {
+      debugPrint('[AUDIO_STREAM] Không thể bóc tách S3 redirect: $e');
+    }
+    return url;
+  }
+
   void _cacheTrackForWindows(String trackId, String streamUrl, File cacheFile) {
     if (cacheFile.existsSync() && cacheFile.lengthSync() > 102400) return;
     final tmpFile = File('${cacheFile.path}.tmp');
-    DioClient().dio.download(
+    // Dùng Dio mới không interceptor để tránh gửi kèm Authorization header tới S3
+    Dio().download(
       streamUrl,
       tmpFile.path,
     ).then((_) async {
@@ -451,6 +485,9 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // Play / Pause / Seek
  // ══════════════════════════════════════════════════════════
    Future<void> toggleFavorite() async {
+    final cachedUser = await TokenStorage.instance.getUser();
+    if (cachedUser?.isArtist == true) return;
+
     final currentState = state.value;
     if (currentState == null || currentState.currentTrackId == null) return;
     
@@ -460,7 +497,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
         state = AsyncValue.data(currentState.copyWith(isLiked: isLiked));
       }
     } catch (e) {
-      debugPrint('Lỗi thả tim: ');
+      debugPrint('Lỗi thả tim: $e');
     }
   }
 
