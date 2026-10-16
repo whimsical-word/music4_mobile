@@ -169,11 +169,15 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
 
   void _onUpload() {
     if (_selectedAudioFile == null || _selectedCoverFile == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng chọn đủ File Âm thanh và Ảnh bìa!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng chọn đủ File Âm thanh và Ảnh bìa!')),
+      );
       return;
     }
     if (_titleController.text.trim().isEmpty || _selectedCategory == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Vui lòng nhập Tên bài hát và Thể loại!')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Vui lòng nhập Tên bài hát và Thể loại!')),
+      );
       return;
     }
 
@@ -190,11 +194,16 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
   @override
   Widget build(BuildContext context) {
     final uploadState = ref.watch(uploadNotifierProvider);
-    final isUploading = uploadState is AsyncLoading || _isValidatingAudio;
+    final isUploading = uploadState.isLoading || _isValidatingAudio;
 
-    ref.listen(uploadNotifierProvider, (_, next) {
-      if (next is AsyncData) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Tải lên thành công! Bài hát đang chờ duyệt.')));
+    ref.listen<UploadState>(uploadNotifierProvider, (previous, next) {
+      if (next.isSuccess && (previous == null || !previous.isSuccess)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Tải lên thành công! Bài hát đang chờ duyệt.'),
+            backgroundColor: Colors.green,
+          ),
+        );
         setState(() {
           _selectedAudioFile = null;
           _audioFileName = null;
@@ -206,8 +215,14 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
         _titleController.clear();
         _albumController.clear();
         _collabArtistsController.clear();
-      } else if (next is AsyncError) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(next.error.toString())));
+        ref.read(uploadNotifierProvider.notifier).reset();
+      } else if (next.error != null && next.error != previous?.error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(next.error!),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
       }
     });
 
@@ -229,7 +244,8 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
               onAudioTap: _pickAudio,
             ),
             const SizedBox(height: 24),
-            if (uploadState is AsyncLoading) const UploadProgressWidget(progress: 0.5),
+            if (uploadState.isLoading)
+              UploadProgressWidget(progress: uploadState.progress),
             UploadFormFields(
               titleController: _titleController,
               collabArtistsController: _collabArtistsController,
@@ -249,10 +265,28 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
                   foregroundColor: Colors.black,
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 ),
-                child: Text(
-                  isUploading ? 'ĐANG XỬ LÝ...' : 'TẢI LÊN & XUẤT BẢN',
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
+                child: isUploading
+                    ? Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(
+                            _isValidatingAudio
+                                ? 'ĐANG KIỂM TRA FILE...'
+                                : 'ĐANG TẢI LÊN (${(uploadState.progress * 100).toInt()}%)...',
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      )
+                    : const Text(
+                        'TẢI LÊN & XUẤT BẢN',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
               ),
             ),
           ],
