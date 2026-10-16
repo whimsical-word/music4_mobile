@@ -2,8 +2,9 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:path_provider/path_provider.dart';
 import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/network/dio_client.dart';
+import '../../data/services/audio_cache_service.dart';
 import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
@@ -266,19 +267,12 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  debugPrint('[AUDIO_STREAM] Track: ${item.id} | Mode: ${isPreview ? "PREVIEW 30s (Guest)" : "FULL (Logged in)"} | URL: $streamUrl');
 
- AudioSource source;
- if (Platform.isWindows || isPreview) {
-  source = AudioSource.uri(Uri.parse(streamUrl), tag: item);
- } else {
-  final cacheDir = await getApplicationDocumentsDirectory();
-  if (_loadId != myLoadId) return;
-  // ignore: experimental_member_use
-  source = LockCachingAudioSource(
-  Uri.parse(streamUrl),
-  tag: item,
-  cacheFile: File('${cacheDir.path}/music4_cache_${item.id}.mp3'),
-  );
- }
+ final source = await _createAudioSource(
+  item: item,
+  streamUrl: streamUrl,
+  isPreview: isPreview,
+ );
+ if (_loadId != myLoadId) return;
 
  // Ép player reset về 0 để tránh kẹt trạng thái
  await _player.setAudioSource(source, initialPosition: Duration.zero);
@@ -299,7 +293,11 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  } catch (e, st) {
  // Chỉ báo lỗi nếu đây vẫn là lần load hiện hành (không bị supersede)
  if (_loadId == myLoadId) {
-  state = AsyncError("Không thể tải bài hát.", st);
+  final errStr = e.toString();
+  final errorMsg = errStr.contains('SocketException') || errStr.contains('Failed host lookup')
+      ? "Mất kết nối mạng. Bài hát này chưa được lưu để nghe offline."
+      : "Không thể tải bài hát.";
+  state = AsyncError(errorMsg, st);
  }
  } finally {
  if (_loadId == myLoadId) {
@@ -307,6 +305,59 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  }
  }
  }
+
+  // ══════════════════════════════════════════════════════════
+  // Offline Audio Cache Helper (UC42)
+  // ══════════════════════════════════════════════════════════
+  Future<AudioSource> _createAudioSource({
+    required TrackQueueItem item,
+    required String streamUrl,
+    required bool isPreview,
+  }) async {
+    final cacheFile = await AudioCacheService.instance.getCacheFile(item.id);
+    final isCached = await AudioCacheService.instance.isTrackCached(item.id);
+
+    if (isCached) {
+      debugPrint('[AUDIO_CACHE] Phát từ file cache cục bộ (hoàn toàn offline): ${cacheFile.path}');
+      state = state.whenData((data) => data.copyWith(isOfflineCached: true));
+      return AudioSource.file(cacheFile.path, tag: item);
+    }
+
+    state = state.whenData((data) => data.copyWith(isOfflineCached: false));
+
+    if (Platform.isWindows || isPreview) {
+      if (Platform.isWindows && !isPreview) {
+        _cacheTrackForWindows(item.id, streamUrl, cacheFile);
+      }
+      return AudioSource.uri(Uri.parse(streamUrl), tag: item);
+    }
+
+    // Android / iOS: Dùng LockCachingAudioSource vừa stream vừa ghi cache an toàn
+    // ignore: experimental_member_use
+    return LockCachingAudioSource(
+      Uri.parse(streamUrl),
+      tag: item,
+      cacheFile: cacheFile,
+    );
+  }
+
+  void _cacheTrackForWindows(String trackId, String streamUrl, File cacheFile) {
+    if (cacheFile.existsSync() && cacheFile.lengthSync() > 102400) return;
+    final tmpFile = File('${cacheFile.path}.tmp');
+    DioClient().dio.download(
+      streamUrl,
+      tmpFile.path,
+    ).then((_) async {
+      if (await tmpFile.exists() && await tmpFile.length() > 102400) {
+        await tmpFile.rename(cacheFile.path);
+        debugPrint('[WINDOWS_CACHE] Đã lưu cache offline cho bài hát $trackId (${cacheFile.lengthSync()} bytes)');
+      } else if (await tmpFile.exists()) {
+        await tmpFile.delete();
+      }
+    }).catchError((e) {
+      debugPrint('[WINDOWS_CACHE] Lỗi tải cache ngầm trên Windows: $e');
+    });
+  }
 
  // ══════════════════════════════════════════════════════════
  // Public API: Khởi tạo playlist
@@ -472,19 +523,12 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
       final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=$token';
       debugPrint('[AUDIO_STREAM] UPGRADE TO FULL: Track ${item.id} -> $streamUrl (resuming at $seekTo)');
 
-      AudioSource source;
-      if (Platform.isWindows) {
-        source = AudioSource.uri(Uri.parse(streamUrl), tag: item);
-      } else {
-        final cacheDir = await getApplicationDocumentsDirectory();
-        if (_loadId != myLoadId) return;
-        // ignore: experimental_member_use
-        source = LockCachingAudioSource(
-          Uri.parse(streamUrl),
-          tag: item,
-          cacheFile: File('${cacheDir.path}/music4_cache_${item.id}.mp3'),
-        );
-      }
+      final source = await _createAudioSource(
+        item: item,
+        streamUrl: streamUrl,
+        isPreview: false,
+      );
+      if (_loadId != myLoadId) return;
 
       await _player.setAudioSource(source, initialPosition: seekTo);
       if (_loadId != myLoadId) return;
