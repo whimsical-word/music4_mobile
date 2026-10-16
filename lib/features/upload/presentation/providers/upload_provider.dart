@@ -40,9 +40,9 @@ class UploadNotifier extends StateNotifier<UploadState> {
 
   Future<void> uploadTrack({
     required String title,
-    required String categoryId,
+    required List<int> categoryIds,
     String? albumId,
-    String? collabArtists,
+    List<int>? artistIds,
     required String audioFilePath,
     required String coverFilePath,
   }) async {
@@ -50,9 +50,9 @@ class UploadNotifier extends StateNotifier<UploadState> {
       state = state.copyWith(isLoading: true, progress: 0.0, error: null, isSuccess: false);
       await _repository.uploadTrack(
         title: title,
-        categoryId: categoryId,
+        categoryIds: categoryIds,
         albumId: albumId,
-        collabArtists: collabArtists,
+        artistIds: artistIds,
         audioFilePath: audioFilePath,
         coverFilePath: coverFilePath,
         onSendProgress: (sent, total) {

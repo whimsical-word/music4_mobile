@@ -47,9 +47,9 @@ void main() {
       await expectLater(
         uploadRepository.uploadTrack(
           title: 'Test Song',
-          categoryId: '1',
+          categoryIds: [1],
           albumId: '2',
-          collabArtists: 'Artist B',
+          artistIds: [2],
           audioFilePath: dummyAudio.path,
           coverFilePath: dummyCover.path,
         ),
@@ -85,7 +85,7 @@ void main() {
       expect(
         () => uploadRepository.uploadTrack(
           title: 'Existing Song',
-          categoryId: '1',
+          categoryIds: [1],
           audioFilePath: dummyAudio.path,
           coverFilePath: dummyCover.path,
         ),
@@ -113,7 +113,7 @@ void main() {
       expect(
         () => uploadRepository.uploadTrack(
           title: 'Large Song',
-          categoryId: '1',
+          categoryIds: [1],
           audioFilePath: dummyAudio.path,
           coverFilePath: dummyCover.path,
         ),
@@ -141,9 +141,9 @@ void main() {
     test('uploadTrack success updates state to isSuccess = true and progress = 1.0', () async {
       when(() => mockRepo.uploadTrack(
             title: any(named: 'title'),
-            categoryId: any(named: 'categoryId'),
+            categoryIds: any(named: 'categoryIds'),
             albumId: any(named: 'albumId'),
-            collabArtists: any(named: 'collabArtists'),
+            artistIds: any(named: 'artistIds'),
             audioFilePath: any(named: 'audioFilePath'),
             coverFilePath: any(named: 'coverFilePath'),
             onSendProgress: any(named: 'onSendProgress'),
@@ -154,7 +154,7 @@ void main() {
 
       await notifier.uploadTrack(
         title: 'New Track',
-        categoryId: '1',
+        categoryIds: [1],
         audioFilePath: dummyAudio.path,
         coverFilePath: dummyCover.path,
       );
@@ -168,9 +168,9 @@ void main() {
     test('uploadTrack failure updates error and sets isLoading = false', () async {
       when(() => mockRepo.uploadTrack(
             title: any(named: 'title'),
-            categoryId: any(named: 'categoryId'),
+            categoryIds: any(named: 'categoryIds'),
             albumId: any(named: 'albumId'),
-            collabArtists: any(named: 'collabArtists'),
+            artistIds: any(named: 'artistIds'),
             audioFilePath: any(named: 'audioFilePath'),
             coverFilePath: any(named: 'coverFilePath'),
             onSendProgress: any(named: 'onSendProgress'),
@@ -178,7 +178,7 @@ void main() {
 
       await notifier.uploadTrack(
         title: 'New Track',
-        categoryId: '1',
+        categoryIds: [1],
         audioFilePath: dummyAudio.path,
         coverFilePath: dummyCover.path,
       );

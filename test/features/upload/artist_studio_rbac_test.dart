@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:just_audio/just_audio.dart';
 
-import 'package:music4_mobile/core/network/dio_client.dart';
 import 'package:music4_mobile/core/theme/app_theme.dart';
 import 'package:music4_mobile/features/album/presentation/screens/album_management_screen.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
@@ -15,7 +14,6 @@ import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart'
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
 import 'package:music4_mobile/features/home/data/sources/home_mock_data.dart';
-import 'package:music4_mobile/features/home/data/sources/home_repository.dart';
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_controller.dart';
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_state.dart';
 import 'package:music4_mobile/features/home/presentation/screens/home_screen.dart';

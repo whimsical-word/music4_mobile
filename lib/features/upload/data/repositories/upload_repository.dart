@@ -17,9 +17,9 @@ class UploadRepository {
 
   Future<void> uploadTrack({
     required String title,
-    required String categoryId,
+    required List<int> categoryIds,
     String? albumId,
-    String? collabArtists,
+    List<int>? artistIds,
     required String audioFilePath,
     required String coverFilePath,
     ProgressCallback? onSendProgress,
@@ -28,14 +28,18 @@ class UploadRepository {
       final audioFileName = audioFilePath.split(RegExp(r'[\\/]')).last;
       final coverFileName = coverFilePath.split(RegExp(r'[\\/]')).last;
 
-      final formData = FormData.fromMap({
+      final Map<String, dynamic> formMap = {
         'title': title,
-        'categoryId': categoryId,
-        if (albumId != null && albumId.isNotEmpty) 'albumId': albumId,
-        if (collabArtists != null && collabArtists.isNotEmpty) 'collabArtists': collabArtists,
+        'categoryIds': categoryIds,
+        if (albumId != null && albumId.trim().isNotEmpty)
+          'albumId': int.tryParse(albumId.trim()),
+        if (artistIds != null && artistIds.isNotEmpty)
+          'artistIds': artistIds,
         'audioFile': await MultipartFile.fromFile(audioFilePath, filename: audioFileName),
         'coverImage': await MultipartFile.fromFile(coverFilePath, filename: coverFileName),
-      });
+      };
+
+      final formData = FormData.fromMap(formMap, ListFormat.multi);
 
       await _dio.post(
         '/api/tracks',
@@ -52,7 +56,15 @@ class UploadRepository {
         throw Exception("Kết nối mạng quá yếu hoặc máy chủ phản hồi chậm. Vui lòng thử lại sau.");
       }
       if (e.response?.statusCode == 400) {
-        final msg = e.response?.data is Map ? e.response?.data['message'] : null;
+        String? msg;
+        if (e.response?.data is Map) {
+          final map = e.response!.data as Map;
+          if (map.containsKey('message')) {
+            msg = map['message']?.toString();
+          } else if (map.isNotEmpty) {
+            msg = map.values.first?.toString();
+          }
+        }
         throw Exception(msg ?? "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin bài hát.");
       }
       if (e.response?.statusCode == 413) {

@@ -7,6 +7,8 @@ import 'package:just_audio/just_audio.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../data/models/category_model.dart';
+import '../providers/categories_provider.dart';
 import '../providers/upload_provider.dart';
 import '../widgets/file_picker_area.dart';
 import '../widgets/image_crop_dialog.dart';
@@ -32,8 +34,7 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
   bool _isValidatingAudio = false;
 
   File? _selectedCoverFile;
-  String? _selectedCategory;
-  final _categories = ['Pop (1)', 'Rock (2)', 'Hip-Hop (3)', 'Acoustic (4)'];
+  CategoryModel? _selectedCategory;
 
   @override
   void dispose() {
@@ -178,16 +179,26 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
     }
     if (_titleController.text.trim().isEmpty || _selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập Tên bài hát và Thể loại!')),
+        const SnackBar(content: Text('Vui lòng nhập Tên bài hát và chọn Thể loại!')),
       );
       return;
     }
 
+    List<int>? artistIds;
+    final collabText = _collabArtistsController.text.trim();
+    if (collabText.isNotEmpty) {
+      artistIds = collabText
+          .split(RegExp(r'[,;\s]+'))
+          .map((s) => int.tryParse(s.trim()))
+          .whereType<int>()
+          .toList();
+    }
+
     ref.read(uploadNotifierProvider.notifier).uploadTrack(
       title: _titleController.text.trim(),
-      categoryId: _selectedCategory!.replaceAll(RegExp(r'[^0-9]'), ''),
+      categoryIds: [_selectedCategory!.id],
       albumId: _albumController.text.trim(),
-      collabArtists: _collabArtistsController.text.trim(),
+      artistIds: artistIds,
       audioFilePath: _selectedAudioFile!.path,
       coverFilePath: _selectedCoverFile!.path,
     );
@@ -244,6 +255,8 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
     }
 
     final uploadState = ref.watch(uploadNotifierProvider);
+    final categoriesAsync = ref.watch(categoriesProvider);
+    final categories = categoriesAsync.value ?? defaultBackendCategories;
     final isUploading = uploadState.isLoading || _isValidatingAudio;
 
     ref.listen<UploadState>(uploadNotifierProvider, (previous, next) {
@@ -302,7 +315,7 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
               albumController: _albumController,
               isUploading: isUploading,
               selectedCategory: _selectedCategory,
-              categories: _categories,
+              categories: categories,
               onCategoryChanged: (val) => setState(() => _selectedCategory = val),
             ),
             const SizedBox(height: 32),
