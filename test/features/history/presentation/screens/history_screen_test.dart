@@ -238,6 +238,75 @@ void main() {
       expect(find.text('track-page-5'), findsOneWidget);
     });
 
+    testWidgets('7a. The options menu opens the track detail', (tester) async {
+      stubPage(0, HistoryPageResponse(content: [historyTrack(5, name: 'Lạc Trôi')]));
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Xem chi tiết bài hát'), findsOneWidget);
+      expect(find.text('Xem hồ sơ nghệ sĩ'), findsOneWidget);
+
+      await tester.tap(find.text('Xem chi tiết bài hát'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('track-page-5'), findsOneWidget);
+    });
+
+    testWidgets('7d. The options menu opens the artist profile', (tester) async {
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [
+            historyTrack(
+              5,
+              name: 'Lạc Trôi',
+              artists: const [
+                TrackArtistInfo(id: 10, name: 'Sơn Tùng M-TP', role: 'MAIN'),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      await tester.tap(find.text('Xem hồ sơ nghệ sĩ'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('artist-page-10'), findsOneWidget);
+    });
+
+    testWidgets('7e. Without an artist the menu has no artist entry', (tester) async {
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [historyTrack(5, name: 'Lạc Trôi', artists: const [])],
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      await tester.tap(find.byIcon(Icons.more_vert));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(find.text('Xem chi tiết bài hát'), findsOneWidget);
+      expect(find.text('Xem hồ sơ nghệ sĩ'), findsNothing);
+    });
+
     testWidgets('7b. Tapping the artist name opens that artist profile', (tester) async {
       stubPage(
         0,

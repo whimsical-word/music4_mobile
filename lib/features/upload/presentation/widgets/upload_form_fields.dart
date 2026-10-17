@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../data/models/category_model.dart';
 
 class UploadFormFields extends StatelessWidget {
   final TextEditingController titleController;
   final TextEditingController collabArtistsController;
   final TextEditingController albumController;
   final bool isUploading;
-  final String? selectedCategory;
-  final List<String> categories;
-  final ValueChanged<String?> onCategoryChanged;
+  final CategoryModel? selectedCategory;
+  final List<CategoryModel> categories;
+  final ValueChanged<CategoryModel?> onCategoryChanged;
 
   const UploadFormFields({
     super.key,
@@ -39,16 +40,22 @@ class UploadFormFields extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         // Category
-        DropdownButtonFormField<String>(
+        DropdownButtonFormField<CategoryModel>(
           initialValue: selectedCategory,
           decoration: InputDecoration(
-            labelText: 'Thể loại (Category IDs)',
+            labelText: 'Thể loại (Category)',
+            hintText: 'Chọn thể loại nhạc',
             prefixIcon: const Icon(Icons.category),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
             filled: true,
             fillColor: AppColors.card,
           ),
-          items: categories.map((cat) => DropdownMenuItem(value: cat, child: Text(cat))).toList(),
+          items: categories
+              .map((cat) => DropdownMenuItem<CategoryModel>(
+                    value: cat,
+                    child: Text('${cat.name} (ID: ${cat.id})'),
+                  ))
+              .toList(),
           onChanged: isUploading ? null : onCategoryChanged,
         ),
         const SizedBox(height: 16),
