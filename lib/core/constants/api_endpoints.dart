@@ -17,7 +17,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CẤU HÌNH IP MÁY TÍNH KHI TEST QUA WI-FI (KHÔNG DÙNG CÁP)
   // ==========================================
-  static const String _lanIp = '192.168.1.48';
+  static const String _lanIp = '192.168.1.160';
 
   // ==========================================
   // 🔴 2. CHẾ ĐỘ KẾT NỐI CHO THIẾT BỊ:
