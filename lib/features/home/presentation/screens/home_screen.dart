@@ -49,8 +49,14 @@ class HomeScreen extends ConsumerWidget {
             IconButton(
               key: const Key('home_appbar_upload_btn'),
               icon: const Icon(Icons.cloud_upload_outlined),
-              tooltip: 'Tải lên & Quản lý nhạc',
+              tooltip: 'Tải lên nhạc',
               onPressed: () => context.push(RouteNames.upload),
+            ),
+            IconButton(
+              key: const Key('home_appbar_track_btn'),
+              icon: const Icon(Icons.library_music_outlined),
+              tooltip: 'Quản lý Bài hát',
+              onPressed: () => context.push(RouteNames.trackManagement),
             ),
             IconButton(
               key: const Key('home_appbar_album_btn'),
