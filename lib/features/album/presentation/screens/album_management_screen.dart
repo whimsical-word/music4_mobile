@@ -9,6 +9,7 @@ import '../providers/album_provider.dart';
 import '../../data/models/album_model.dart';
 import '../widgets/album_creation_form.dart';
 import '../widgets/album_grid_item.dart';
+import '../widgets/add_track_options_bottom_sheet.dart';
 
 class AlbumManagementScreen extends ConsumerStatefulWidget {
   const AlbumManagementScreen({super.key});
@@ -42,7 +43,7 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
     );
 
     if (newAlbum != null && mounted) {
-      _showAddTrackPromptDialog(context, newAlbum);
+      _showAddTrackPromptDialog(this.context, newAlbum);
     }
   }
 
@@ -73,7 +74,15 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
           ElevatedButton.icon(
             onPressed: () {
               Navigator.pop(dialogContext);
-              context.push('${RouteNames.upload}?albumId=${album.id}');
+              final authState = ref.read(authNotifierProvider);
+              final artistId = int.tryParse(album.artistId) ??
+                  (authState is AuthAuthenticated ? authState.user.id : 0);
+              showAddTrackOptionsBottomSheet(
+                context,
+                albumId: int.tryParse(album.id) ?? 0,
+                albumTitle: album.title,
+                artistId: artistId,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
@@ -81,7 +90,7 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             ),
-            icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+            icon: const Icon(Icons.playlist_add_rounded, size: 18),
             label: const Text('Thêm bài hát ngay', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
@@ -136,7 +145,7 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
       );
     }
 
-    final user = (authState as AuthAuthenticated).user;
+    final user = authState.user;
     final albumState = ref.watch(albumNotifierProvider);
 
     return Scaffold(

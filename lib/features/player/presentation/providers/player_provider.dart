@@ -134,9 +134,8 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
     this._trackDetailRepo,
     this._audioHandler, {
     this._tracker,
-    Ref? ref,
-  })  : _ref = ref,
-        super(const AsyncData(PlayerStateData())) {
+    this._ref,
+  }) : super(const AsyncData(PlayerStateData())) {
     _audioHandler.onSkipToNextCb = () => next();
     _audioHandler.onSkipToPreviousCb = () => previous();
     _initStreams();

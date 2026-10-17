@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/router/route_names.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_player_body.dart';
 import '../dialogs/preview_ended_dialog.dart';

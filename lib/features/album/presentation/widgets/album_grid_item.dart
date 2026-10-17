@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../data/models/album_model.dart';
 import '../providers/album_provider.dart';
+import 'add_track_options_bottom_sheet.dart';
 
 class AlbumGridItem extends ConsumerWidget {
   final AlbumModel album;
@@ -143,7 +145,16 @@ class AlbumGridItem extends ConsumerWidget {
                             key: Key('album_item_add_track_btn_${album.id}'),
                             onPressed: () {
                               HapticFeedback.lightImpact();
-                              context.push('${RouteNames.upload}?albumId=${album.id}');
+                              final authState = ref.read(authNotifierProvider);
+                              final artistId = (authState is AuthAuthenticated)
+                                  ? authState.user.id
+                                  : (int.tryParse(album.artistId) ?? 0);
+                              showAddTrackOptionsBottomSheet(
+                                context,
+                                albumId: int.tryParse(album.id) ?? 0,
+                                albumTitle: album.title,
+                                artistId: artistId,
+                              );
                             },
                             icon: const Icon(Icons.add, size: 14, color: AppColors.primary),
                             label: const Text(

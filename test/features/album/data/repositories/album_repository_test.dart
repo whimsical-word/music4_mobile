@@ -357,4 +357,89 @@ void main() {
       );
     });
   });
+
+  group('[CE190036] AlbumRepository getArtistTracks & assign/remove tracks Unit Tests', () {
+    const artistId = 1;
+    const trackId = 101;
+    const albumId = 5;
+
+    test('getArtistTracks trả về danh sách tracks của artist thành công', () async {
+      final mockData = [
+        {
+          'id': 101,
+          'name': 'Bài Hát Single 1',
+          'albumName': 'Single',
+          'duration': 210,
+        },
+        {
+          'id': 102,
+          'name': 'Bài Hát Thuộc Album Khác',
+          'albumName': 'Album Cũ',
+          'duration': 180,
+        },
+      ];
+
+      when(() => mockDio.get('${ApiEndpoints.trackDetail}/artist/$artistId')).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: '${ApiEndpoints.trackDetail}/artist/$artistId'),
+          statusCode: 200,
+          data: mockData,
+        ),
+      );
+
+      final result = await repository.getArtistTracks(artistId);
+
+      expect(result.length, 2);
+      expect(result[0]['name'], 'Bài Hát Single 1');
+      expect(result[0]['albumName'], 'Single');
+      expect(result[1]['albumName'], 'Album Cũ');
+      verify(() => mockDio.get('${ApiEndpoints.trackDetail}/artist/$artistId')).called(1);
+    });
+
+    test('assignTrackToAlbum gửi POST đến /api/tracks/update/{id} với albumId tương ứng', () async {
+      when(() => mockDio.post(
+            '${ApiEndpoints.trackDetail}/update/$trackId',
+            data: any(named: 'data'),
+          )).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: '${ApiEndpoints.trackDetail}/update/$trackId'),
+          statusCode: 200,
+          data: {'message': 'Cập nhật thành công!'},
+        ),
+      );
+
+      await expectLater(
+        repository.assignTrackToAlbum(trackId: trackId, albumId: albumId),
+        completes,
+      );
+
+      verify(() => mockDio.post(
+            '${ApiEndpoints.trackDetail}/update/$trackId',
+            data: any(named: 'data'),
+          )).called(1);
+    });
+
+    test('removeTrackFromAlbum gửi POST đến /api/tracks/update/{id} với albumId: -1', () async {
+      when(() => mockDio.post(
+            '${ApiEndpoints.trackDetail}/update/$trackId',
+            data: any(named: 'data'),
+          )).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: '${ApiEndpoints.trackDetail}/update/$trackId'),
+          statusCode: 200,
+          data: {'message': 'Gỡ khỏi album thành công!'},
+        ),
+      );
+
+      await expectLater(
+        repository.removeTrackFromAlbum(trackId: trackId),
+        completes,
+      );
+
+      verify(() => mockDio.post(
+            '${ApiEndpoints.trackDetail}/update/$trackId',
+            data: any(named: 'data'),
+          )).called(1);
+    });
+  });
 }

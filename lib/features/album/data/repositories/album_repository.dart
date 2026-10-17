@@ -252,6 +252,52 @@ class AlbumRepository {
     }
   }
 
+  /// Lấy toàn bộ danh sách bài hát của một nghệ sĩ
+  Future<List<Map<String, dynamic>>> getArtistTracks(int artistId) async {
+    try {
+      final response = await _dio.get('${ApiEndpoints.trackDetail}/artist/$artistId');
+      if (response.data is List) {
+        return List<Map<String, dynamic>>.from(response.data);
+      }
+      return [];
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  /// Gán một bài hát có sẵn vào Album
+  Future<void> assignTrackToAlbum({required int trackId, required int albumId}) async {
+    try {
+      final formData = FormData.fromMap({
+        'albumId': albumId,
+      });
+      await _dio.post(
+        '${ApiEndpoints.trackDetail}/update/$trackId',
+        data: formData,
+      );
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  /// Gỡ bài hát ra khỏi Album (chuyển thành bài Single độc lập)
+  Future<void> removeTrackFromAlbum({required int trackId}) async {
+    try {
+      final formData = FormData.fromMap({
+        'albumId': -1,
+      });
+      await _dio.post(
+        '${ApiEndpoints.trackDetail}/update/$trackId',
+        data: formData,
+      );
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
   bool _isNetworkError(DioException e) {
     return e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout ||
