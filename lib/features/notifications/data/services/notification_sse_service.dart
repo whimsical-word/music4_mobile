@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
 import '../models/notification_model.dart';
+import 'sse_transport.dart';
 
 /// Các loại sự kiện SSE từ Backend
 sealed class NotificationSseEvent {
@@ -27,9 +28,11 @@ class TrackDeletedEvent extends NotificationSseEvent {
 
 /// Kết nối SSE (`text/event-stream`) tới `GET /api/notifications/subscribe/{userId}`.
 ///
-/// - Dùng chung `Dio` của `DioClient` (baseUrl + AuthInterceptor gắn JWT).
+/// - Đa nền tảng (Cross-platform):
+///   - Native (Android, iOS, Desktop): dùng Dio `ResponseType.stream` tự parse byte chunks.
+///   - Web: dùng HTML5 `EventSource` của browser để nhận stream real-time liên tục.
 /// - Tự động reconnect (backoff 2s → 30s) khi rớt mạng / server restart.
-/// - Hủy subscription (`cancel`) sẽ đóng luôn HTTP stream qua `CancelToken`.
+/// - Hủy subscription (`cancel`) sẽ đóng HTTP stream qua `CancelToken` / `EventSource.close()`.
 class NotificationSseService {
   /// Tên các event Backend bắn kèm payload `NotificationResponseDTO`.
   static const _notificationEvents = {'NOTIFICATION', 'NEW_TRACK', 'NEW_ALBUM'};
@@ -38,6 +41,18 @@ class NotificationSseService {
 
   NotificationSseService(this._dio);
 
+  String _buildFullUrl(int userId) {
+    final path = '${ApiEndpoints.subscribeNotification}/$userId';
+    final base = _dio.options.baseUrl.isNotEmpty
+        ? _dio.options.baseUrl
+        : ApiEndpoints.baseUrl;
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    final cleanBase =
+        base.endsWith('/') ? base.substring(0, base.length - 1) : base;
+    final cleanPath = path.startsWith('/') ? path : '/$path';
+    return '$cleanBase$cleanPath';
+  }
+
   Stream<NotificationSseEvent> subscribe(int userId) {
     late final StreamController<NotificationSseEvent> controller;
     CancelToken? cancelToken;
@@ -45,25 +60,23 @@ class NotificationSseService {
 
     Future<void> run() async {
       var attempt = 0;
+      final url = _buildFullUrl(userId);
+
       while (!closed) {
         try {
           cancelToken = CancelToken();
-          final response = await _dio.get<ResponseBody>(
-            '${ApiEndpoints.subscribeNotification}/$userId',
+          debugPrint('[SSE] Connecting for userId=$userId: $url');
+          final rawStream = openSseStream(
+            url,
+            dio: _dio,
             cancelToken: cancelToken,
-            options: Options(
-              responseType: ResponseType.stream,
-              receiveTimeout: Duration.zero, // kết nối sống lâu, không timeout
-              headers: {
-                'Accept': 'text/event-stream',
-                'Cache-Control': 'no-cache',
-              },
-            ),
           );
           attempt = 0;
-          debugPrint('[SSE] Connected for userId=$userId');
-          await _consume(response.data!.stream, controller);
-          debugPrint('[SSE] Stream closed by server');
+          await for (final rawEvent in rawStream) {
+            if (closed) break;
+            _dispatch(rawEvent.event, rawEvent.data, controller);
+          }
+          debugPrint('[SSE] Stream ended');
         } catch (e) {
           if (closed) break;
           debugPrint('[SSE] Connection error: $e');
@@ -84,42 +97,6 @@ class NotificationSseService {
       },
     );
     return controller.stream;
-  }
-
-  /// Parse khung SSE: `event:<name>` + `data:<json>` + dòng trống kết thúc event.
-  Future<void> _consume(
-    Stream<Uint8List> body,
-    StreamController<NotificationSseEvent> sink,
-  ) async {
-    final lines = body
-        .cast<List<int>>()
-        .transform(utf8.decoder)
-        .transform(const LineSplitter());
-
-    String? event;
-    final data = StringBuffer();
-
-    await for (final line in lines) {
-      if (line.isEmpty) {
-        _dispatch(event, data.toString(), sink);
-        event = null;
-        data.clear();
-        continue;
-      }
-      if (line.startsWith(':')) continue; // comment / heartbeat
-
-      final sep = line.indexOf(':');
-      final field = sep == -1 ? line : line.substring(0, sep);
-      var value = sep == -1 ? '' : line.substring(sep + 1);
-      if (value.startsWith(' ')) value = value.substring(1);
-
-      if (field == 'event') {
-        event = value;
-      } else if (field == 'data') {
-        if (data.isNotEmpty) data.write('\n');
-        data.write(value);
-      }
-    }
   }
 
   void _dispatch(
