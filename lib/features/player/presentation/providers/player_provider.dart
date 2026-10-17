@@ -674,6 +674,9 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
    final currentPos = state.value?.position ?? Duration.zero;
    if (isPreview && currentPos >= const Duration(seconds: 30)) {
+     if (state.value?.showLoginPrompt == true) {
+       state = state.whenData((data) => data.copyWith(showLoginPrompt: false));
+     }
      state = state.whenData((data) => data.copyWith(
        isPlaying: false,
        showLoginPrompt: true,
@@ -715,6 +718,9 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
        await _player.pause();
      }
      await _player.seek(const Duration(seconds: 30));
+     if (state.value?.showLoginPrompt == true) {
+       state = state.whenData((data) => data.copyWith(showLoginPrompt: false));
+     }
      state = state.whenData((data) => data.copyWith(
        position: const Duration(seconds: 30),
        isPlaying: false,

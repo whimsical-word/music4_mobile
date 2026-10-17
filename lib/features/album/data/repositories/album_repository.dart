@@ -202,7 +202,6 @@ class AlbumRepository {
       if (coverFilePath != null && coverFilePath.isNotEmpty) {
         final fileName = coverFilePath.split(RegExp(r'[/\\]')).last;
         final uploadFormData = FormData.fromMap({
-          'type': 'images',
           'file': await MultipartFile.fromFile(coverFilePath, filename: fileName),
         });
         final uploadRes = await _dio.post(
