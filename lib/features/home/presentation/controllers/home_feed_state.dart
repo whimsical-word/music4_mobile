@@ -11,7 +11,13 @@ class HomeFeedState {
     this.trendingTracks = const [],
   });
 
-  bool get isEmpty => aiRecommendations.isEmpty && trendingTracks.isEmpty;
+  /// True only when there is nothing to show at all. The featured track counts:
+  /// the controller makes the first recommendation the featured one, so a feed
+  /// with a single recommendation has an empty [aiRecommendations] list.
+  bool get isEmpty =>
+      featuredAiTrack == null &&
+      aiRecommendations.isEmpty &&
+      trendingTracks.isEmpty;
 
   HomeFeedState copyWith({
     HomeTrackItem? featuredAiTrack,
