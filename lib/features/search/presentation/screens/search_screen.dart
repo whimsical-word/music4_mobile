@@ -388,15 +388,7 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           Icons.album,
                           onItemTap: (item, index) {
                             HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Tính năng chi tiết Album đang được phát triển.',
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                                duration: Duration(seconds: 2),
-                              ),
-                            );
+                            context.push('/album/${item.id}');
                           },
                         ),
                       if (currentType == 'all' || currentType == 'artist')
