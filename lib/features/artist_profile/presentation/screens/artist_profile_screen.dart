@@ -160,52 +160,86 @@ class _ArtistProfileScreenState extends ConsumerState<ArtistProfileScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 4.0),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            key: const Key('artist_profile_upload_btn'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                key: const Key('artist_profile_upload_btn'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.cloud_upload_outlined, size: 20),
+                                label: const Text(
+                                  'Upload Nhạc Mới',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () => context.push(RouteNames.upload),
                               ),
                             ),
-                            icon: const Icon(Icons.cloud_upload_outlined, size: 20),
-                            label: const Text(
-                              'Upload Nhạc',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: () => context.push(RouteNames.upload),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            key: const Key('artist_profile_album_btn'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textPrimary,
-                              side: const BorderSide(color: AppColors.divider),
-                              backgroundColor: AppColors.surface,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                key: const Key('artist_profile_track_btn'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.textPrimary,
+                                  side: const BorderSide(color: AppColors.divider),
+                                  backgroundColor: AppColors.surface,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.library_music_outlined,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
+                                label: const Text(
+                                  'Quản lý Bài hát',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () =>
+                                    context.push(RouteNames.trackManagement),
                               ),
                             ),
-                            icon: const Icon(
-                              Icons.album_outlined,
-                              size: 20,
-                              color: AppColors.textSecondary,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                key: const Key('artist_profile_album_btn'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.textPrimary,
+                                  side: const BorderSide(color: AppColors.divider),
+                                  backgroundColor: AppColors.surface,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.album_outlined,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
+                                label: const Text(
+                                  'Quản lý Album',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () =>
+                                    context.push(RouteNames.albumManagement),
+                              ),
                             ),
-                            label: const Text(
-                              'Quản lý Album',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: () =>
-                                context.push(RouteNames.albumManagement),
-                          ),
+                          ],
                         ),
                       ],
                     ),
