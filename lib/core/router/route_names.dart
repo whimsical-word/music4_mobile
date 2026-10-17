@@ -21,4 +21,5 @@ class RouteNames {
   static const String categoryDetail = '/category/:id';
   static const String admin = '/admin';
   static const String userProfile = '/users/:id';
+  static const String forgotPassword = '/forgot-password';
 }
