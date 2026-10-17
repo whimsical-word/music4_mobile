@@ -96,7 +96,10 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.upload,
       name: 'upload',
-      builder: (context, state) => const UploadTrackScreen(),
+      builder: (context, state) {
+        final albumId = state.uri.queryParameters['albumId'] ?? (state.extra as String?);
+        return UploadTrackScreen(initialAlbumId: albumId);
+      },
     ),
     GoRoute(
       path: RouteNames.albumManagement,

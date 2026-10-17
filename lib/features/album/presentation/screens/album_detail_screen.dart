@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/models/album_detail_model.dart';
@@ -125,6 +127,8 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final albumState = ref.watch(albumDetailControllerProvider(_id));
+    final authState = ref.watch(authNotifierProvider);
+    final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
 
     return Scaffold(
       appBar: AppBar(
@@ -135,6 +139,13 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
         title: const Text('Chi tiết Album'),
         centerTitle: true,
         actions: [
+          if (isArtist) ...[
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+              tooltip: 'Thêm bài hát vào Album',
+              onPressed: () => context.push('${RouteNames.upload}?albumId=$_id'),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.share_outlined),
             tooltip: 'Chia sẻ album',
@@ -183,12 +194,33 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
               ),
               const SizedBox(height: 8),
               if (tracks.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32.0),
                   child: Center(
-                    child: Text(
-                      'Album này hiện chưa có bài hát nào.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Album này hiện chưa có bài hát nào.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                        if (isArtist) ...[
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            key: const Key('album_detail_add_track_btn'),
+                            onPressed: () => context.push('${RouteNames.upload}?albumId=$_id'),
+                            icon: const Icon(Icons.cloud_upload_outlined, color: Colors.black),
+                            label: const Text(
+                              'Thêm bài hát vào Album này',
+                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 )

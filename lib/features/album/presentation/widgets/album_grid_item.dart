@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
 import '../../data/models/album_model.dart';
@@ -134,6 +135,28 @@ class AlbumGridItem extends ConsumerWidget {
                         Text(
                           '${album.trackCount} bài hát',
                           style: const TextStyle(color: AppColors.textSecondary, fontSize: 12),
+                        ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          width: double.infinity,
+                          child: OutlinedButton.icon(
+                            key: Key('album_item_add_track_btn_${album.id}'),
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              context.push('${RouteNames.upload}?albumId=${album.id}');
+                            },
+                            icon: const Icon(Icons.add, size: 14, color: AppColors.primary),
+                            label: const Text(
+                              'Thêm bài hát',
+                              style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary),
+                            ),
+                            style: OutlinedButton.styleFrom(
+                              side: BorderSide(color: AppColors.primary.withValues(alpha: 0.6), width: 1),
+                              padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
+                              minimumSize: const Size(0, 30),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(6)),
+                            ),
+                          ),
                         ),
                       ],
                     ),

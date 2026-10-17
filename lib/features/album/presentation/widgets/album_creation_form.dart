@@ -89,7 +89,7 @@ class _AlbumCreationFormState extends ConsumerState<AlbumCreationForm> {
     setState(() => _isLoading = true);
 
     try {
-      await ref.read(albumNotifierProvider.notifier).createAlbum(
+      final newAlbum = await ref.read(albumNotifierProvider.notifier).createAlbum(
         title: title,
         artistId: authState.user.id,
         coverFilePath: _coverFile?.path,
@@ -97,13 +97,7 @@ class _AlbumCreationFormState extends ConsumerState<AlbumCreationForm> {
       );
 
       if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Đã tạo Album "$title" thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        Navigator.pop(context, newAlbum);
       }
     } catch (e) {
       if (mounted) {

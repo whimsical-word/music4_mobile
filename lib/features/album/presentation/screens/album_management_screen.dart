@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../providers/album_provider.dart';
+import '../../data/models/album_model.dart';
 import '../widgets/album_creation_form.dart';
 import '../widgets/album_grid_item.dart';
 
@@ -31,13 +32,60 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
     });
   }
 
-  void _showCreateAlbumPopup(BuildContext context) {
-    showModalBottomSheet(
+  Future<void> _showCreateAlbumPopup(BuildContext context) async {
+    final newAlbum = await showModalBottomSheet<AlbumModel>(
       context: context,
       isScrollControlled: true,
       backgroundColor: AppColors.background,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (context) => const AlbumCreationForm(),
+    );
+
+    if (newAlbum != null && mounted) {
+      _showAddTrackPromptDialog(context, newAlbum);
+    }
+  }
+
+  void _showAddTrackPromptDialog(BuildContext context, AlbumModel album) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        icon: const Icon(Icons.check_circle_outline, color: AppColors.primary, size: 48),
+        title: const Text(
+          'Tạo Album thành công!',
+          style: TextStyle(fontWeight: FontWeight.bold),
+          textAlign: TextAlign.center,
+        ),
+        content: Text(
+          'Bạn vừa tạo thành công album "${album.title}". Bạn có muốn thêm bài hát vào album này ngay bây giờ không?',
+          textAlign: TextAlign.center,
+          style: const TextStyle(color: AppColors.textSecondary),
+        ),
+        actionsAlignment: MainAxisAlignment.center,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('Để sau', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pop(dialogContext);
+              context.push('${RouteNames.upload}?albumId=${album.id}');
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            ),
+            icon: const Icon(Icons.cloud_upload_outlined, size: 18),
+            label: const Text('Thêm bài hát ngay', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -95,6 +143,14 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
       appBar: AppBar(
         title: const Text('Artist Studio - Quản lý Album'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            key: const Key('album_mgmt_appbar_add_btn'),
+            icon: const Icon(Icons.add_circle_outline, color: AppColors.primary, size: 26),
+            tooltip: 'Tạo Album Mới',
+            onPressed: () => _showCreateAlbumPopup(context),
+          ),
+        ],
       ),
       body: albumState.when(
         loading: () => const Center(child: CircularProgressIndicator()),
@@ -132,9 +188,24 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
                     ),
                     const SizedBox(height: 8),
                     const Text(
-                      'Bấm "Tạo Album" bên dưới để phát hành đĩa nhạc đầu tiên của bạn!',
+                      'Bấm nút "Tạo Album" bên dưới để phát hành đĩa nhạc đầu tiên của bạn!',
                       textAlign: TextAlign.center,
                       style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton.icon(
+                      key: const Key('album_empty_create_btn'),
+                      onPressed: () => _showCreateAlbumPopup(context),
+                      icon: const Icon(Icons.add, color: Colors.black),
+                      label: const Text(
+                        'Tạo Album Đầu Tiên',
+                        style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                      ),
                     ),
                   ],
                 ),
@@ -149,7 +220,7 @@ class _AlbumManagementScreenState extends ConsumerState<AlbumManagementScreen> {
                 crossAxisCount: 2,
                 crossAxisSpacing: 16,
                 mainAxisSpacing: 16,
-                childAspectRatio: 0.8,
+                childAspectRatio: 0.72,
               ),
               itemCount: albums.length,
               itemBuilder: (context, index) => AlbumGridItem(album: albums[index]),
