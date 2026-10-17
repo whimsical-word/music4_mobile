@@ -62,7 +62,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           tooltip: 'Quay lại Trang chủ',
-          onPressed: () => context.go(RouteNames.home),
+          onPressed: () async {
+            await ref.read(authNotifierProvider.notifier).continueAsGuest();
+            if (context.mounted) {
+              context.go(RouteNames.home);
+            }
+          },
         ),
       ),
       body: SafeArea(

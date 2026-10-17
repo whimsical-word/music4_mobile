@@ -50,6 +50,7 @@ class MusicPlayerBody extends StatelessWidget {
             artist: state.artist,
             isLiked: state.isLiked,
             isOfflineCached: state.isOfflineCached,
+            isPreview: state.isPreview,
             onFavoriteTap: onFavoriteTap,
           ),
           ProgressBarWidget(

@@ -7,6 +7,7 @@ class TrackInfoWidget extends StatelessWidget {
   final String artist;
   final bool isLiked;
   final bool isOfflineCached;
+  final bool isPreview;
   final VoidCallback onFavoriteTap;
 
   const TrackInfoWidget({
@@ -15,6 +16,7 @@ class TrackInfoWidget extends StatelessWidget {
     required this.artist,
     required this.isLiked,
     this.isOfflineCached = false,
+    this.isPreview = false,
     required this.onFavoriteTap,
   });
 
@@ -39,6 +41,33 @@ class TrackInfoWidget extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
+                  if (isPreview) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      key: const Key('preview_30s_badge'),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.amber, width: 0.8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.timer_outlined, size: 12, color: Colors.amber),
+                          SizedBox(width: 4),
+                          Text(
+                            'Preview 30s',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.amber,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   if (isOfflineCached) ...[
                     const SizedBox(width: 8),
                     Container(
