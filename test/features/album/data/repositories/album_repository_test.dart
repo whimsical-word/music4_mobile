@@ -173,6 +173,41 @@ void main() {
         )),
       );
     });
+
+    test('getAlbumDetail ném lỗi rõ ràng khi album không tồn tại hoặc đã bị xóa', () async {
+      when(() => mockDio.get('${ApiEndpoints.trackDetail}/album/$albumId')).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: '${ApiEndpoints.trackDetail}/album/$albumId'),
+          statusCode: 200,
+          data: [],
+        ),
+      );
+      when(() => mockDio.get('${ApiEndpoints.albums}/$albumId')).thenThrow(
+        DioException(
+          requestOptions: RequestOptions(path: '${ApiEndpoints.albums}/$albumId'),
+          response: Response(
+            requestOptions: RequestOptions(path: '${ApiEndpoints.albums}/$albumId'),
+            statusCode: 404,
+          ),
+        ),
+      );
+      when(() => mockDio.get(ApiEndpoints.albums)).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ApiEndpoints.albums),
+          statusCode: 200,
+          data: [],
+        ),
+      );
+
+      expect(
+        () => repository.getAlbumDetail(albumId),
+        throwsA(isA<Exception>().having(
+          (e) => e.toString(),
+          'message',
+          contains('Album không tồn tại hoặc đã bị xóa.'),
+        )),
+      );
+    });
   });
 
   group('[CE190036] AlbumRepository getAlbumsByArtist Unit Tests UC4', () {

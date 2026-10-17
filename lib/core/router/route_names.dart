@@ -14,6 +14,7 @@ class RouteNames {
   static const String albumDetail = '/album/:id';
   static const String upload = '/upload';
   static const String albumManagement = '/album-management';
+  static const String trackManagement = '/track-management';
   static const String history = '/history';
   static const String artistProfile = '/artist/:id';
   static const String notifications = '/notifications';

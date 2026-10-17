@@ -107,10 +107,41 @@ class ArtistStudioQuickBanner extends StatelessWidget {
                   ),
                   icon: const Icon(Icons.cloud_upload_outlined, size: 18),
                   label: const Text(
-                    'Upload Nhạc',
+                    'Upload Nhạc Mới',
                     style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                   ),
                   onPressed: () => context.push(RouteNames.upload),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  key: const Key('artist_studio_track_btn'),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: BorderSide(
+                      color: AppColors.divider.withValues(alpha: 0.8),
+                    ),
+                    backgroundColor: AppColors.surface,
+                    padding: const EdgeInsets.symmetric(vertical: 11),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  icon: const Icon(
+                    Icons.library_music_outlined,
+                    size: 18,
+                    color: AppColors.textSecondary,
+                  ),
+                  label: const Text(
+                    'Quản lý Bài hát',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13),
+                  ),
+                  onPressed: () => context.push(RouteNames.trackManagement),
                 ),
               ),
               const SizedBox(width: 10),

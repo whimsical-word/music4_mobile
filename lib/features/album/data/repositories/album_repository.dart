@@ -173,14 +173,8 @@ class AlbumRepository {
         );
       }
 
-      // 6. Fallback an toàn cho album mẫu test
-      return AlbumDetailModel(
-        id: albumId,
-        title: 'Album #$albumId',
-        artistName: 'Chưa rõ nghệ sĩ',
-        trackTotal: 0,
-        tracks: const [],
-      );
+      // 6. Không tìm thấy album trong hệ thống và không có bài hát nào (album đã bị xóa hoặc không tồn tại)
+      throw Exception('Album không tồn tại hoặc đã bị xóa.');
     } on DioException catch (e) {
       _handleError(e);
       rethrow;
