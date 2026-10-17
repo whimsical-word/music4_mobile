@@ -166,7 +166,7 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
                       try {
                         await ref.read(albumRepositoryProvider).removeTrackFromAlbum(trackId: track.id);
                         ref.invalidate(albumDetailControllerProvider(_id));
-                        ref.invalidate(albumNotifierProvider);
+                        ref.read(albumNotifierProvider.notifier).fetchAlbums();
                         _showNotification('Đã gỡ bài hát "${track.name}" khỏi Album thành công!');
                       } catch (e) {
                         final cleanMsg = e.toString().replaceFirst('Exception: ', '');

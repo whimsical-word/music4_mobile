@@ -1,9 +1,19 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../data/models/album_model.dart';
 import '../../data/repositories/album_repository.dart';
 
 final albumNotifierProvider = StateNotifierProvider<AlbumNotifier, AsyncValue<List<AlbumModel>>>((ref) {
-  return AlbumNotifier(ref.watch(albumRepositoryProvider));
+  final repo = ref.watch(albumRepositoryProvider);
+  final authState = ref.watch(authNotifierProvider);
+  final notifier = AlbumNotifier(repo);
+  if (authState is AuthAuthenticated && authState.user.isArtist) {
+    notifier.fetchMyAlbums(authState.user.id, artistName: authState.user.displayName);
+  } else {
+    notifier.fetchAlbums();
+  }
+  return notifier;
 });
 
 class AlbumNotifier extends StateNotifier<AsyncValue<List<AlbumModel>>> {
@@ -19,7 +29,9 @@ class AlbumNotifier extends StateNotifier<AsyncValue<List<AlbumModel>>> {
     _currentArtistId = artistId;
     _currentArtistName = artistName;
     try {
-      state = const AsyncLoading();
+      if (state is! AsyncData) {
+        state = const AsyncLoading();
+      }
       final albums = await _repository.getAlbumsByArtist(artistId, artistName: artistName);
       state = AsyncData(albums);
     } catch (e, st) {
@@ -33,7 +45,9 @@ class AlbumNotifier extends StateNotifier<AsyncValue<List<AlbumModel>>> {
       return fetchMyAlbums(_currentArtistId!, artistName: _currentArtistName);
     }
     try {
-      state = const AsyncLoading();
+      if (state is! AsyncData) {
+        state = const AsyncLoading();
+      }
       final albums = await _repository.getAlbums();
       state = AsyncData(albums);
     } catch (e, st) {

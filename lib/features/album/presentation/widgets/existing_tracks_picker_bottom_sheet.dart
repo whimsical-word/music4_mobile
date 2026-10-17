@@ -111,7 +111,7 @@ class _ExistingTracksPickerBottomSheetState
 
       // Refresh lại AlbumDetail và AlbumNotifier
       ref.invalidate(albumDetailControllerProvider(widget.albumId));
-      ref.invalidate(albumNotifierProvider);
+      ref.read(albumNotifierProvider.notifier).fetchMyAlbums(widget.artistId);
 
       if (mounted) {
         Navigator.pop(context, true);
