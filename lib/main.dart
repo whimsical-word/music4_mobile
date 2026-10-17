@@ -6,6 +6,7 @@ import 'package:audio_service/audio_service.dart';
 import 'package:just_audio/just_audio.dart';
 import 'features/player/data/services/app_audio_handler.dart';
 import 'features/player/presentation/providers/player_provider.dart';
+import 'features/notifications/presentation/providers/notification_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,15 +34,20 @@ void main() async {
   );
 }
 
-class Music4App extends StatelessWidget {
+class Music4App extends ConsumerWidget {
   const Music4App({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // Giữ notifier sống toàn app để SSE chạy ngay sau khi đăng nhập
+    // (listen không làm rebuild MaterialApp mỗi khi danh sách đổi).
+    ref.listen(notificationProvider, (_, _) {});
+
     return MaterialApp.router(
       title: 'Music4',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       routerConfig: appRouter,
     );
   }
