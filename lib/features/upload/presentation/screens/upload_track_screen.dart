@@ -14,6 +14,7 @@ import '../widgets/file_picker_area.dart';
 import '../widgets/image_crop_dialog.dart';
 import '../widgets/upload_form_fields.dart';
 import '../widgets/upload_progress_widget.dart';
+import '../../../track_management/presentation/providers/artist_tracks_provider.dart';
 
 class UploadTrackScreen extends ConsumerStatefulWidget {
   final String? initialAlbumId;
@@ -270,6 +271,7 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
 
     ref.listen<UploadState>(uploadNotifierProvider, (previous, next) {
       if (next.isSuccess && (previous == null || !previous.isSuccess)) {
+        ref.read(artistTracksNotifierProvider.notifier).refresh();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Tải lên thành công! Bài hát đang chờ duyệt.'),

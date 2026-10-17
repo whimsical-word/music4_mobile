@@ -8,7 +8,7 @@ import '../../data/repositories/track_management_repository.dart';
 final artistTracksNotifierProvider = StateNotifierProvider<ArtistTracksNotifier, AsyncValue<List<ArtistTrackItemModel>>>((ref) {
   final repo = ref.watch(trackManagementRepositoryProvider);
   final authState = ref.watch(authNotifierProvider);
-  final notifier = ArtistTracksNotifier(repo);
+  final notifier = ArtistTracksNotifier(repo, ref);
 
   if (authState is AuthAuthenticated && authState.user.isArtist) {
     notifier.fetchArtistTracks(authState.user.id);
@@ -18,9 +18,10 @@ final artistTracksNotifierProvider = StateNotifierProvider<ArtistTracksNotifier,
 
 class ArtistTracksNotifier extends StateNotifier<AsyncValue<List<ArtistTrackItemModel>>> {
   final TrackManagementRepository _repository;
+  final Ref? _ref;
   int? _currentArtistId;
 
-  ArtistTracksNotifier(this._repository) : super(const AsyncLoading());
+  ArtistTracksNotifier(this._repository, [this._ref]) : super(const AsyncLoading());
 
   /// UC47: Tải danh sách toàn bộ bài hát của nghệ sĩ
   Future<void> fetchArtistTracks(int artistId) async {
@@ -37,9 +38,16 @@ class ArtistTracksNotifier extends StateNotifier<AsyncValue<List<ArtistTrackItem
   }
 
   /// Làm mới danh sách
-  Future<void> refresh() async {
-    if (_currentArtistId != null) {
-      return fetchArtistTracks(_currentArtistId!);
+  Future<void> refresh([int? artistId]) async {
+    int? targetId = artistId ?? _currentArtistId;
+    if (targetId == null && _ref != null) {
+      final auth = _ref.read(authNotifierProvider);
+      if (auth is AuthAuthenticated && auth.user.isArtist) {
+        targetId = auth.user.id;
+      }
+    }
+    if (targetId != null) {
+      return fetchArtistTracks(targetId);
     }
   }
 
