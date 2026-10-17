@@ -58,10 +58,10 @@ class TokenStorage {
   }
 
   Future<UserEntity?> getUser() async {
-    final userJson = await _storage.read(key: _keyCachedUser);
-    if (userJson == null) return null;
-
     try {
+      final userJson = await _storage.read(key: _keyCachedUser);
+      if (userJson == null) return null;
+
       final decoded = jsonDecode(userJson);
       if (decoded is! Map<String, dynamic>) return null;
 
@@ -73,9 +73,7 @@ class TokenStorage {
         imageUrl: decoded['imageUrl'] as String?,
         isArtist: decoded['isArtist'] as bool? ?? false,
       );
-    } on FormatException {
-      return null;
-    } on TypeError {
+    } catch (_) {
       return null;
     }
   }

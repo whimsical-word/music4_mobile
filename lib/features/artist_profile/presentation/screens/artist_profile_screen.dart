@@ -122,12 +122,25 @@ class _ArtistProfileScreenState extends ConsumerState<ArtistProfileScreen> {
         elevation: 0,
         backgroundColor: Colors.transparent,
         actions: [
-          if (isOwnerMode)
+          if (isOwnerMode) ...[
+            IconButton(
+              key: const Key('artist_profile_appbar_upload_btn'),
+              icon: const Icon(Icons.cloud_upload_outlined),
+              tooltip: 'Tải lên & Quản lý nhạc',
+              onPressed: () => context.push(RouteNames.upload),
+            ),
+            IconButton(
+              key: const Key('artist_profile_appbar_album_btn'),
+              icon: const Icon(Icons.album_outlined),
+              tooltip: 'Quản lý Album',
+              onPressed: () => context.push(RouteNames.albumManagement),
+            ),
             IconButton(
               icon: const Icon(Icons.settings_outlined),
               tooltip: 'Cài đặt',
               onPressed: () => showSettingsBottomSheet(context),
             ),
+          ],
         ],
       ),
       extendBodyBehindAppBar: true,
@@ -143,6 +156,61 @@ class _ArtistProfileScreenState extends ConsumerState<ArtistProfileScreen> {
                   onToggleFollow: () => _toggleFollow(context, params),
                 ),
               ),
+              if (isOwnerMode)
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 4.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: ElevatedButton.icon(
+                            key: const Key('artist_profile_upload_btn'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(Icons.cloud_upload_outlined, size: 20),
+                            label: const Text(
+                              'Upload Nhạc',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () => context.push(RouteNames.upload),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            key: const Key('artist_profile_album_btn'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textPrimary,
+                              side: const BorderSide(color: AppColors.divider),
+                              backgroundColor: AppColors.surface,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            icon: const Icon(
+                              Icons.album_outlined,
+                              size: 20,
+                              color: AppColors.textSecondary,
+                            ),
+                            label: const Text(
+                              'Quản lý Album',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            onPressed: () =>
+                                context.push(RouteNames.albumManagement),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               const SliverToBoxAdapter(
                 child: Padding(
                   padding: EdgeInsets.all(16.0),

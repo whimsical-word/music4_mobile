@@ -12,6 +12,8 @@ import '../widgets/ai_recommendation_section.dart';
 import '../widgets/home_empty_state.dart';
 import '../widgets/home_error_state.dart';
 import '../widgets/home_header_greeting.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../widgets/artist_studio_quick_banner.dart';
 import '../widgets/home_shimmer_skeleton.dart';
 import '../widgets/home_album_section.dart';
 import '../widgets/trending_section.dart';
@@ -22,6 +24,8 @@ class HomeScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final homeFeedAsync = ref.watch(homeFeedControllerProvider);
+    final authState = ref.watch(authNotifierProvider);
+    final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
 
     return Scaffold(
       appBar: AppBar(
@@ -30,6 +34,20 @@ class HomeScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         actions: [
+          if (isArtist) ...[
+            IconButton(
+              key: const Key('home_appbar_upload_btn'),
+              icon: const Icon(Icons.cloud_upload_outlined),
+              tooltip: 'Tải lên & Quản lý nhạc',
+              onPressed: () => context.push(RouteNames.upload),
+            ),
+            IconButton(
+              key: const Key('home_appbar_album_btn'),
+              icon: const Icon(Icons.album_outlined),
+              tooltip: 'Quản lý Album',
+              onPressed: () => context.push(RouteNames.albumManagement),
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.notifications_none),
             onPressed: () => context.push(RouteNames.notifications),
@@ -67,6 +85,10 @@ class HomeScreen extends ConsumerWidget {
                     padding: const EdgeInsets.only(bottom: 24.0),
                     children: [
                       const HomeHeaderGreeting(),
+                      if (isArtist) ...[
+                        const SizedBox(height: 12),
+                        const ArtistStudioQuickBanner(),
+                      ],
                       const SizedBox(height: 8),
                       AiRecommendationBanner(
                         track: state.featuredAiTrack,

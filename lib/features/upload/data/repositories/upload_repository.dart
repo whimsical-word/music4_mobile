@@ -1,4 +1,4 @@
-﻿import 'package:dio/dio.dart';
+import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -17,25 +17,34 @@ class UploadRepository {
 
   Future<void> uploadTrack({
     required String title,
-    required String categoryId,
+    required List<int> categoryIds,
     String? albumId,
-    String? collabArtists,
+    List<int>? artistIds,
     required String audioFilePath,
     required String coverFilePath,
+    ProgressCallback? onSendProgress,
   }) async {
     try {
-      final formData = FormData.fromMap({
+      final audioFileName = audioFilePath.split(RegExp(r'[\\/]')).last;
+      final coverFileName = coverFilePath.split(RegExp(r'[\\/]')).last;
+
+      final Map<String, dynamic> formMap = {
         'title': title,
-        'categoryId': categoryId,
-        if (albumId != null && albumId.isNotEmpty) 'albumId': albumId,
-        if (collabArtists != null && collabArtists.isNotEmpty) 'collabArtists': collabArtists,
-        'audioFile': await MultipartFile.fromFile(audioFilePath, filename: audioFilePath.split('/').last),
-        'coverFile': await MultipartFile.fromFile(coverFilePath, filename: coverFilePath.split('/').last),
-      });
+        'categoryIds': categoryIds,
+        if (albumId != null && albumId.trim().isNotEmpty)
+          'albumId': int.tryParse(albumId.trim()),
+        if (artistIds != null && artistIds.isNotEmpty)
+          'artistIds': artistIds,
+        'audioFile': await MultipartFile.fromFile(audioFilePath, filename: audioFileName),
+        'coverImage': await MultipartFile.fromFile(coverFilePath, filename: coverFileName),
+      };
+
+      final formData = FormData.fromMap(formMap, ListFormat.multi);
 
       await _dio.post(
-        '/api/tracks/upload',
+        '/api/tracks',
         data: formData,
+        onSendProgress: onSendProgress,
         options: Options(
           headers: {
             'Content-Type': 'multipart/form-data',
@@ -44,18 +53,27 @@ class UploadRepository {
       );
     } on DioException catch (e) {
       if (e.type == DioExceptionType.connectionTimeout || e.type == DioExceptionType.receiveTimeout) {
-        throw Exception("Máº¡ng quÃ¡ yáº¿u, thá»­ láº¡i sau.");
+        throw Exception("Kết nối mạng quá yếu hoặc máy chủ phản hồi chậm. Vui lòng thử lại sau.");
       }
       if (e.response?.statusCode == 400) {
-        throw Exception("Dá»¯ liá»‡u khÃ´ng há»£p lá»‡. Vui lÃ²ng kiá»ƒm tra láº¡i.");
+        String? msg;
+        if (e.response?.data is Map) {
+          final map = e.response!.data as Map;
+          if (map.containsKey('message')) {
+            msg = map['message']?.toString();
+          } else if (map.isNotEmpty) {
+            msg = map.values.first?.toString();
+          }
+        }
+        throw Exception(msg ?? "Dữ liệu không hợp lệ. Vui lòng kiểm tra lại thông tin bài hát.");
       }
       if (e.response?.statusCode == 413) {
-        throw Exception("File quÃ¡ lá»›n.");
+        throw Exception("File tải lên vượt quá dung lượng cho phép của máy chủ.");
       }
-      throw Exception("Lá»—i há»‡ thá»‘ng: ${e.message}");
+      final serverMsg = e.response?.data is Map ? e.response?.data['message'] : null;
+      throw Exception(serverMsg ?? "Lỗi hệ thống (${e.response?.statusCode ?? e.type}): ${e.message}");
     } catch (e) {
-      throw Exception("Lá»—i khÃ´ng xÃ¡c Ä‘á»‹nh: $e");
+      throw Exception("Lỗi không xác định: $e");
     }
   }
 }
-
