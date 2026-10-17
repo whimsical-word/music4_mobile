@@ -41,22 +41,31 @@ class AlbumNotifier extends StateNotifier<AsyncValue<List<AlbumModel>>> {
     }
   }
 
-  Future<void> createAlbum(String title, String coverFilePath) async {
+  /// UC2: Tạo Album mới cho ca sĩ và cập nhật danh sách
+  Future<AlbumModel> createAlbum({
+    required String title,
+    required int artistId,
+    String? coverFilePath,
+    String? artistName,
+  }) async {
     try {
-      // Keep old state while uploading
-      final previousState = state;
-      state = const AsyncLoading();
-      final newAlbum = await _repository.createAlbum(title: title, coverFilePath: coverFilePath);
-      
-      // Update state
-      if (previousState is AsyncData<List<AlbumModel>>) {
-        state = AsyncData([newAlbum, ...previousState.value]);
+      final newAlbum = await _repository.createAlbum(
+        title: title,
+        artistId: artistId,
+        coverFilePath: coverFilePath,
+        artistName: artistName,
+      );
+      _currentArtistId = artistId;
+      _currentArtistName = artistName;
+      if (state is AsyncData<List<AlbumModel>>) {
+        final currentList = state.value ?? [];
+        state = AsyncData([newAlbum, ...currentList]);
       } else {
         state = AsyncData([newAlbum]);
       }
-    } catch (e, st) {
-      state = AsyncError(e.toString(), st);
-      // Re-fetch to ensure consistency if needed
+      return newAlbum;
+    } catch (e) {
+      rethrow;
     }
   }
 

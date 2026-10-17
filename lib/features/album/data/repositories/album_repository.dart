@@ -190,23 +190,57 @@ class AlbumRepository {
     }
   }
 
+  /// UC2: Tạo Album mới kèm ảnh bìa đã upload qua S3
   Future<AlbumModel> createAlbum({
     required String title,
-    required String coverFilePath,
+    required int artistId,
+    String? coverFilePath,
+    String? artistName,
   }) async {
     try {
-      final formData = FormData.fromMap({
-        'title': title,
-        'coverFile': await MultipartFile.fromFile(coverFilePath, filename: coverFilePath.split('/').last),
-      });
+      String? coverImageKey;
+      if (coverFilePath != null && coverFilePath.isNotEmpty) {
+        final fileName = coverFilePath.split(RegExp(r'[/\\]')).last;
+        final uploadFormData = FormData.fromMap({
+          'type': 'images',
+          'file': await MultipartFile.fromFile(coverFilePath, filename: fileName),
+        });
+        final uploadRes = await _dio.post(
+          ApiEndpoints.uploadTemp,
+          data: uploadFormData,
+          queryParameters: {'type': 'images'},
+        );
+        if (uploadRes.data is Map && uploadRes.data['s3Key'] != null) {
+          coverImageKey = uploadRes.data['s3Key'].toString();
+        }
+      }
 
-      final response = await _dio.post(ApiEndpoints.albums, data: formData);
-      return AlbumModel.fromJson(response.data);
+      final Map<String, dynamic> formMap = {
+        'albumTitle': title,
+        'artistId': artistId,
+      };
+      if (coverImageKey != null && coverImageKey.isNotEmpty) {
+        formMap['coverImageKey'] = coverImageKey;
+      }
+
+      final response = await _dio.post(
+        ApiEndpoints.albums,
+        data: FormData.fromMap(formMap),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return AlbumModel.fromJson(
+          response.data as Map<String, dynamic>,
+          artistNameOverride: artistName,
+        );
+      }
+      throw Exception('Dữ liệu trả về từ máy chủ không hợp lệ.');
     } on DioException catch (e) {
       _handleError(e);
       rethrow;
     } catch (e) {
-      throw Exception("Khong the mo file anh cover. Vui long kiem tra lai.");
+      if (e is Exception) rethrow;
+      throw Exception('Không thể tạo Album: $e');
     }
   }
 
