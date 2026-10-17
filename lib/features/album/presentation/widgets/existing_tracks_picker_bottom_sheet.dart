@@ -5,6 +5,7 @@ import '../../../../core/utils/image_url_helper.dart';
 import '../../data/repositories/album_repository.dart';
 import '../controllers/album_detail_controller.dart';
 import '../providers/album_provider.dart';
+import '../../../track_management/presentation/providers/artist_tracks_provider.dart';
 
 Future<bool?> showExistingTracksPickerBottomSheet(
   BuildContext context, {
@@ -109,9 +110,10 @@ class _ExistingTracksPickerBottomSheetState
         );
       }
 
-      // Refresh lại AlbumDetail và AlbumNotifier
+      // Refresh lại AlbumDetail, AlbumNotifier và ArtistTracksNotifier
       ref.invalidate(albumDetailControllerProvider(widget.albumId));
       ref.read(albumNotifierProvider.notifier).fetchMyAlbums(widget.artistId);
+      ref.read(artistTracksNotifierProvider.notifier).refresh(widget.artistId);
 
       if (mounted) {
         Navigator.pop(context, true);

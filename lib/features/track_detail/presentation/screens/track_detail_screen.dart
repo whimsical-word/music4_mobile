@@ -16,6 +16,9 @@ import '../widgets/track_action_bar.dart';
 import '../widgets/track_comment_section.dart';
 import '../widgets/track_detail_shimmer.dart';
 import '../widgets/track_header_info.dart';
+import '../../../../core/utils/image_url_helper.dart';
+import 'package:music4_mobile/features/track_management/data/repositories/track_management_repository.dart';
+import 'package:music4_mobile/features/track_management/presentation/widgets/edit_track_modal.dart';
 
 class TrackDetailScreen extends ConsumerStatefulWidget {
   final String? trackId;
@@ -132,6 +135,66 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
         behavior: SnackBarBehavior.floating,
       ),
     );
+  }
+
+  Future<void> _handleDeleteTrack(String trackName) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Xác nhận xóa bài hát', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Bạn có chắc chắn muốn xóa bài hát "$trackName"?'),
+            const SizedBox(height: 8),
+            const Text(
+              'Hành động này sẽ xóa bài hát vĩnh viễn khỏi hệ thống và các playlist của người nghe.',
+              style: TextStyle(color: Colors.redAccent, fontSize: 13),
+            ),
+          ],
+        ),
+        actionsOverflowButtonSpacing: 8,
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
+          ),
+          TextButton(
+            key: const Key('confirm_delete_track_btn'),
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            child: const Text('Xác nhận xóa', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true && mounted) {
+      try {
+        await ref.read(trackManagementRepositoryProvider).deleteTrack(_id);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Đã xóa bài hát "$trackName" thành công!'),
+              backgroundColor: Colors.green,
+            ),
+          );
+          context.pop();
+        }
+      } catch (e) {
+        if (mounted) {
+          final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Lỗi khi xóa bài hát: $cleanMsg'),
+              backgroundColor: Colors.redAccent,
+            ),
+          );
+        }
+      }
+    }
   }
 
   void _addComment(String text) async {
@@ -254,10 +317,47 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
       'currentUsername: "$currentUsername"',
     );
 
+    final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
+    final trackData = detailAsync.value?.track;
+    final isOwner = isArtist && trackData != null && (
+      (authState.user.id == trackData.album?.artistId) ||
+      trackData.artists.any((a) => a.id == authState.user.id && (a.role == 'MAIN' || a.role == null))
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: Text(detailAsync.value?.track.name ?? 'Chi tiết bài hát'),
         actions: [
+          if (isOwner) ...[
+            IconButton(
+              key: const Key('track_detail_edit_btn'),
+              icon: const Icon(Icons.edit_outlined, color: AppColors.primary),
+              tooltip: 'Chỉnh sửa bài hát',
+              onPressed: () {
+                final track = detailAsync.value?.track;
+                if (track == null) return;
+                EditTrackModal.show(
+                  context,
+                  trackId: track.id,
+                  initialTitle: track.name,
+                  initialAlbumId: track.album?.id,
+                  initialAlbumName: track.album?.title,
+                  initialCoverUrl: track.img,
+                  initialCategoryIds: track.categories.map((c) => c.id).toList(),
+                  onSuccess: () => ref.read(trackDetailControllerProvider(_id).notifier).refresh(),
+                );
+              },
+            ),
+            IconButton(
+              key: const Key('track_detail_delete_btn'),
+              icon: const Icon(Icons.delete_outline, color: Colors.redAccent),
+              tooltip: 'Xóa bài hát',
+              onPressed: () {
+                final track = detailAsync.value?.track;
+                if (track != null) _handleDeleteTrack(track.name);
+              },
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.share_outlined),
             tooltip: 'Chia sẻ',
@@ -349,6 +449,181 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                       ),
                     );
                   },
+                ),
+                const SizedBox(height: 16),
+
+                // UC49: Liên kết Album
+                if (track.album != null &&
+                    track.album!.title.trim().isNotEmpty &&
+                    track.album!.title.trim().toLowerCase() != 'single') ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    child: Material(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      clipBehavior: Clip.antiAlias,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            width: 1.0,
+                          ),
+                        ),
+                        child: ListTile(
+                          key: const Key('track_detail_album_tile'),
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          onTap: () async {
+                            await context.push('/album/${track.album!.id}');
+                            if (context.mounted) {
+                              ref.read(trackDetailControllerProvider(_id).notifier).refresh();
+                            }
+                          },
+                        leading: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: SizedBox(
+                            width: 48,
+                            height: 48,
+                            child: track.album!.coverUrl != null
+                                ? Image.network(
+                                    ImageUrlHelper.resolve(track.album!.coverUrl) ?? track.album!.coverUrl!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, _, _) => Container(
+                                      color: AppColors.card,
+                                      child: const Icon(Icons.album, color: AppColors.primary),
+                                    ),
+                                  )
+                                : Container(
+                                    color: AppColors.card,
+                                    child: const Icon(Icons.album, color: AppColors.primary),
+                                  ),
+                          ),
+                        ),
+                        title: Text(
+                          track.album!.title,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: const Text(
+                          'Thuộc Album • Bấm để nghe toàn bộ Album',
+                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                        ),
+                        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
+
+                // UC48: Chi tiết metadata (Ngày phát hành, Nghệ sĩ tham gia)
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(16.0),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: AppColors.divider.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Row(
+                          children: [
+                            Icon(Icons.info_outline, size: 18, color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Text(
+                              'Thông tin bài hát',
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        if (track.uploadDate != null && track.uploadDate!.isNotEmpty) ...[
+                          Row(
+                            children: [
+                              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textMuted),
+                              const SizedBox(width: 6),
+                              const Text('Ngày phát hành: ', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                              Text(
+                                track.uploadDate!,
+                                style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                        ],
+                        if (track.artists.isNotEmpty) ...[
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Nghệ sĩ tham gia:',
+                            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                          ),
+                          const SizedBox(height: 6),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: track.artists.map((artist) {
+                              final isMain = artist.role == 'MAIN' || artist.role == null;
+                              return InkWell(
+                                onTap: () => context.push('/artist/${artist.id}'),
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: isMain
+                                        ? AppColors.primary.withValues(alpha: 0.15)
+                                        : AppColors.card,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isMain
+                                          ? AppColors.primary.withValues(alpha: 0.4)
+                                          : AppColors.divider,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isMain ? Icons.star_rounded : Icons.person_outline,
+                                        size: 14,
+                                        color: isMain ? AppColors.primary : AppColors.textSecondary,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        artist.name,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: isMain ? AppColors.primary : AppColors.textPrimary,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        isMain ? '(Chính)' : '(Collab)',
+                                        style: TextStyle(
+                                          fontSize: 10,
+                                          color: isMain ? AppColors.primary.withValues(alpha: 0.8) : AppColors.textMuted,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Divider(color: AppColors.divider),

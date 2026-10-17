@@ -76,7 +76,7 @@ class TrackManagementRepository {
       }
 
       if (collabArtistIds != null) {
-        formMap['collabArtistIds'] = collabArtistIds;
+        formMap['artistIds'] = collabArtistIds;
       }
 
       if (coverImageFile != null && await coverImageFile.exists()) {

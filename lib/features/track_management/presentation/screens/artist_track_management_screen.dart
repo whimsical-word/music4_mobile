@@ -10,6 +10,7 @@ import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/models/artist_track_model.dart';
 import '../providers/artist_tracks_provider.dart';
+import '../widgets/edit_track_modal.dart';
 
 class ArtistTrackManagementScreen extends ConsumerStatefulWidget {
   const ArtistTrackManagementScreen({super.key});
@@ -22,6 +23,14 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedFilter = 'all'; // 'all', 'single', 'album'
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(artistTracksNotifierProvider.notifier).refresh();
+    });
+  }
 
   @override
   void dispose() {
@@ -161,10 +170,26 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
         centerTitle: true,
         actions: [
           IconButton(
+            key: const Key('track_mgmt_appbar_album_btn'),
+            icon: const Icon(Icons.album_outlined, color: AppColors.textSecondary, size: 24),
+            tooltip: 'Quản lý Album',
+            onPressed: () async {
+              await context.push(RouteNames.albumManagement);
+              if (mounted) {
+                ref.read(artistTracksNotifierProvider.notifier).refresh();
+              }
+            },
+          ),
+          IconButton(
             key: const Key('track_mgmt_appbar_upload_btn'),
             icon: const Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 26),
             tooltip: 'Tải lên bài hát mới',
-            onPressed: () => context.push(RouteNames.upload),
+            onPressed: () async {
+              await context.push(RouteNames.upload);
+              if (mounted) {
+                ref.read(artistTracksNotifierProvider.notifier).refresh();
+              }
+            },
           ),
         ],
       ),
@@ -394,11 +419,26 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
                               trailing: PopupMenuButton<String>(
                                 icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                onSelected: (action) {
+                                onSelected: (action) async {
                                   if (action == 'play') {
                                     _playTrack(track, filteredTracks);
                                   } else if (action == 'detail') {
-                                    context.push('/track/${track.id}');
+                                    await context.push('/track/${track.id}');
+                                    if (mounted) {
+                                      ref.read(artistTracksNotifierProvider.notifier).refresh();
+                                    }
+                                  } else if (action == 'edit') {
+                                    await EditTrackModal.show(
+                                      context,
+                                      trackId: track.id,
+                                      initialTitle: track.name,
+                                      initialAlbumName: track.albumName,
+                                      initialCoverUrl: track.rawImg,
+                                      initialCategoryIds: track.categoryIds,
+                                    );
+                                    if (mounted) {
+                                      ref.read(artistTracksNotifierProvider.notifier).refresh();
+                                    }
                                   } else if (action == 'delete') {
                                     _handleDeleteTrack(track);
                                   }
@@ -423,6 +463,17 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
                                         Icon(Icons.info_outline, size: 20),
                                         SizedBox(width: 10),
                                         Flexible(child: Text('Chi tiết')),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                                        SizedBox(width: 10),
+                                        Flexible(child: Text('Sửa bài hát')),
                                       ],
                                     ),
                                   ),
