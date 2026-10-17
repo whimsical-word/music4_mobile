@@ -157,21 +157,30 @@ void main() {
     expect(container.read(notificationProvider).value!.first.isRead, isFalse);
   });
 
-  test('delete: xóa ngay, lỗi API thì khôi phục đúng vị trí', () async {
+  test('delete: xóa ngay, lỗi API thì khôi phục đúng vị trí ban đầu', () async {
+    final third = read.copyWith(id: 3, content: 'Thông báo 3');
+    when(
+      () => repository.getNotifications(any()),
+    ).thenAnswer((_) async => [unread, read, third]);
+
     final container = await loggedInContainer();
     final notifier = container.read(notificationProvider.notifier);
 
-    when(() => repository.deleteNotification(1)).thenThrow(Exception('x'));
-    final failed = await notifier.delete(1);
+    // Xóa item ở giữa (id: 2, index: 1 trong [1, 2, 3]) nhưng API thất bại:
+    // Rollback phải chèn lại đúng vị trí index 1 -> thứ tự giữ nguyên [1, 2, 3] (không bị đẩy lên đầu [2, 1, 3])
+    when(() => repository.deleteNotification(2)).thenThrow(Exception('x'));
+    final failed = await notifier.delete(2);
     expect(failed, isFalse);
     expect(container.read(notificationProvider).value!.map((n) => n.id), [
       1,
       2,
+      3,
     ]);
 
-    when(() => repository.deleteNotification(1)).thenAnswer((_) async {});
-    expect(await notifier.delete(1), isTrue);
-    expect(container.read(notificationProvider).value!.map((n) => n.id), [2]);
+    // Xóa thành công item ở giữa -> danh sách còn [1, 3]
+    when(() => repository.deleteNotification(2)).thenAnswer((_) async {});
+    expect(await notifier.delete(2), isTrue);
+    expect(container.read(notificationProvider).value!.map((n) => n.id), [1, 3]);
   });
 
   test('Model parse JSON dạng mảng ngày của Spring + suy ra type', () {
