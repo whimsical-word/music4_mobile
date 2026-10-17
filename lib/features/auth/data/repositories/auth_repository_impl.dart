@@ -78,4 +78,32 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
       );
     }
   }
+
+  @override
+  Future<Result<void>> forgotPassword({required String email}) async {
+    try {
+      await remoteDataSource.forgotPassword(email: email);
+      return const Success(null);
+    } catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  @override
+  Future<Result<void>> resetPasswordOtp({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      await remoteDataSource.resetPasswordOtp(
+        email: email,
+        otp: otp,
+        newPassword: newPassword,
+      );
+      return const Success(null);
+    } catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
 }

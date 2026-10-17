@@ -8,6 +8,13 @@ abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> login(String username, String password);
   Future<void> logout(String refreshToken);
   Future<void> register(RegisterRequest request);
+
+  Future<void> forgotPassword({required String email});
+  Future<void> resetPasswordOtp({
+    required String email,
+    required String otp,
+    required String newPassword,
+  });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -70,6 +77,37 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           e.response?.data['message'] ??
           e.response?.data?['error'] ??
           'Đăng ký không thành công';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> forgotPassword({required String email}) async {
+    try {
+      await dioClient.dio.post(
+        '/api/auth/forgot-password',
+        data: {'email': email, 'verificationMethod': 'OTP'},
+      );
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Gửi OTP thất bại';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> resetPasswordOtp({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      await dioClient.dio.post(
+        '/api/auth/reset-password-otp',
+        data: {'email': email, 'otp': otp, 'newPassword': newPassword},
+      );
+    } on DioException catch (e) {
+      final message =
+          e.response?.data?['message'] ?? 'Đặt lại mật khẩu thất bại';
       throw Exception(message);
     }
   }
