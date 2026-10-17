@@ -9,11 +9,29 @@ final albumNotifierProvider = StateNotifierProvider<AlbumNotifier, AsyncValue<Li
 class AlbumNotifier extends StateNotifier<AsyncValue<List<AlbumModel>>> {
   final AlbumRepository _repository;
 
-  AlbumNotifier(this._repository) : super(const AsyncLoading()) {
-    fetchAlbums();
+  int? _currentArtistId;
+  String? _currentArtistName;
+
+  AlbumNotifier(this._repository) : super(const AsyncLoading());
+
+  /// UC4: Tải danh sách album riêng của nghệ sĩ
+  Future<void> fetchMyAlbums(int artistId, {String? artistName}) async {
+    _currentArtistId = artistId;
+    _currentArtistName = artistName;
+    try {
+      state = const AsyncLoading();
+      final albums = await _repository.getAlbumsByArtist(artistId, artistName: artistName);
+      state = AsyncData(albums);
+    } catch (e, st) {
+      state = AsyncError(e.toString(), st);
+    }
   }
 
+  /// Tải danh sách tất cả album
   Future<void> fetchAlbums() async {
+    if (_currentArtistId != null) {
+      return fetchMyAlbums(_currentArtistId!, artistName: _currentArtistName);
+    }
     try {
       state = const AsyncLoading();
       final albums = await _repository.getAlbums();

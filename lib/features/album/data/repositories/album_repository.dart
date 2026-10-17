@@ -53,6 +53,23 @@ class AlbumRepository {
     }
   }
 
+  /// UC4: Lấy danh sách Album của một ca sĩ cụ thể
+  Future<List<AlbumModel>> getAlbumsByArtist(int artistId, {String? artistName}) async {
+    try {
+      final response = await _dio.get('${ApiEndpoints.albums}/artist/$artistId');
+      final List data = response.data is List ? response.data as List : [];
+      return data.map((json) {
+        if (json is Map<String, dynamic>) {
+          return AlbumModel.fromJson(json, artistNameOverride: artistName);
+        }
+        return AlbumModel.fromJson(json as Map<String, dynamic>, artistNameOverride: artistName);
+      }).toList();
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
   /// Lấy chi tiết Album (bao gồm thông tin album và danh sách bài hát)
   Future<AlbumDetailModel> getAlbumDetail(int albumId) async {
     try {
