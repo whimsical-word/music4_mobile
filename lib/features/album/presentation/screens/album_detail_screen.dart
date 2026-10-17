@@ -18,6 +18,7 @@ import '../widgets/album_detail_error_state.dart';
 import '../widgets/album_detail_header.dart';
 import '../widgets/album_detail_shimmer.dart';
 import '../widgets/album_detail_track_tile.dart';
+import '../../../track_management/presentation/providers/artist_tracks_provider.dart';
 
 class AlbumDetailScreen extends ConsumerStatefulWidget {
   final String? albumId;
@@ -167,6 +168,12 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
                         await ref.read(albumRepositoryProvider).removeTrackFromAlbum(trackId: track.id);
                         ref.invalidate(albumDetailControllerProvider(_id));
                         ref.read(albumNotifierProvider.notifier).fetchAlbums();
+                        final authState = ref.read(authNotifierProvider);
+                        if (authState is AuthAuthenticated) {
+                          ref.read(artistTracksNotifierProvider.notifier).refresh(authState.user.id);
+                        } else {
+                          ref.read(artistTracksNotifierProvider.notifier).refresh();
+                        }
                         _showNotification('Đã gỡ bài hát "${track.name}" khỏi Album thành công!');
                       } catch (e) {
                         final cleanMsg = e.toString().replaceFirst('Exception: ', '');

@@ -25,6 +25,14 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
   String _selectedFilter = 'all'; // 'all', 'single', 'album'
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(artistTracksNotifierProvider.notifier).refresh();
+    });
+  }
+
+  @override
   void dispose() {
     _searchController.dispose();
     super.dispose();
@@ -162,10 +170,26 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
         centerTitle: true,
         actions: [
           IconButton(
+            key: const Key('track_mgmt_appbar_album_btn'),
+            icon: const Icon(Icons.album_outlined, color: AppColors.textSecondary, size: 24),
+            tooltip: 'Quản lý Album',
+            onPressed: () async {
+              await context.push(RouteNames.albumManagement);
+              if (mounted) {
+                ref.read(artistTracksNotifierProvider.notifier).refresh();
+              }
+            },
+          ),
+          IconButton(
             key: const Key('track_mgmt_appbar_upload_btn'),
             icon: const Icon(Icons.cloud_upload_outlined, color: AppColors.primary, size: 26),
             tooltip: 'Tải lên bài hát mới',
-            onPressed: () => context.push(RouteNames.upload),
+            onPressed: () async {
+              await context.push(RouteNames.upload);
+              if (mounted) {
+                ref.read(artistTracksNotifierProvider.notifier).refresh();
+              }
+            },
           ),
         ],
       ),
@@ -395,13 +419,16 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
                               trailing: PopupMenuButton<String>(
                                 icon: const Icon(Icons.more_vert, color: AppColors.textMuted),
                                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                                onSelected: (action) {
+                                onSelected: (action) async {
                                   if (action == 'play') {
                                     _playTrack(track, filteredTracks);
                                   } else if (action == 'detail') {
-                                    context.push('/track/${track.id}');
+                                    await context.push('/track/${track.id}');
+                                    if (mounted) {
+                                      ref.read(artistTracksNotifierProvider.notifier).refresh();
+                                    }
                                   } else if (action == 'edit') {
-                                    EditTrackModal.show(
+                                    await EditTrackModal.show(
                                       context,
                                       trackId: track.id,
                                       initialTitle: track.name,
@@ -409,6 +436,9 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
                                       initialCoverUrl: track.rawImg,
                                       initialCategoryIds: track.categoryIds,
                                     );
+                                    if (mounted) {
+                                      ref.read(artistTracksNotifierProvider.notifier).refresh();
+                                    }
                                   } else if (action == 'delete') {
                                     _handleDeleteTrack(track);
                                   }
