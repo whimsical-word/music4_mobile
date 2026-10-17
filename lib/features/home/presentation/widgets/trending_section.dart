@@ -6,7 +6,11 @@ import 'trending_track_tile.dart';
 class TrendingSection extends StatelessWidget {
   final List<HomeTrackItem> tracks;
 
-  const TrendingSection({super.key, required this.tracks});
+  /// Tapping the header (with its ">") opens just this section. Null hides the
+  /// ">" (the feed is already filtered to this section).
+  final VoidCallback? onSeeAll;
+
+  const TrendingSection({super.key, required this.tracks, this.onSeeAll});
 
   @override
   Widget build(BuildContext context) {
@@ -18,63 +22,68 @@ class TrendingSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Row(
-                  children: [
-                    Text(
-                      'Thịnh hành',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          width: 1,
+        InkWell(
+          onTap: onSeeAll,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Row(
+                    children: [
+                      Text(
+                        'Thịnh hành',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      child: const Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.local_fire_department,
-                            size: 13,
-                            color: AppColors.primary,
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.3),
+                            width: 1,
                           ),
-                          SizedBox(width: 2),
-                          Text(
-                            'Top 5',
-                            style: TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.bold,
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.local_fire_department,
+                              size: 13,
                               color: AppColors.primary,
                             ),
-                          ),
-                        ],
+                            SizedBox(width: 2),
+                            Text(
+                              'Top 5',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-                size: 20,
-              ),
-            ],
+                if (onSeeAll != null) ...[
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
         ListView.builder(

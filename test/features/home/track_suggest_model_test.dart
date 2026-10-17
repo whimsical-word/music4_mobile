@@ -192,5 +192,64 @@ void main() {
         ),
       );
     });
+
+    test('getAlbumsPage GETs /api/albums/all with page and size and maps AlbumDetailResponseDTO', () async {
+      final path = '${ApiEndpoints.albums}/all';
+      when(() => mockDio.get(path, queryParameters: {'page': 1, 'size': 10})).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: path),
+          statusCode: 200,
+          data: {
+            'content': [
+              {
+                'id': 21,
+                'name': 'Album Mới',
+                'img': 'covers/a21.jpg',
+                'uploadDate': '2026-02-01',
+                'trackTotal': 8,
+                'artist': {'id': 3, 'name': 'Ngọt'},
+                'tracks': [],
+              },
+              {
+                'id': 22,
+                'name': 'Không ảnh',
+                'img': null,
+                'uploadDate': null,
+                'trackTotal': 0,
+                'artist': null,
+                'tracks': [],
+              },
+            ],
+            'page': {'size': 10, 'number': 1, 'totalElements': 12, 'totalPages': 2},
+          },
+        ),
+      );
+
+      final albums = await repository.getAlbumsPage(page: 1, size: 10);
+
+      expect(albums, hasLength(2));
+      expect(albums[0].id, '21');
+      expect(albums[0].title, 'Album Mới');
+      expect(albums[0].coverUrl, 'covers/a21.jpg');
+      expect(albums[0].artistId, '3');
+      expect(albums[0].artistName, 'Ngọt');
+      expect(albums[0].trackCount, 8);
+      expect(albums[1].coverUrl, isNull);
+      expect(albums[1].artistName, 'Chưa rõ nghệ sĩ');
+      verify(() => mockDio.get(path, queryParameters: {'page': 1, 'size': 10})).called(1);
+    });
+
+    test('getAlbumsPage returns an empty list when the response has no content', () async {
+      final path = '${ApiEndpoints.albums}/all';
+      when(() => mockDio.get(path, queryParameters: {'page': 0, 'size': 10})).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: path),
+          statusCode: 200,
+          data: {'content': []},
+        ),
+      );
+
+      expect(await repository.getAlbumsPage(), isEmpty);
+    });
   });
 }
