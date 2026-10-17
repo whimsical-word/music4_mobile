@@ -5,10 +5,15 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/models/album_detail_model.dart';
+import '../../data/repositories/album_repository.dart';
 import '../controllers/album_detail_controller.dart';
+import '../providers/album_provider.dart';
+import '../widgets/add_track_options_bottom_sheet.dart';
 import '../widgets/album_detail_error_state.dart';
 import '../widgets/album_detail_header.dart';
 import '../widgets/album_detail_shimmer.dart';
@@ -73,7 +78,13 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
     context.push(RouteNames.player);
   }
 
-  void _showTrackOptions(AlbumTrackModel track, List<AlbumTrackModel> allTracks, int index, String? albumCover) {
+  void _showTrackOptions(
+    AlbumTrackModel track,
+    List<AlbumTrackModel> allTracks,
+    int index,
+    String? albumCover, {
+    bool isArtist = false,
+  }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: AppColors.surface,
@@ -115,6 +126,56 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
                   _showNotification('Đã sao chép liên kết: music4://track/${track.id}');
                 },
               ),
+              if (isArtist) ...[
+                const Divider(height: 1),
+                ListTile(
+                  leading: const Icon(Icons.remove_circle_outline, color: Colors.redAccent),
+                  title: const Text(
+                    'Gỡ bài hát khỏi Album này (trở thành Single)',
+                    style: TextStyle(color: Colors.redAccent),
+                  ),
+                  onTap: () async {
+                    modalContext.pop();
+                    final confirm = await showDialog<bool>(
+                      context: context,
+                      builder: (dialogCtx) => AlertDialog(
+                        backgroundColor: AppColors.card,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        title: const Text('Gỡ bài hát khỏi Album', style: TextStyle(fontWeight: FontWeight.bold)),
+                        content: Text(
+                          'Bài hát "${track.name}" sẽ được gỡ khỏi Album này và trở thành bài hát Single độc lập. Bạn có chắc chắn không?',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(dialogCtx, false),
+                            child: const Text('HỦY', style: TextStyle(color: Colors.grey)),
+                          ),
+                          ElevatedButton(
+                            onPressed: () => Navigator.pop(dialogCtx, true),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.redAccent,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                            ),
+                            child: const Text('GỠ KHỎI ALBUM', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                          ),
+                        ],
+                      ),
+                    );
+
+                    if (confirm == true && mounted) {
+                      try {
+                        await ref.read(albumRepositoryProvider).removeTrackFromAlbum(trackId: track.id);
+                        ref.invalidate(albumDetailControllerProvider(_id));
+                        ref.read(albumNotifierProvider.notifier).fetchAlbums();
+                        _showNotification('Đã gỡ bài hát "${track.name}" khỏi Album thành công!');
+                      } catch (e) {
+                        final cleanMsg = e.toString().replaceFirst('Exception: ', '');
+                        _showNotification('Lỗi khi gỡ bài hát: $cleanMsg');
+                      }
+                    }
+                  },
+                ),
+              ],
             ],
           ),
         );
@@ -125,6 +186,8 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final albumState = ref.watch(albumDetailControllerProvider(_id));
+    final authState = ref.watch(authNotifierProvider);
+    final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
 
     return Scaffold(
       appBar: AppBar(
@@ -135,6 +198,21 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
         title: const Text('Chi tiết Album'),
         centerTitle: true,
         actions: [
+          if (isArtist) ...[
+            IconButton(
+              icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+              tooltip: 'Thêm bài hát vào Album',
+              onPressed: () {
+                final currentAlbum = albumState.valueOrNull?.album;
+                showAddTrackOptionsBottomSheet(
+                  context,
+                  albumId: _id,
+                  albumTitle: currentAlbum?.title ?? 'Album',
+                  artistId: authState.user.id,
+                );
+              },
+            ),
+          ],
           IconButton(
             icon: const Icon(Icons.share_outlined),
             tooltip: 'Chia sẻ album',
@@ -183,12 +261,40 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
               ),
               const SizedBox(height: 8),
               if (tracks.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 32.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 32.0),
                   child: Center(
-                    child: Text(
-                      'Album này hiện chưa có bài hát nào.',
-                      style: TextStyle(color: AppColors.textSecondary),
+                    child: Column(
+                      children: [
+                        const Text(
+                          'Album này hiện chưa có bài hát nào.',
+                          style: TextStyle(color: AppColors.textSecondary),
+                        ),
+                        if (isArtist) ...[
+                          const SizedBox(height: 16),
+                          ElevatedButton.icon(
+                            key: const Key('album_detail_add_track_btn'),
+                            onPressed: () {
+                              showAddTrackOptionsBottomSheet(
+                                context,
+                                albumId: _id,
+                                albumTitle: album.title,
+                                artistId: authState.user.id,
+                              );
+                            },
+                            icon: const Icon(Icons.add_circle_outline, color: Colors.black),
+                            label: const Text(
+                              'Thêm bài hát vào Album này',
+                              style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ),
                 )
@@ -203,7 +309,13 @@ class _AlbumDetailScreenState extends ConsumerState<AlbumDetailScreen> {
                       artist: track.artistsDisplayText,
                       duration: track.formattedDuration,
                       onTap: () => _playSingleTrack(tracks, index, album.coverUrl),
-                      onMorePressed: () => _showTrackOptions(track, tracks, index, album.coverUrl),
+                      onMorePressed: () => _showTrackOptions(
+                        track,
+                        tracks,
+                        index,
+                        album.coverUrl,
+                        isArtist: isArtist,
+                      ),
                     );
                   },
                 ),

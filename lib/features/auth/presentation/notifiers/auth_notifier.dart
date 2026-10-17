@@ -83,6 +83,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  Future<void> continueAsGuest() async {
+    await tokenStorage.clearSession();
+    state = const AuthUnauthenticated();
+  }
+
   Future<void> updateUser({String? displayName, String? imageUrl}) async {
     final currentState = state;
     if (currentState is! AuthAuthenticated) return;

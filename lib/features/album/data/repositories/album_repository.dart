@@ -53,6 +53,23 @@ class AlbumRepository {
     }
   }
 
+  /// UC4: Lấy danh sách Album của một ca sĩ cụ thể
+  Future<List<AlbumModel>> getAlbumsByArtist(int artistId, {String? artistName}) async {
+    try {
+      final response = await _dio.get('${ApiEndpoints.albums}/artist/$artistId');
+      final List data = response.data is List ? response.data as List : [];
+      return data.map((json) {
+        if (json is Map<String, dynamic>) {
+          return AlbumModel.fromJson(json, artistNameOverride: artistName);
+        }
+        return AlbumModel.fromJson(json as Map<String, dynamic>, artistNameOverride: artistName);
+      }).toList();
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
   /// Lấy chi tiết Album (bao gồm thông tin album và danh sách bài hát)
   Future<AlbumDetailModel> getAlbumDetail(int albumId) async {
     try {
@@ -173,29 +190,108 @@ class AlbumRepository {
     }
   }
 
+  /// UC2: Tạo Album mới kèm ảnh bìa đã upload qua S3
   Future<AlbumModel> createAlbum({
     required String title,
-    required String coverFilePath,
+    required int artistId,
+    String? coverFilePath,
+    String? artistName,
   }) async {
     try {
-      final formData = FormData.fromMap({
-        'title': title,
-        'coverFile': await MultipartFile.fromFile(coverFilePath, filename: coverFilePath.split('/').last),
-      });
+      String? coverImageKey;
+      if (coverFilePath != null && coverFilePath.isNotEmpty) {
+        final fileName = coverFilePath.split(RegExp(r'[/\\]')).last;
+        final uploadFormData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(coverFilePath, filename: fileName),
+        });
+        final uploadRes = await _dio.post(
+          ApiEndpoints.uploadTemp,
+          data: uploadFormData,
+          queryParameters: {'type': 'images'},
+        );
+        if (uploadRes.data is Map && uploadRes.data['s3Key'] != null) {
+          coverImageKey = uploadRes.data['s3Key'].toString();
+        }
+      }
 
-      final response = await _dio.post(ApiEndpoints.albums, data: formData);
-      return AlbumModel.fromJson(response.data);
+      final Map<String, dynamic> formMap = {
+        'albumTitle': title,
+        'artistId': artistId,
+      };
+      if (coverImageKey != null && coverImageKey.isNotEmpty) {
+        formMap['coverImageKey'] = coverImageKey;
+      }
+
+      final response = await _dio.post(
+        ApiEndpoints.albums,
+        data: FormData.fromMap(formMap),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return AlbumModel.fromJson(
+          response.data as Map<String, dynamic>,
+          artistNameOverride: artistName,
+        );
+      }
+      throw Exception('Dữ liệu trả về từ máy chủ không hợp lệ.');
     } on DioException catch (e) {
       _handleError(e);
       rethrow;
     } catch (e) {
-      throw Exception("Khong the mo file anh cover. Vui long kiem tra lai.");
+      if (e is Exception) rethrow;
+      throw Exception('Không thể tạo Album: $e');
     }
   }
 
   Future<void> deleteAlbum(String albumId) async {
     try {
       await _dio.delete('${ApiEndpoints.albums}/$albumId');
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  /// Lấy toàn bộ danh sách bài hát của một nghệ sĩ
+  Future<List<Map<String, dynamic>>> getArtistTracks(int artistId) async {
+    try {
+      final response = await _dio.get('${ApiEndpoints.trackDetail}/artist/$artistId');
+      if (response.data is List) {
+        return List<Map<String, dynamic>>.from(response.data);
+      }
+      return [];
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  /// Gán một bài hát có sẵn vào Album
+  Future<void> assignTrackToAlbum({required int trackId, required int albumId}) async {
+    try {
+      final formData = FormData.fromMap({
+        'albumId': albumId,
+      });
+      await _dio.post(
+        '${ApiEndpoints.trackDetail}/update/$trackId',
+        data: formData,
+      );
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    }
+  }
+
+  /// Gỡ bài hát ra khỏi Album (chuyển thành bài Single độc lập)
+  Future<void> removeTrackFromAlbum({required int trackId}) async {
+    try {
+      final formData = FormData.fromMap({
+        'albumId': -1,
+      });
+      await _dio.post(
+        '${ApiEndpoints.trackDetail}/update/$trackId',
+        data: formData,
+      );
     } on DioException catch (e) {
       _handleError(e);
       rethrow;

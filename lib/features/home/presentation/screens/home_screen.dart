@@ -18,12 +18,23 @@ import '../widgets/artist_studio_quick_banner.dart';
 import '../widgets/home_shimmer_skeleton.dart';
 import '../widgets/home_album_section.dart';
 import '../widgets/trending_section.dart';
+import '../../../player/presentation/providers/player_provider.dart';
+import '../../../player/domain/models/player_state_data.dart';
+import '../../../player/presentation/dialogs/preview_ended_dialog.dart';
 
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.listen<AsyncValue<PlayerStateData>>(playerNotifierProvider, (previous, next) {
+      if (next is AsyncData &&
+          next.value!.showLoginPrompt &&
+          !(previous?.value?.showLoginPrompt ?? false)) {
+        showPreviewEndedDialog(context, ref);
+      }
+    });
+
     final homeFeedAsync = ref.watch(homeFeedControllerProvider);
     final authState = ref.watch(authNotifierProvider);
     final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
