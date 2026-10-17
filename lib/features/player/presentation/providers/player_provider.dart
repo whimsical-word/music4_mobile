@@ -63,6 +63,11 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  List<TrackQueueItem> _playlist = [];
  int _currentIndex = 0;
 
+ /// One-shot start position for the NEXT track load (resume playback). It is
+ /// consumed at the start of [_loadAndPlayCurrentTrack], so only the track that
+ /// was explicitly asked for is resumed, never the next/previous ones.
+ Duration? _pendingStartPosition;
+
  List<int> _shuffledIndices = [];
  bool _isShuffle = false;
  RepeatState _repeatMode = RepeatState.off;
@@ -254,12 +259,25 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  final item = _playlist[_currentIndex];
 
+ // Resume playback: take the one-shot start position now, before any await.
+ final Duration? requestedStart = _pendingStartPosition;
+ _pendingStartPosition = null;
+
  // Bắt đầu phiên nghe mới (bỏ phiên cũ => skip không bị tính lượt nghe).
  _tracker?.startTrack(trackId: item.id, duration: item.duration);
 
  final String? token = await _resolveToken();
  final bool isArtist = await _isCurrentUserArtist();
  final bool isPreview = token == null || token.isEmpty;
+
+ // Only the full (logged-in) stream can resume; a preview always starts at 0.
+ // A start at or after the end of the track makes no sense: play from 0.
+ final Duration startPosition = (!isPreview &&
+         requestedStart != null &&
+         requestedStart > Duration.zero &&
+         (item.duration == Duration.zero || requestedStart < item.duration))
+     ? requestedStart
+     : Duration.zero;
 
  // Cập nhật UI ngay lập tức (Optimistic UI)
  state = state.whenData((data) => data.copyWith(
@@ -270,7 +288,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
       duration: isPreview ? const Duration(seconds: 30) : item.duration,
       hasNext: _getNextIndex() != null,
       hasPrevious: _getPreviousIndex() != null,
-      position: Duration.zero,
+      position: startPosition,
       bufferedPosition: Duration.zero,
       isLiked: false, // Tạm thời set false, sẽ check api sau
       isPreview: isPreview,
@@ -319,8 +337,8 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  );
  if (_loadId != myLoadId) return;
 
- // Ép player reset về 0 để tránh kẹt trạng thái
- await _player.setAudioSource(source, initialPosition: Duration.zero);
+ // Bắt đầu từ vị trí được yêu cầu (nghe tiếp) hoặc reset về 0 để tránh kẹt trạng thái
+ await _player.setAudioSource(source, initialPosition: startPosition);
  if (_loadId != myLoadId) return;
 
  _player.play().catchError((e) {
@@ -456,6 +474,22 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // ══════════════════════════════════════════════════════════
  // Public API: Khởi tạo playlist
  // ══════════════════════════════════════════════════════════
+ /// Like [playPlaylist], but the first track starts at [startPosition] (resume
+ /// playback). Next/previous tracks start from 0 as usual.
+ Future<void> resumePlaylist(
+   List<TrackQueueItem> playlist,
+   int initialIndex, {
+   required Duration startPosition,
+ }) async {
+   _pendingStartPosition = startPosition;
+   try {
+     await playPlaylist(playlist, initialIndex);
+   } finally {
+     // Never leak a start position into a later, unrelated load.
+     _pendingStartPosition = null;
+   }
+ }
+
  Future<void> playPlaylist(List<TrackQueueItem> playlist, int initialIndex) async {
  _playlist = List.from(playlist);
  _currentIndex = initialIndex.clamp(0, playlist.length - 1);

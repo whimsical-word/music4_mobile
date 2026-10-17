@@ -250,6 +250,144 @@ void main() {
       expect(notifierWithRef.state.value!.duration, const Duration(minutes: 3, seconds: 45));
     });
 
+    group('resume playback (start position)', () {
+      const listener = UserEntity(
+        id: 1,
+        username: 'listener',
+        displayName: 'Listener',
+        email: 'listener@gmail.com',
+        isArtist: false,
+      );
+
+      TrackQueueItem item({Duration duration = const Duration(minutes: 3, seconds: 45)}) {
+        return TrackQueueItem(
+          id: '1',
+          title: 'Song Test',
+          artist: 'Artist Test',
+          coverUrl: 'http://example.com/cover.jpg',
+          duration: duration,
+        );
+      }
+
+      Future<PlayerNotifier> notifierFor(AuthState auth, {required String token}) async {
+        final container = ProviderContainer(
+          overrides: [
+            authNotifierProvider.overrideWith((ref) => FakeAuthNotifier(auth)),
+          ],
+        );
+        addTearDown(container.dispose);
+
+        await TokenStorage.instance.saveTokens(accessToken: token);
+
+        return PlayerNotifier(
+          mockAudioPlayer,
+          mockTrackDetailRepo,
+          mockAppAudioHandler,
+          ref: container.read(testRefProvider),
+        );
+      }
+
+      test('resumePlaylist starts the full stream at the saved position', () async {
+        final notifier = await notifierFor(
+          const AuthAuthenticated(listener),
+          token: 'valid_token_123',
+        );
+
+        await notifier.resumePlaylist(
+          [item()],
+          0,
+          startPosition: const Duration(seconds: 42),
+        );
+
+        verify(
+          () => mockAudioPlayer.setAudioSource(
+            any(),
+            initialPosition: const Duration(seconds: 42),
+          ),
+        ).called(1);
+        expect(notifier.state.value!.isPreview, isFalse);
+        expect(notifier.state.value!.position, const Duration(seconds: 42));
+      });
+
+      test('playPlaylist still starts from the beginning', () async {
+        final notifier = await notifierFor(
+          const AuthAuthenticated(listener),
+          token: 'valid_token_123',
+        );
+
+        await notifier.playPlaylist([item()], 0);
+
+        verify(
+          () => mockAudioPlayer.setAudioSource(any(), initialPosition: Duration.zero),
+        ).called(1);
+      });
+
+      test('the start position applies to one load only', () async {
+        final notifier = await notifierFor(
+          const AuthAuthenticated(listener),
+          token: 'valid_token_123',
+        );
+
+        await notifier.resumePlaylist(
+          [item()],
+          0,
+          startPosition: const Duration(seconds: 42),
+        );
+        await notifier.playPlaylist([item()], 0);
+
+        verify(
+          () => mockAudioPlayer.setAudioSource(
+            any(),
+            initialPosition: const Duration(seconds: 42),
+          ),
+        ).called(1);
+        verify(
+          () => mockAudioPlayer.setAudioSource(any(), initialPosition: Duration.zero),
+        ).called(1);
+      });
+
+      test('a start position at or after the end of the track is ignored', () async {
+        final notifier = await notifierFor(
+          const AuthAuthenticated(listener),
+          token: 'valid_token_123',
+        );
+
+        await notifier.resumePlaylist(
+          [item(duration: const Duration(seconds: 60))],
+          0,
+          startPosition: const Duration(seconds: 90),
+        );
+
+        verify(
+          () => mockAudioPlayer.setAudioSource(any(), initialPosition: Duration.zero),
+        ).called(1);
+      });
+
+      test('a guest preview never resumes (always starts at 0)', () async {
+        final notifier = await notifierFor(
+          const AuthInitial(),
+          token: 'stale_token_123',
+        );
+
+        await notifier.resumePlaylist(
+          [item()],
+          0,
+          startPosition: const Duration(seconds: 42),
+        );
+
+        expect(notifier.state.value!.isPreview, isTrue);
+        verify(
+          () => mockAudioPlayer.setAudioSource(any(), initialPosition: Duration.zero),
+        ).called(1);
+        verifyNever(
+          () => mockAudioPlayer.setAudioSource(
+            any(),
+            initialPosition: const Duration(seconds: 42),
+          ),
+        );
+      });
+    });
+
     test('guest toggleFavorite triggers login prompt', () async {
       final container = ProviderContainer(
         overrides: [
