@@ -13,7 +13,8 @@ class ForgotPasswordResetPage extends ConsumerStatefulWidget {
   }
 }
 
-class _ForgotPasswordResetPageState extends ConsumerState<ForgotPasswordResetPage> {
+class _ForgotPasswordResetPageState
+    extends ConsumerState<ForgotPasswordResetPage> {
   final _formKey = GlobalKey<FormState>();
   final _otpController = TextEditingController();
   final _newPasswordController = TextEditingController();
@@ -23,9 +24,9 @@ class _ForgotPasswordResetPageState extends ConsumerState<ForgotPasswordResetPag
   void initState() {
     super.initState();
     ref.listenManual<ForgotPasswordState>(forgotPasswordNotifierProvider, (
-        previous,
-        next,
-        ) {
+      previous,
+      next,
+    ) {
       if (!mounted) return;
 
       if (next is ForgotPasswordResetSuccess) {
@@ -34,9 +35,8 @@ class _ForgotPasswordResetPageState extends ConsumerState<ForgotPasswordResetPag
         );
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else if (next is ForgotPasswordError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.message)),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(next.message)));
       }
     });
   }
@@ -57,8 +57,9 @@ class _ForgotPasswordResetPageState extends ConsumerState<ForgotPasswordResetPag
 
   String? _validateConfirmPassword(String? value) {
     if ((value ?? '').isEmpty) return 'Vui lòng nhập lại mật khẩu';
-    if (value != _newPasswordController.text)
+    if (value != _newPasswordController.text) {
       return 'Mật khẩu nhập lại không đúng';
+    }
     return null;
   }
 
@@ -75,9 +76,7 @@ class _ForgotPasswordResetPageState extends ConsumerState<ForgotPasswordResetPag
     final state = ref.watch(forgotPasswordNotifierProvider);
     final isLoading = state is ForgotPasswordLoading;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Đặt lại mật khẩu'),
-      ),
+      appBar: AppBar(title: const Text('Đặt lại mật khẩu')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
@@ -101,8 +100,9 @@ class _ForgotPasswordResetPageState extends ConsumerState<ForgotPasswordResetPag
               ),
               TextFormField(
                 controller: _confirmPasswordController,
-                decoration:
-                    const InputDecoration(labelText: 'Nhập lại mật khẩu mới'),
+                decoration: const InputDecoration(
+                  labelText: 'Nhập lại mật khẩu mới',
+                ),
                 obscureText: true,
                 validator: _validateConfirmPassword,
               ),
@@ -113,29 +113,29 @@ class _ForgotPasswordResetPageState extends ConsumerState<ForgotPasswordResetPag
                   onPressed: isLoading
                       ? null
                       : () async {
-                    if (!_formKey.currentState!.validate()) return;
+                          if (!_formKey.currentState!.validate()) return;
 
-                    await ref
-                        .read(forgotPasswordNotifierProvider.notifier)
-                        .resetPassword(
-                      email: widget.email,
-                      otp: _otpController.text.trim(),
-                      newPassword: _newPasswordController.text,
-                    );
-                  },
+                          await ref
+                              .read(forgotPasswordNotifierProvider.notifier)
+                              .resetPassword(
+                                email: widget.email,
+                                otp: _otpController.text.trim(),
+                                newPassword: _newPasswordController.text,
+                              );
+                        },
                   child: isLoading
                       ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
                       : const Text('Đặt lại mật khẩu'),
                 ),
               ),
             ],
           ),
-        )
-      )
+        ),
+      ),
     );
   }
 }
