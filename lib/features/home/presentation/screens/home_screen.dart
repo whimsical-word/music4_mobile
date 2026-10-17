@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../notifications/presentation/widgets/notification_bell_button.dart';
 import '../../../player/presentation/widgets/mini_player_widget.dart';
 import '../controllers/home_feed_controller.dart';
 import '../utils/profile_destination.dart';
@@ -65,10 +66,7 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () => context.push(RouteNames.albumManagement),
             ),
           ],
-          IconButton(
-            icon: const Icon(Icons.notifications_none),
-            onPressed: () => context.push(RouteNames.notifications),
-          ),
+          const NotificationBellButton(),
           IconButton(
             icon: const Icon(Icons.person_outline),
             onPressed: () => context.push(

@@ -8,6 +8,7 @@ import 'features/player/data/services/app_audio_handler.dart';
 import 'features/player/presentation/providers/player_provider.dart';
 import 'features/player/domain/models/player_state_data.dart';
 import 'features/player/presentation/dialogs/preview_ended_dialog.dart';
+import 'features/notifications/presentation/providers/notification_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -40,6 +41,10 @@ class Music4App extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Giữ notifier sống toàn app để SSE chạy ngay sau khi đăng nhập
+    // (listen không làm rebuild MaterialApp mỗi khi danh sách đổi).
+    ref.listen(notificationProvider, (_, _) {});
+
     ref.listen<AsyncValue<PlayerStateData>>(playerNotifierProvider, (previous, next) {
       if (next is AsyncData &&
           next.value!.showLoginPrompt &&
@@ -55,6 +60,7 @@ class Music4App extends ConsumerWidget {
       title: 'Music4',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.darkTheme,
+      scaffoldMessengerKey: rootScaffoldMessengerKey,
       routerConfig: appRouter,
     );
   }
