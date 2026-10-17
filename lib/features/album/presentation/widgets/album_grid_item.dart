@@ -8,6 +8,7 @@ import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../data/models/album_model.dart';
 import '../providers/album_provider.dart';
+import '../../../track_management/presentation/providers/artist_tracks_provider.dart';
 import 'add_track_options_bottom_sheet.dart';
 
 class AlbumGridItem extends ConsumerWidget {
@@ -44,6 +45,12 @@ class AlbumGridItem extends ConsumerWidget {
               Navigator.pop(dialogContext);
               try {
                 await ref.read(albumNotifierProvider.notifier).deleteAlbum(album.id);
+                final authState = ref.read(authNotifierProvider);
+                if (authState is AuthAuthenticated) {
+                  ref.read(artistTracksNotifierProvider.notifier).refresh(authState.user.id);
+                } else {
+                  ref.read(artistTracksNotifierProvider.notifier).refresh();
+                }
                 if (context.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(

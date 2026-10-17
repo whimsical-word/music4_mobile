@@ -135,6 +135,24 @@ void main() {
       expect(find.text('album-page-5'), findsOneWidget);
     });
 
+    testWidgets('Does NOT display album tile when track is Single or album is null', (tester) async {
+      const sampleTrackSingle = TrackDetailModel(
+        id: 102,
+        name: 'Single Test',
+        uploadDate: '2026-03-01',
+        album: null,
+        artists: [TrackArtistInfo(id: 5, name: 'Sơn Tùng M-TP', role: 'MAIN')],
+      );
+
+      await tester.pumpWidget(buildApp(
+        authState: authenticated(1),
+        state: const TrackDetailState(track: sampleTrackSingle),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('track_detail_album_tile')), findsNothing);
+    });
+
     testWidgets('Displays release date, main artist and collab artist with badges (UC48)', (tester) async {
       await tester.pumpWidget(buildApp(authState: authenticated(1)));
       await tester.pumpAndSettle();
