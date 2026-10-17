@@ -10,6 +10,7 @@ import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/models/artist_track_model.dart';
 import '../providers/artist_tracks_provider.dart';
+import '../widgets/edit_track_modal.dart';
 
 class ArtistTrackManagementScreen extends ConsumerStatefulWidget {
   const ArtistTrackManagementScreen({super.key});
@@ -399,6 +400,15 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
                                     _playTrack(track, filteredTracks);
                                   } else if (action == 'detail') {
                                     context.push('/track/${track.id}');
+                                  } else if (action == 'edit') {
+                                    EditTrackModal.show(
+                                      context,
+                                      trackId: track.id,
+                                      initialTitle: track.name,
+                                      initialAlbumName: track.albumName,
+                                      initialCoverUrl: track.rawImg,
+                                      initialCategoryIds: track.categoryIds,
+                                    );
                                   } else if (action == 'delete') {
                                     _handleDeleteTrack(track);
                                   }
@@ -423,6 +433,17 @@ class _ArtistTrackManagementScreenState extends ConsumerState<ArtistTrackManagem
                                         Icon(Icons.info_outline, size: 20),
                                         SizedBox(width: 10),
                                         Flexible(child: Text('Chi tiết')),
+                                      ],
+                                    ),
+                                  ),
+                                  const PopupMenuItem(
+                                    value: 'edit',
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
+                                        SizedBox(width: 10),
+                                        Flexible(child: Text('Sửa bài hát')),
                                       ],
                                     ),
                                   ),
