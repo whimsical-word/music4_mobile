@@ -8,6 +8,7 @@ import '../../data/models/home_track_item.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
+import '../../../artist_profile/presentation/widgets/artist_name_link.dart';
 import '../../../player/domain/models/player_state_data.dart';
 
 class TrendingTrackTile extends ConsumerWidget {
@@ -40,10 +41,22 @@ class TrendingTrackTile extends ConsumerWidget {
     context.push(RouteNames.player);
   }
 
+  Color _rankColor(int rank) {
+    switch (rank) {
+      case 1:
+        return const Color(0xFFFFD700); // Vàng Gold
+      case 2:
+        return const Color(0xFFC0C0C0); // Bạc Silver
+      case 3:
+        return const Color(0xFFCD7F32); // Đồng Bronze
+      default:
+        return AppColors.textMuted;
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
-    final isTop3 = rank <= 3;
 
     return Material(
       color: Colors.transparent,
@@ -61,7 +74,7 @@ class TrendingTrackTile extends ConsumerWidget {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: isTop3 ? AppColors.primary : AppColors.textMuted,
+                    color: _rankColor(rank),
                   ),
                 ),
               ),
@@ -114,22 +127,82 @@ class TrendingTrackTile extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      '${track.artist}${track.playsCount != null ? ' • ${track.playsCount} lượt nghe' : ''}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.bodySmall?.copyWith(
-                        color: AppColors.textSecondary,
-                        fontSize: 12,
-                      ),
+                    Wrap(
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        ArtistNameLink(
+                          text: track.artist,
+                          artistId: track.artistId,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: AppColors.textSecondary,
+                            fontSize: 12,
+                          ),
+                        ),
+                        if (track.playsCount != null) ...[
+                          Text(
+                            ' • ${track.playsCount} lượt nghe',
+                            style: textTheme.bodySmall?.copyWith(
+                              color: AppColors.textSecondary,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.play_circle_fill, color: AppColors.primary, size: 28),
-                onPressed: () => _onPlay(context, ref),
+              const SizedBox(width: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.play_circle_fill, color: AppColors.primary, size: 28),
+                    tooltip: 'Phát bài hát',
+                    onPressed: () => _onPlay(context, ref),
+                  ),
+                  PopupMenuButton<String>(
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    padding: EdgeInsets.zero,
+                    icon: const Icon(Icons.more_vert, color: AppColors.textSecondary, size: 20),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    tooltip: 'Tùy chọn',
+                    onSelected: (action) {
+                      if (action == 'detail') {
+                        context.push('/track/${track.id}');
+                      } else if (action == 'artist' && track.artistId != null) {
+                        context.push('/artist/${track.artistId}');
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'detail',
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.info_outline, size: 18, color: AppColors.primary),
+                            SizedBox(width: 8),
+                            Flexible(child: Text('Chi tiết bài hát')),
+                          ],
+                        ),
+                      ),
+                      if (track.artistId != null)
+                        const PopupMenuItem(
+                          value: 'artist',
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.person_outline, size: 18, color: AppColors.secondary),
+                              SizedBox(width: 8),
+                              Flexible(child: Text('Trang nghệ sĩ')),
+                            ],
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
