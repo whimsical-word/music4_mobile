@@ -453,7 +453,9 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                 const SizedBox(height: 16),
 
                 // UC49: Liên kết Album
-                if (track.album != null) ...[
+                if (track.album != null &&
+                    track.album!.title.trim().isNotEmpty &&
+                    track.album!.title.trim().toLowerCase() != 'single') ...[
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Material(
@@ -471,7 +473,12 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                         child: ListTile(
                           key: const Key('track_detail_album_tile'),
                           contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          onTap: () => context.push('/album/${track.album!.id}'),
+                          onTap: () async {
+                            await context.push('/album/${track.album!.id}');
+                            if (context.mounted) {
+                              ref.read(trackDetailControllerProvider(_id).notifier).refresh();
+                            }
+                          },
                         leading: ClipRRect(
                           borderRadius: BorderRadius.circular(8),
                           child: SizedBox(
