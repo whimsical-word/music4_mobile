@@ -51,8 +51,12 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
 
   Future<UserProfileState> _fetchProfile(int userId) async {
     final profile = await _repository.getProfile(userId);
-    final stats = await _repository.getProfileStats(userId);
-    return UserProfileState(profile: profile.copyWith(stats: stats));
+    try {
+      final stats = await _repository.getProfileStats(userId);
+      return UserProfileState(profile: profile.copyWith(stats: stats));
+    } catch (_) {
+      return UserProfileState(profile: profile);
+    }
   }
 
   Future<void> retry() async {
@@ -110,7 +114,6 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
       final updatedProfile = await _fetchProfile(authState.user.id);
       state = AsyncData(UserProfileState(profile: updatedProfile.profile));
     } catch (e, st) {
-      // Nếu có dữ liệu cũ thì giữ nguyên, không làm crash giao diện
       if (!state.hasValue) {
         state = AsyncError(e, st);
       }

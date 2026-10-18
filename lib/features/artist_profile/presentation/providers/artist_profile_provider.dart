@@ -150,7 +150,6 @@ class ArtistProfileNotifier
                 ),
         ),
       );
-      ref.invalidate(userProfileProvider);
       return FollowResult.success;
     } catch (_) {
       return FollowResult.failed;
