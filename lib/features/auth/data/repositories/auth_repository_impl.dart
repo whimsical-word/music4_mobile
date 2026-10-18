@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:music4_mobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
+import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 
@@ -21,7 +22,7 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
     try {
       final authData = await remoteDataSource.login(username, password);
 
-      await tokenStorage.saveToken(
+      await tokenStorage.saveTokens(
         accessToken: authData.accessToken,
         refreshToken: authData.refreshToken,
       );
@@ -45,10 +46,64 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
 
   @override
   Future<Result<void>> logout() async {
-    await tokenStorage.clear();
-    return const Success(null);
+    try {
+      final refreshToken = await tokenStorage.getRefreshToken();
+      if (refreshToken != null && refreshToken.isNotEmpty) {
+        try {
+          await remoteDataSource.logout(refreshToken);
+        } catch (_) {
+          // Bỏ qua lỗi backend khi logout (ví dụ: token hết hạn hoặc mất mạng),
+          // client vẫn bắt buộc phải xóa session local
+        }
+      }
+      return const Success(null);
+    } catch (e) {
+      return Error(ServerFailure(e.toString()));
+    } finally {
+      await tokenStorage.clearSession();
+    }
   }
 
   @override
   Future<bool> isLoggedIn() => tokenStorage.hasValidSession();
+
+  @override
+  Future<Result<void>> register(RegisterRequest request) async {
+    try {
+      await remoteDataSource.register(request);
+      return const Success(null);
+    } catch (e) {
+      return Error(
+        ServerFailure(e.toString().replaceAll('Exception: ', '')),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void>> forgotPassword({required String email}) async {
+    try {
+      await remoteDataSource.forgotPassword(email: email);
+      return const Success(null);
+    } catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  @override
+  Future<Result<void>> resetPasswordOtp({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      await remoteDataSource.resetPasswordOtp(
+        email: email,
+        otp: otp,
+        newPassword: newPassword,
+      );
+      return const Success(null);
+    } catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
 }

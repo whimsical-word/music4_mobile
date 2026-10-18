@@ -6,7 +6,7 @@ import '../../domain/models/user_profile.dart';
 import '../providers/user_profile_provider.dart';
 import '../widgets/account_section.dart';
 import '../widgets/edit_profile_button.dart';
-import '../widgets/logout_button.dart';
+import '../../../../core/shared/widgets/settings_bottom_sheet.dart';
 import '../widgets/profile_error_view.dart';
 import '../widgets/user_profile_header.dart';
 import '../widgets/user_profile_shimmer.dart';
@@ -21,7 +21,7 @@ class UserProfileScreen extends ConsumerWidget {
     return Scaffold(
       backgroundColor: AppColors.background,
       extendBodyBehindAppBar: true,
-      appBar: _buildAppBar(),
+      appBar: _buildAppBar(context),
       body: profileAsync.when(
         loading: () => const UserProfileShimmer(),
         error: (error, _) => ProfileErrorView(
@@ -38,7 +38,7 @@ class UserProfileScreen extends ConsumerWidget {
     );
   }
 
-  AppBar _buildAppBar() {
+  AppBar _buildAppBar(BuildContext context) {
     return AppBar(
       title: const Text('Hồ sơ cá nhân'),
       backgroundColor: Colors.transparent,
@@ -48,7 +48,7 @@ class UserProfileScreen extends ConsumerWidget {
           icon: const Icon(Icons.settings_outlined),
           tooltip: 'Cài đặt',
           onPressed: () {
-            // TODO: navigate to Settings
+            showSettingsBottomSheet(context);
           },
         ),
       ],
@@ -56,29 +56,35 @@ class UserProfileScreen extends ConsumerWidget {
   }
 }
 
-// ── Body (data state) ──────────────────────────────────────────────────────
-
-class _ProfileBody extends StatelessWidget {
+class _ProfileBody extends ConsumerWidget {
   final UserProfile profile;
 
   const _ProfileBody({required this.profile});
 
   @override
-  Widget build(BuildContext context) {
-    return CustomScrollView(
-      slivers: [
-        SliverToBoxAdapter(child: UserProfileHeader(profile: profile)),
-        const SliverToBoxAdapter(child: EditProfileButton()),
-        const SliverToBoxAdapter(
-          child: Padding(
-            padding: EdgeInsets.symmetric(vertical: 12),
-            child: Divider(color: AppColors.divider, thickness: 1),
+  Widget build(BuildContext context, WidgetRef ref) {
+    return RefreshIndicator(
+      onRefresh: () => ref.read(userProfileProvider.notifier).refresh(),
+      color: AppColors.primary,
+      backgroundColor: AppColors.card,
+      child: CustomScrollView(
+        // Bắt buộc có dòng này để màn hình luôn kéo vuốt được ngay cả khi nội dung ngắn hơn chiều cao màn hình:
+        physics: const AlwaysScrollableScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: UserProfileHeader(profile: profile)),
+          SliverToBoxAdapter(child: EditProfileButton(profile: profile)),
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Divider(color: AppColors.divider, thickness: 1),
+            ),
           ),
-        ),
-        SliverToBoxAdapter(child: AccountSection(profile: profile)),
-        // const SliverToBoxAdapter(child: SettingsSection()),
-        const SliverToBoxAdapter(child: LogoutButton()),
-      ],
+          SliverToBoxAdapter(child: AccountSection(profile: profile)),
+
+          // BOTTOM PADDING: Tạo khoảng đệm thoáng đáy màn hình
+          const SliverToBoxAdapter(child: SizedBox(height: 40)),
+        ],
+      ),
     );
   }
 }

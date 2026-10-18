@@ -1,27 +1,53 @@
 import 'package:dio/dio.dart';
+
 import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/network/dio_client.dart';
 import '../models/history_page_response.dart';
 
+/// Readable error raised by [HistoryRepository]; its message is shown as-is in
+/// the History error state.
+class HistoryException implements Exception {
+  final String message;
+
+  const HistoryException(this.message);
+
+  @override
+  String toString() => message;
+}
+
+/// Listening history API.
+///
+/// `GET /api/tracking/history/{userId}?page=&size=` returns a Spring Data page:
+/// `{ "content": [TrackResponseDTO...], "page": { size, number,
+/// totalElements, totalPages } }`. The backend already de-duplicates by track
+/// (latest listen per track, newest first).
 class HistoryRepository {
-  final Dio _dio;
+  static const int defaultPageSize = 20;
 
-  HistoryRepository(this._dio);
+  final DioClient _dioClient;
 
-  Future<HistoryPageResponse> getListeningHistory(int userId, {int page = 0, int size = 10}) async {
+  HistoryRepository(this._dioClient);
+
+  Future<HistoryPageResponse> getListeningHistory(
+    int userId, {
+    int page = 0,
+    int size = defaultPageSize,
+  }) async {
     try {
-      final response = await _dio.get(
+      final response = await _dioClient.dio.get(
         '${ApiEndpoints.history}/$userId',
-        queryParameters: {
-          'page': page,
-          'size': size,
-        },
+        queryParameters: {'page': page, 'size': size},
       );
-      
-      return HistoryPageResponse.fromJson(response.data);
+
+      return HistoryPageResponse.fromJson(
+        response.data as Map<String, dynamic>,
+      );
     } on DioException catch (e) {
-      throw _handleDioError(e);
-    } catch (e) {
-      throw 'Đã xảy ra lỗi không xác định. Vui lòng thử lại.';
+      throw HistoryException(_handleDioError(e));
+    } catch (_) {
+      throw const HistoryException(
+        'Đã xảy ra lỗi không xác định. Vui lòng thử lại.',
+      );
     }
   }
 
@@ -33,6 +59,12 @@ class HistoryRepository {
         return 'Kết nối máy chủ quá thời gian. Vui lòng kiểm tra mạng.';
       case DioExceptionType.badResponse:
         final statusCode = error.response?.statusCode;
+        if (statusCode == 401) {
+          return 'Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.';
+        }
+        if (statusCode == 403) {
+          return 'Bạn không có quyền xem lịch sử này.';
+        }
         if (statusCode == 404) {
           return 'Không tìm thấy thông tin người dùng.';
         }

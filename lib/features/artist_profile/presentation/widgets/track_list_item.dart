@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/track.dart';
+import '../utils/count_format.dart';
 
 class TrackListItem extends StatelessWidget {
   final Track track;
@@ -29,14 +30,16 @@ class TrackListItem extends StatelessWidget {
           width: 48,
           height: 48,
           color: AppColors.surface,
-          child: Image.network(
-            track.artworkUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, _, _) => const Icon(
-              Icons.music_note,
-              color: AppColors.textMuted,
-            ),
-          ),
+          child: track.artworkUrl == null
+              ? const Icon(Icons.music_note, color: AppColors.textMuted)
+              : Image.network(
+                  track.artworkUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => const Icon(
+                    Icons.music_note,
+                    color: AppColors.textMuted,
+                  ),
+                ),
         ),
       ),
       title: Text(
@@ -48,7 +51,7 @@ class TrackListItem extends StatelessWidget {
         overflow: TextOverflow.ellipsis,
       ),
       subtitle: Text(
-        track.artistName,
+        '${track.artistName} • ${formatCount(track.viewCount)} lượt nghe',
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: AppColors.textSecondary,
             ),

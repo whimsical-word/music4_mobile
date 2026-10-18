@@ -1,20 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/image_url_helper.dart';
 
 class AlbumDetailHeader extends StatelessWidget {
-  final String title, artist, metadata, imageUrl;
-  final bool isFavorite;
-  final VoidCallback onPlay, onShuffle, onToggleFavorite, onShare;
+  final String title, artist, metadata;
+  final String? imageUrl;
+  final VoidCallback onPlay, onShuffle, onShare;
 
   const AlbumDetailHeader({
-    super.key, required this.title, required this.artist, required this.metadata,
-    required this.imageUrl, required this.isFavorite, required this.onPlay,
-    required this.onShuffle, required this.onToggleFavorite, required this.onShare,
+    super.key,
+    required this.title,
+    required this.artist,
+    required this.metadata,
+    this.imageUrl,
+    required this.onPlay,
+    required this.onShuffle,
+    required this.onShare,
   });
 
   @override
   Widget build(BuildContext context) {
+    final resolvedUrl = ImageUrlHelper.resolve(imageUrl);
+
     return Column(
       children: [
         Container(
@@ -26,14 +34,19 @@ class AlbumDetailHeader extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => Container(
-                color: AppColors.surface,
-                child: const Icon(Icons.album, size: 80, color: AppColors.primary),
-              ),
-            ),
+            child: resolvedUrl != null
+                ? Image.network(
+                    resolvedUrl,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      color: AppColors.surface,
+                      child: const Icon(Icons.album, size: 80, color: AppColors.primary),
+                    ),
+                  )
+                : Container(
+                    color: AppColors.surface,
+                    child: const Icon(Icons.album, size: 80, color: AppColors.primary),
+                  ),
           ),
         ),
         const SizedBox(height: 16),
@@ -58,12 +71,6 @@ class AlbumDetailHeader extends StatelessWidget {
               icon: const Icon(Icons.shuffle, size: 18),
               label: const Text('Trộn'),
               style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              onPressed: () { HapticFeedback.lightImpact(); onToggleFavorite(); },
-              icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border, color: isFavorite ? Colors.redAccent : AppColors.textPrimary),
-              tooltip: 'Yêu thích album',
             ),
             IconButton(
               onPressed: () { HapticFeedback.lightImpact(); onShare(); },

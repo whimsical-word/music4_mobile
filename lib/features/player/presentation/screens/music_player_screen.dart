@@ -1,9 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../providers/player_provider.dart';
 import '../widgets/music_player_body.dart';
+import '../dialogs/preview_ended_dialog.dart';
 
 class MusicPlayerScreen extends ConsumerStatefulWidget {
  const MusicPlayerScreen({super.key});
@@ -15,17 +16,26 @@ class MusicPlayerScreen extends ConsumerStatefulWidget {
 class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with SingleTickerProviderStateMixin {
  late AnimationController _spinController;
 
- @override
- void initState() {
- super.initState();
- _spinController = AnimationController(vsync: this, duration: const Duration(seconds: 10));
- }
+  @override
+  void initState() {
+    super.initState();
+    _spinController = AnimationController(vsync: this, duration: const Duration(seconds: 10));
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final playerState = ref.read(playerNotifierProvider).value;
+      if (playerState?.showLoginPrompt == true) {
+        showPreviewEndedDialog(context, ref);
+      }
+    });
+  }
 
  @override
  void dispose() {
  _spinController.dispose();
  super.dispose();
  }
+
+
 
  void _onPlayPause(bool isPlaying) {
  HapticFeedback.lightImpact();
@@ -37,12 +47,15 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
  Widget build(BuildContext context) {
  final playerStateAsync = ref.watch(playerNotifierProvider);
 
- ref.listen(playerNotifierProvider, (prev, next) {
- if (next is AsyncData) {
-  next.value!.isPlaying ? _spinController.repeat() : _spinController.stop();
+    ref.listen(playerNotifierProvider, (prev, next) {
+      if (next is AsyncData) {
+        next.value!.isPlaying ? _spinController.repeat() : _spinController.stop();
 
- }
- });
+        if (next.value!.showLoginPrompt && !(prev?.value?.showLoginPrompt ?? false)) {
+          showPreviewEndedDialog(context, ref);
+        }
+      }
+    });
 
  return Scaffold(
  appBar: AppBar(
@@ -50,7 +63,15 @@ class _MusicPlayerScreenState extends ConsumerState<MusicPlayerScreen> with Sing
   icon: const Icon(Icons.keyboard_arrow_down, size: 32),
   onPressed: () => context.pop(),
   ),
-  title: const Text('Đang phát'),
+  title: const Text(
+    'ĐANG PHÁT',
+    style: TextStyle(
+      fontSize: 14,
+      fontWeight: FontWeight.bold,
+      color: Colors.white,
+      letterSpacing: 1.0,
+    ),
+  ),
   centerTitle: true,
   actions: [
   IconButton(

@@ -25,6 +25,14 @@ class ArtistHeader extends StatelessWidget {
     return count.toString();
   }
 
+  Widget _avatarFallback() {
+    return const SizedBox(
+      width: 92,
+      height: 92,
+      child: Icon(Icons.person, size: 40, color: AppColors.textMuted),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -38,12 +46,14 @@ class ArtistHeader extends StatelessWidget {
               height: 160,
               width: double.infinity,
               color: AppColors.card,
-              // Giả lập network image cover, dùng màu solid nếu lỗi
-              child: Image.network(
-                artist.coverUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, _, _) => Container(color: AppColors.surface),
-              ),
+              // Solid colour when the artist has no cover or it fails to load.
+              child: artist.coverUrl == null
+                  ? Container(color: AppColors.surface)
+                  : Image.network(
+                      artist.coverUrl!,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(color: AppColors.surface),
+                    ),
             ),
             Positioned(
               bottom: -50,
@@ -53,9 +63,17 @@ class ArtistHeader extends StatelessWidget {
                 child: CircleAvatar(
                   radius: 46,
                   backgroundColor: AppColors.card,
-                  backgroundImage: NetworkImage(artist.avatarUrl),
-                  onBackgroundImageError: (_, _) {},
-                  child: const Icon(Icons.person, size: 40, color: AppColors.textMuted),
+                  child: ClipOval(
+                    child: artist.avatarUrl == null
+                        ? _avatarFallback()
+                        : Image.network(
+                            artist.avatarUrl!,
+                            width: 92,
+                            height: 92,
+                            fit: BoxFit.cover,
+                            errorBuilder: (_, _, _) => _avatarFallback(),
+                          ),
+                  ),
                 ),
               ),
             ),
@@ -76,25 +94,15 @@ class ArtistHeader extends StatelessWidget {
                     ),
                 textAlign: TextAlign.center,
               ),
-              const SizedBox(height: 8),
-              Text(
-                '${_formatFollowers(artist.followersCount)} Người theo dõi',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: AppColors.textSecondary,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              
-              // Bio
-              Text(
-                artist.bio,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                textAlign: TextAlign.center,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              if (artist.followersCount != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${_formatFollowers(artist.followersCount!)} Người theo dõi',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                ),
+              ],
               const SizedBox(height: 16),
               
               // Follow Button

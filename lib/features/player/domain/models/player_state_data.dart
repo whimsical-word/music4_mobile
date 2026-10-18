@@ -32,6 +32,9 @@ class PlayerStateData {
 
   final bool isShuffle;
   final RepeatState repeatMode;
+  final bool isPreview;
+  final bool showLoginPrompt;
+  final bool isOfflineCached;
 
   const PlayerStateData({
     this.currentTrackId,
@@ -47,6 +50,9 @@ class PlayerStateData {
     this.hasPrevious = false,
     this.isShuffle = false,
     this.repeatMode = RepeatState.off,
+    this.isPreview = false,
+    this.showLoginPrompt = false,
+    this.isOfflineCached = false,
   });
 
   PlayerStateData copyWith({
@@ -63,6 +69,9 @@ class PlayerStateData {
     bool? hasPrevious,
     bool? isShuffle,
     RepeatState? repeatMode,
+    bool? isPreview,
+    bool? showLoginPrompt,
+    bool? isOfflineCached,
   }) {
     return PlayerStateData(
       currentTrackId: currentTrackId ?? this.currentTrackId,
@@ -78,6 +87,9 @@ class PlayerStateData {
       hasPrevious: hasPrevious ?? this.hasPrevious,
       isShuffle: isShuffle ?? this.isShuffle,
       repeatMode: repeatMode ?? this.repeatMode,
+      isPreview: isPreview ?? this.isPreview,
+      showLoginPrompt: showLoginPrompt ?? this.showLoginPrompt,
+      isOfflineCached: isOfflineCached ?? this.isOfflineCached,
     );
   }
 

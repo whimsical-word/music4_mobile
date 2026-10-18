@@ -15,14 +15,18 @@ class ApiEndpoints {
   }
 
   // ==========================================
-  // 1. CAU HINH CHO DIEN THOAI THAT
+  // 1. CẤU HÌNH IP MÁY TÍNH KHI TEST QUA WI-FI (KHÔNG DÙNG CÁP)
   // ==========================================
-  static const String _lanIp = '10.64.223.168';
+  static const String _lanIp = '192.168.1.160';
 
   // ==========================================
-  // 🔴 2. BẠN ĐANG TEST TRÊN ĐIỆN THOẠI THẬT HAY MÁY ẢO?
-  // Để 'true' nếu dùng Máy Ảo (Emulator), 'false' nếu cắm cáp Điện thoại thật
+  // 🔴 2. CHẾ ĐỘ KẾT NỐI CHO THIẾT BỊ:
+  // - _useUsbCable = true: Cắm cáp USB (dùng adb reverse tcp:8080 tcp:8080)
+  //   -> Đề xuất số 1 khi Demo: không phụ thuộc Wi-Fi, không sợ mạng trường chặn LAN.
+  // - _isEmulator = true: Dùng máy ảo Android Emulator (10.0.2.2)
+  // - Cả 2 đều false: Dùng điện thoại thật kết nối qua Wi-Fi nội bộ (_lanIp)
   // ==========================================
+  static const bool _useUsbCable = false;
   static const bool _isEmulator = false;
 
   static String get baseUrl {
@@ -30,9 +34,19 @@ class ApiEndpoints {
       return 'http://localhost:8080'; // Web và Desktop luôn là localhost
     }
 
+    // Khi cắm cáp USB trên điện thoại thật có adb reverse
+    if (_useUsbCable) {
+      return 'http://localhost:8080';
+    }
+
     if (_isEmulator) {
       if (Platform.isAndroid) return 'http://10.0.2.2:8080'; // Máy ảo Android
-      if (Platform.isIOS) return 'http://localhost:8080'; // Máy ảo iOS
+      if (Platform.isIOS) {
+        return 'http://localhost:8080'; // Máy ảo iOS (Simulator)
+      }
+      if (Platform.isMacOS) {
+        return 'http://localhost:8080'; // Ứng dụng macOS
+      }
     }
 
     return 'http://$_lanIp:8080';
@@ -72,6 +86,8 @@ class ApiEndpoints {
   static const String artists = '/api/artists';
   static const String top3Artists = '/api/artists/top3';
   static const String albums = '/api/albums';
+  static const String follows = '/api/follows';
+  static const String analytics = '/api/analytics';
 
   // Comments
   static const String comments = '/api/comments';
@@ -88,5 +104,10 @@ class ApiEndpoints {
   // Notifications
   static const String notifications = '/api/notifications/user'; // + /{userId}
   static const String subscribeNotification =
-      '/api/notifications/subscribe'; // + /{userId}
+      '/api/notifications/subscribe'; // + /{userId} (SSE)
+  static const String notificationBase =
+      '/api/notifications'; // + /{id}/read | /{id} | /clear-all
+
+  // User Profile
+  static const String userProfile = '/api/users'; // + /{userId}
 }

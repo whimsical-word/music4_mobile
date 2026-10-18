@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import '../../../artist_profile/presentation/widgets/artist_name_link.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/home_track_item.dart';
-import '../controllers/home_feed_controller.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -44,7 +44,6 @@ class AiRecommendationCard extends ConsumerWidget {
           
           ref.read(playerNotifierProvider.notifier).playPlaylist(queue, initialIndex);
           
-          ref.read(homeFeedControllerProvider.notifier).trackPlay(track.id);
           context.push(RouteNames.player);
         },
         child: Container(
@@ -107,10 +106,9 @@ class AiRecommendationCard extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: 2),
-                    Text(
-                      track.artist,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    ArtistNameLink(
+                      text: track.artist,
+                      artistId: track.artistId,
                       style: textTheme.bodySmall?.copyWith(
                         color: AppColors.textSecondary,
                         fontSize: 11,

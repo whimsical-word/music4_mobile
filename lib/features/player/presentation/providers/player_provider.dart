@@ -2,12 +2,18 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:path_provider/path_provider.dart';
+import 'package:dio/dio.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../../../core/constants/api_endpoints.dart';
+import '../../data/services/audio_cache_service.dart';
 import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../../../features/track_detail/data/repositories/track_detail_repository.dart';
 import '../../data/services/app_audio_handler.dart';
+import '../../../tracking/application/playback_tracker.dart';
+import '../../../tracking/presentation/providers/playback_tracker_provider.dart';
 
 final audioPlayerProvider = Provider<AudioPlayer>((ref) {
  final player = AudioPlayer();
@@ -20,16 +26,35 @@ final audioHandlerProvider = Provider<AppAudioHandler>((ref) {
 });
 
 final playerNotifierProvider = StateNotifierProvider<PlayerNotifier, AsyncValue<PlayerStateData>>((ref) {
- final audioHandler = ref.watch(audioHandlerProvider);
- final player = ref.watch(audioPlayerProvider);
- final trackDetailRepo = ref.watch(trackDetailRepositoryProvider);
- return PlayerNotifier(player, trackDetailRepo, audioHandler);
+  final audioHandler = ref.watch(audioHandlerProvider);
+  final player = ref.watch(audioPlayerProvider);
+  final trackDetailRepo = ref.watch(trackDetailRepositoryProvider);
+  final tracker = ref.watch(playbackTrackerProvider);
+  final notifier = PlayerNotifier(
+    player,
+    trackDetailRepo,
+    audioHandler,
+    tracker: tracker,
+    ref: ref,
+  );
+
+  ref.listen<AuthState>(authNotifierProvider, (previous, next) {
+    if (next is AuthAuthenticated) {
+      notifier.onUserAuthenticated();
+    } else if (next is AuthUnauthenticated) {
+      notifier.onUserLoggedOut();
+    }
+  });
+
+  return notifier;
 });
 
 class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  final AudioPlayer _player;
  final TrackDetailRepository _trackDetailRepo;
  final AppAudioHandler _audioHandler;
+ final PlaybackTracker? _tracker;
+ final Ref? _ref;
 
  // ── Spotify-style Queue: tự quản lý playlist + index thay vì dùng ConcatenatingAudioSource ──
  // Lý do: ConcatenatingAudioSource.seek(index) trên just_audio_windows_plus gây ra transient states
@@ -37,6 +62,11 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // sau khi buffer bị hủy. Spotify giải quyết bằng cách load từng bài đơn lẻ.
  List<TrackQueueItem> _playlist = [];
  int _currentIndex = 0;
+
+ /// One-shot start position for the NEXT track load (resume playback). It is
+ /// consumed at the start of [_loadAndPlayCurrentTrack], so only the track that
+ /// was explicitly asked for is resumed, never the next/previous ones.
+ Duration? _pendingStartPosition;
 
  List<int> _shuffledIndices = [];
  bool _isShuffle = false;
@@ -104,11 +134,48 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // Mỗi lần gọi _loadAndPlayCurrentTrack, tăng _loadId lên 1.
  // Nếu một load cũ đang chạy dở mà load mới bắt đầu, load cũ sẽ tự hủy khi thấy _loadId đã thay đổi.
  int _loadId = 0;
-  PlayerNotifier(this._player, this._trackDetailRepo, this._audioHandler) : super(const AsyncData(PlayerStateData())) {
+  PlayerNotifier(
+    this._player,
+    this._trackDetailRepo,
+    this._audioHandler, {
+    this._tracker,
+    this._ref,
+  }) : super(const AsyncData(PlayerStateData())) {
     _audioHandler.onSkipToNextCb = () => next();
     _audioHandler.onSkipToPreviousCb = () => previous();
- _initStreams();
- }
+    _initStreams();
+  }
+
+  Future<String?> _resolveToken() async {
+    if (_ref != null) {
+      final authState = _ref.read(authNotifierProvider);
+      if (authState is AuthAuthenticated) {
+        return await TokenStorage.instance.getAccessToken();
+      }
+      return null;
+    }
+    try {
+      return await TokenStorage.instance.getAccessToken();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<bool> _isCurrentUserArtist() async {
+    if (_ref != null) {
+      final authState = _ref.read(authNotifierProvider);
+      if (authState is AuthAuthenticated) {
+        return authState.user.isArtist;
+      }
+      return false;
+    }
+    try {
+      final cachedUser = await TokenStorage.instance.getUser();
+      return cachedUser?.isArtist ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
 
  void _initStreams() {
  _player.playerStateStream.listen((playerState) {
@@ -117,6 +184,17 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  // Auto-advance: bài hát phát xong tự nhiên → chuyển sang bài kế tiếp
  if (playerState.processingState == ProcessingState.completed) {
+  _tracker?.onCompleted();
+
+  final isPreview = state.value?.isPreview ?? false;
+  if (isPreview) {
+    _player.pause();
+    state = state.whenData((data) => data.copyWith(
+      isPlaying: false,
+      showLoginPrompt: true,
+    ));
+    return;
+  }
   final nextIdx = _getNextIndex();
   if (nextIdx != null) {
   _currentIndex = nextIdx;
@@ -132,6 +210,23 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  _player.positionStream.listen((position) {
  if (_isLoadingTrack) return;
+ _tracker?.onPosition(position);
+
+ final isPreview = state.value?.isPreview ?? false;
+ if (isPreview && position >= const Duration(seconds: 30)) {
+   if (_player.playing) {
+     _player.pause();
+   }
+   if (state.value?.showLoginPrompt != true || state.value?.isPlaying == true || state.value?.position != const Duration(seconds: 30)) {
+     state = state.whenData((data) => data.copyWith(
+       position: const Duration(seconds: 30),
+       isPlaying: false,
+       showLoginPrompt: true,
+     ));
+   }
+   return;
+ }
+
  state = state.whenData((data) => data.copyWith(position: position));
  });
 
@@ -142,7 +237,11 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  _player.durationStream.listen((duration) {
  if (duration != null) {
-  state = state.whenData((data) => data.copyWith(duration: duration));
+  _tracker?.updateDuration(duration);
+  final isPreview = state.value?.isPreview ?? false;
+  state = state.whenData((data) => data.copyWith(
+    duration: isPreview ? const Duration(seconds: 30) : duration,
+  ));
  }
  });
  }
@@ -160,18 +259,40 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
 
  final item = _playlist[_currentIndex];
 
+ // Resume playback: take the one-shot start position now, before any await.
+ final Duration? requestedStart = _pendingStartPosition;
+ _pendingStartPosition = null;
+
+ // Bắt đầu phiên nghe mới (bỏ phiên cũ => skip không bị tính lượt nghe).
+ _tracker?.startTrack(trackId: item.id, duration: item.duration);
+
+ final String? token = await _resolveToken();
+ final bool isArtist = await _isCurrentUserArtist();
+ final bool isPreview = token == null || token.isEmpty;
+
+ // Only the full (logged-in) stream can resume; a preview always starts at 0.
+ // A start at or after the end of the track makes no sense: play from 0.
+ final Duration startPosition = (!isPreview &&
+         requestedStart != null &&
+         requestedStart > Duration.zero &&
+         (item.duration == Duration.zero || requestedStart < item.duration))
+     ? requestedStart
+     : Duration.zero;
+
  // Cập nhật UI ngay lập tức (Optimistic UI)
  state = state.whenData((data) => data.copyWith(
       currentTrackId: item.id,
       title: item.title,
       artist: item.artist,
       coverUrl: item.coverUrl,
-      duration: item.duration,
+      duration: isPreview ? const Duration(seconds: 30) : item.duration,
       hasNext: _getNextIndex() != null,
       hasPrevious: _getPreviousIndex() != null,
-      position: Duration.zero,
+      position: startPosition,
       bufferedPosition: Duration.zero,
       isLiked: false, // Tạm thời set false, sẽ check api sau
+      isPreview: isPreview,
+      showLoginPrompt: false,
     ));
     
     // Cập nhật lên Notification / Lockscreen
@@ -183,12 +304,14 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
       duration: item.duration,
     );
 
-    // Gọi API check isFavorite ngầm (không chặn UI)
-    _trackDetailRepo.checkIsFavorite(int.tryParse(item.id) ?? 0).then((isLiked) {
-      if (mounted && _loadId == myLoadId) {
-        state = state.whenData((data) => data.copyWith(isLiked: isLiked));
-      }
-    }).catchError((_) {});
+    // Gọi API check isFavorite ngầm (chỉ gọi cho Listener/User, Artist không có Favorite)
+    if (!isArtist) {
+      _trackDetailRepo.checkIsFavorite(int.tryParse(item.id) ?? 0).then((isLiked) {
+        if (mounted && _loadId == myLoadId) {
+          state = state.whenData((data) => data.copyWith(isLiked: isLiked));
+        }
+      }).catchError((_) {});
+    }
 
 
  try {
@@ -198,25 +321,24 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  }
  if (_loadId != myLoadId) return; // Load đã bị supersede
 
- final token = await TokenStorage.instance.getAccessToken();
- final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=${token ?? ""}';
-
- AudioSource source;
- if (Platform.isWindows) {
-  source = AudioSource.uri(Uri.parse(streamUrl), tag: item);
+ final String streamUrl;
+ if (!isPreview) {
+   streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=$token';
  } else {
-  final cacheDir = await getApplicationDocumentsDirectory();
-  if (_loadId != myLoadId) return;
-  // ignore: experimental_member_use
-  source = LockCachingAudioSource(
-  Uri.parse(streamUrl),
-  tag: item,
-  cacheFile: File('${cacheDir.path}/music4_cache_${item.id}.mp3'),
-  );
+   streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/preview/${item.id}';
  }
 
- // Ép player reset về 0 để tránh kẹt trạng thái
- await _player.setAudioSource(source, initialPosition: Duration.zero);
+ debugPrint('[AUDIO_STREAM] Track: ${item.id} | Mode: ${isPreview ? "PREVIEW 30s (Guest)" : "FULL (Logged in)"} | URL: $streamUrl');
+
+ final source = await _createAudioSource(
+  item: item,
+  streamUrl: streamUrl,
+  isPreview: isPreview,
+ );
+ if (_loadId != myLoadId) return;
+
+ // Bắt đầu từ vị trí được yêu cầu (nghe tiếp) hoặc reset về 0 để tránh kẹt trạng thái
+ await _player.setAudioSource(source, initialPosition: startPosition);
  if (_loadId != myLoadId) return;
 
  _player.play().catchError((e) {
@@ -234,7 +356,14 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  } catch (e, st) {
  // Chỉ báo lỗi nếu đây vẫn là lần load hiện hành (không bị supersede)
  if (_loadId == myLoadId) {
-  state = AsyncError("Không thể tải bài hát.", st);
+  debugPrint('[PLAYER_ERROR] Lỗi phát nhạc: $e\n$st');
+  final errStr = e.toString();
+  final errorMsg = errStr.contains('SocketException') ||
+          errStr.contains('Failed host lookup') ||
+          errStr.contains('Mất kết nối mạng')
+      ? "Mất kết nối mạng. Bài hát này chưa được lưu để nghe offline."
+      : "Không thể tải bài hát.";
+  state = AsyncError(errorMsg, st);
  }
  } finally {
  if (_loadId == myLoadId) {
@@ -243,9 +372,124 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  }
  }
 
+  // ══════════════════════════════════════════════════════════
+  // Offline Audio Cache Helper (UC42)
+  // ══════════════════════════════════════════════════════════
+  Future<AudioSource> _createAudioSource({
+    required TrackQueueItem item,
+    required String streamUrl,
+    required bool isPreview,
+  }) async {
+    final cacheFile = await AudioCacheService.instance.getCacheFile(item.id);
+    final isCached = await AudioCacheService.instance.isTrackCached(item.id);
+
+    // Kiểm tra kết nối mạng thực tế
+    bool isOnline = true;
+    try {
+      final connectivity = await Connectivity().checkConnectivity();
+      isOnline = connectivity.any((r) => r != ConnectivityResult.none);
+    } catch (_) {
+      isOnline = true;
+    }
+
+    // Trường hợp 1: Không có kết nối mạng (mất mạng từ đầu)
+    if (!isOnline) {
+      if (isCached) {
+        debugPrint('[AUDIO_CACHE] Đang mất mạng: Phát từ file cache cục bộ (offline mode): ${cacheFile.path}');
+        state = state.whenData((data) => data.copyWith(isOfflineCached: true));
+        return AudioSource.file(cacheFile.path, tag: item);
+      } else {
+        debugPrint('[AUDIO_CACHE] Mất kết nối mạng và bài hát chưa được lưu vào cache.');
+        state = state.whenData((data) => data.copyWith(isOfflineCached: false));
+        throw 'Mất kết nối mạng. Bài hát này chưa được lưu để nghe offline.';
+      }
+    }
+
+    // Trường hợp 2: Có mạng bình thường (Online Streaming) -> Tuyệt đối không gắn nhãn Offline
+    state = state.whenData((data) => data.copyWith(isOfflineCached: false));
+
+    // Bóc tách S3 Presigned URL từ backend 307 TEMPORARY_REDIRECT (nếu là luồng Full có token)
+    final finalUrl = isPreview ? streamUrl : await _resolveRedirectUrl(streamUrl);
+
+    if (Platform.isWindows || isPreview) {
+      if (Platform.isWindows && !isPreview) {
+        _cacheTrackForWindows(item.id, finalUrl, cacheFile);
+      }
+      return AudioSource.uri(Uri.parse(finalUrl), tag: item);
+    }
+
+    // Android / iOS: Dùng LockCachingAudioSource vừa stream vừa ghi cache an toàn
+    // ignore: experimental_member_use
+    return LockCachingAudioSource(
+      Uri.parse(finalUrl),
+      tag: item,
+      cacheFile: cacheFile,
+    );
+  }
+
+  /// Bóc tách URL S3 Presigned từ mã chuyển hướng HTTP 307 của Backend
+  /// Giúp trình phát nhạc kết nối trực tiếp S3 mà không bị lỗi cross-protocol redirect.
+  Future<String> _resolveRedirectUrl(String url) async {
+    try {
+      final client = HttpClient();
+      final uri = Uri.parse(url);
+      final request = await client.getUrl(uri);
+      request.followRedirects = false;
+      final response = await request.close();
+      if (response.isRedirect ||
+          response.statusCode == HttpStatus.temporaryRedirect ||
+          response.statusCode == HttpStatus.movedTemporarily ||
+          response.statusCode == HttpStatus.seeOther) {
+        final location = response.headers.value(HttpHeaders.locationHeader);
+        if (location != null && location.isNotEmpty) {
+          debugPrint('[AUDIO_STREAM] Resolved S3 Presigned URL thành công.');
+          return location;
+        }
+      }
+    } catch (e) {
+      debugPrint('[AUDIO_STREAM] Không thể bóc tách S3 redirect: $e');
+    }
+    return url;
+  }
+
+  void _cacheTrackForWindows(String trackId, String streamUrl, File cacheFile) {
+    if (cacheFile.existsSync() && cacheFile.lengthSync() > 102400) return;
+    final tmpFile = File('${cacheFile.path}.tmp');
+    // Dùng Dio mới không interceptor để tránh gửi kèm Authorization header tới S3
+    Dio().download(
+      streamUrl,
+      tmpFile.path,
+    ).then((_) async {
+      if (await tmpFile.exists() && await tmpFile.length() > 102400) {
+        await tmpFile.rename(cacheFile.path);
+        debugPrint('[WINDOWS_CACHE] Đã lưu cache offline cho bài hát $trackId (${cacheFile.lengthSync()} bytes)');
+      } else if (await tmpFile.exists()) {
+        await tmpFile.delete();
+      }
+    }).catchError((e) {
+      debugPrint('[WINDOWS_CACHE] Lỗi tải cache ngầm trên Windows: $e');
+    });
+  }
+
  // ══════════════════════════════════════════════════════════
  // Public API: Khởi tạo playlist
  // ══════════════════════════════════════════════════════════
+ /// Like [playPlaylist], but the first track starts at [startPosition] (resume
+ /// playback). Next/previous tracks start from 0 as usual.
+ Future<void> resumePlaylist(
+   List<TrackQueueItem> playlist,
+   int initialIndex, {
+   required Duration startPosition,
+ }) async {
+   _pendingStartPosition = startPosition;
+   try {
+     await playPlaylist(playlist, initialIndex);
+   } finally {
+     // Never leak a start position into a later, unrelated load.
+     _pendingStartPosition = null;
+   }
+ }
+
  Future<void> playPlaylist(List<TrackQueueItem> playlist, int initialIndex) async {
  _playlist = List.from(playlist);
  _currentIndex = initialIndex.clamp(0, playlist.length - 1);
@@ -278,7 +522,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  title: item.title,
  artist: item.artist,
  coverUrl: item.coverUrl,
- duration: item.duration,
+ duration: (state.value?.isPreview ?? false) ? const Duration(seconds: 30) : item.duration,
  hasNext: _getNextIndex() != null,
  hasPrevious: true,
  position: Duration.zero,
@@ -317,7 +561,7 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  title: item.title,
  artist: item.artist,
  coverUrl: item.coverUrl,
- duration: item.duration,
+ duration: (state.value?.isPreview ?? false) ? const Duration(seconds: 30) : item.duration,
  hasNext: true,
  hasPrevious: _currentIndex > 0,
  position: Duration.zero,
@@ -334,7 +578,16 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  // ══════════════════════════════════════════════════════════
  // Play / Pause / Seek
  // ══════════════════════════════════════════════════════════
-   Future<void> toggleFavorite() async {
+    Future<void> toggleFavorite() async {
+    final isArtist = await _isCurrentUserArtist();
+    if (isArtist) return;
+
+    final token = await _resolveToken();
+    if (token == null || token.isEmpty) {
+      state = state.whenData((data) => data.copyWith(showLoginPrompt: true));
+      return;
+    }
+
     final currentState = state.value;
     if (currentState == null || currentState.currentTrackId == null) return;
     
@@ -344,12 +597,125 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
         state = AsyncValue.data(currentState.copyWith(isLiked: isLiked));
       }
     } catch (e) {
-      debugPrint('Lỗi thả tim: ');
+      debugPrint('Lỗi thả tim: $e');
     }
   }
 
 
- Future<void> play() async {
+  Future<void> onUserLoggedOut() async {
+    try {
+      _loadId++;
+      _tracker?.onCompleted();
+      await _player.stop();
+      _playlist = [];
+      _currentIndex = 0;
+      state = const AsyncData(PlayerStateData());
+      await _audioHandler.stop();
+    } catch (e) {
+      debugPrint("Lỗi dừng nhạc khi đăng xuất: $e");
+    }
+  }
+
+  Future<void> onUserAuthenticated() async {
+    final isPreview = state.value?.isPreview ?? false;
+    if (isPreview && _playlist.isNotEmpty && _currentIndex >= 0 && _currentIndex < _playlist.length) {
+      final currentPos = state.value?.position ?? Duration.zero;
+      await _upgradeToFullStream(resumePosition: currentPos);
+    }
+  }
+
+  Future<void> _upgradeToFullStream({Duration? resumePosition}) async {
+    if (_playlist.isEmpty || _currentIndex < 0 || _currentIndex >= _playlist.length) return;
+    final item = _playlist[_currentIndex];
+    final token = await _resolveToken();
+    if (token == null || token.isEmpty) return;
+
+    final seekTo = resumePosition ?? state.value?.position ?? Duration.zero;
+
+    _loadId++;
+    final myLoadId = _loadId;
+    _isLoadingTrack = true;
+
+    state = state.whenData((data) => data.copyWith(
+      duration: item.duration,
+      isPreview: false,
+      showLoginPrompt: false,
+      isPlaying: true,
+    ));
+
+    _audioHandler.updateCurrentMediaItem(
+      id: item.id,
+      title: item.title,
+      artist: item.artist,
+      artUri: item.coverUrl,
+      duration: item.duration,
+    );
+
+    try {
+      if (_player.audioSource != null) {
+        await _player.stop();
+      }
+      if (_loadId != myLoadId) return;
+
+      final streamUrl = '${ApiEndpoints.baseUrl}/api/tracks/stream/${item.id}?token=$token';
+      debugPrint('[AUDIO_STREAM] UPGRADE TO FULL: Track ${item.id} -> $streamUrl (resuming at $seekTo)');
+
+      final source = await _createAudioSource(
+        item: item,
+        streamUrl: streamUrl,
+        isPreview: false,
+      );
+      if (_loadId != myLoadId) return;
+
+      await _player.setAudioSource(source, initialPosition: seekTo);
+      if (_loadId != myLoadId) return;
+
+      _player.play().catchError((e) {
+        debugPrint("Lỗi auto-play sau khi upgrade full: $e");
+      });
+
+      if (Platform.isWindows) {
+        Future.delayed(const Duration(milliseconds: 150), () {
+          if (_loadId == myLoadId && !_player.playing) {
+            _player.play();
+          }
+        });
+      }
+    } catch (e, st) {
+      if (_loadId == myLoadId) {
+        state = AsyncError("Không thể tiếp tục phát bản full.", st);
+      }
+    } finally {
+      if (_loadId == myLoadId) {
+        _isLoadingTrack = false;
+      }
+    }
+  }
+
+  Future<void> play() async {
+    final isPreview = state.value?.isPreview ?? false;
+    final token = await _resolveToken();
+    final hasToken = token != null && token.isNotEmpty;
+
+   // Nếu trước đó đang nghe Preview (30s) mà bây giờ đã đăng nhập có token:
+   // Tự động nâng cấp sang bản Full và phát tiếp từ điểm đang nghe dở!
+   if (isPreview && hasToken) {
+     final currentPos = state.value?.position ?? Duration.zero;
+     await _upgradeToFullStream(resumePosition: currentPos);
+     return;
+   }
+
+   final currentPos = state.value?.position ?? Duration.zero;
+   if (isPreview && currentPos >= const Duration(seconds: 30)) {
+     if (state.value?.showLoginPrompt == true) {
+       state = state.whenData((data) => data.copyWith(showLoginPrompt: false));
+     }
+     state = state.whenData((data) => data.copyWith(
+       isPlaying: false,
+       showLoginPrompt: true,
+     ));
+     return;
+   }
  try {
  await _player.play();
  } catch (e, st) {
@@ -365,7 +731,37 @@ class PlayerNotifier extends StateNotifier<AsyncValue<PlayerStateData>> {
  }
  }
 
- Future<void> seek(Duration position) async {
+ void dismissLoginPrompt() {
+   state = state.whenData((data) => data.copyWith(showLoginPrompt: false));
+ }
+
+  Future<void> seek(Duration position) async {
+    final isPreview = state.value?.isPreview ?? false;
+    final token = await _resolveToken();
+    final hasToken = token != null && token.isNotEmpty;
+
+   // Nếu trước đó là Preview mà giờ đã có token -> nâng cấp sang Full stream và tua tới vị trí mong muốn
+   if (isPreview && hasToken) {
+     await _upgradeToFullStream(resumePosition: position);
+     return;
+   }
+
+   if (isPreview && position >= const Duration(seconds: 30)) {
+     if (_player.playing) {
+       await _player.pause();
+     }
+     await _player.seek(const Duration(seconds: 30));
+     if (state.value?.showLoginPrompt == true) {
+       state = state.whenData((data) => data.copyWith(showLoginPrompt: false));
+     }
+     state = state.whenData((data) => data.copyWith(
+       position: const Duration(seconds: 30),
+       isPlaying: false,
+       showLoginPrompt: true,
+     ));
+     return;
+   }
+
  try {
  await _player.seek(position);
  } catch (e, st) {

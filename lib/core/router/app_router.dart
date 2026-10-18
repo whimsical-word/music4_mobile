@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:music4_mobile/features/auth/presentation/screens/forgot_password_email_page.dart';
 
 import '../../features/user_profile/presentation/screens/user_profile_screen.dart';
 
@@ -13,6 +14,7 @@ import '../../features/artist_profile/presentation/screens/artist_profile_screen
 import '../../features/player/presentation/screens/music_player_screen.dart';
 import '../../features/upload/presentation/screens/upload_track_screen.dart';
 import '../../features/album/presentation/screens/album_management_screen.dart';
+import '../../features/track_management/presentation/screens/artist_track_management_screen.dart';
 import '../../features/playlist/presentation/screens/playlist_screen.dart';
 import '../../features/playlist/presentation/screens/playlist_detail_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
@@ -24,6 +26,10 @@ import '../../features/categories/presentation/screens/category_detail_screen.da
 import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
+/// Dùng để hiện SnackBar/banner toàn cục (VD: thông báo real-time qua SSE).
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
@@ -68,6 +74,11 @@ final GoRouter appRouter = GoRouter(
       name: 'user-profile',
       builder: (context, state) => const UserProfileScreen(),
     ),
+    GoRoute(
+      path: RouteNames.forgotPassword,
+      name: 'forgot-password',
+      builder: (context, state) => const ForgotPasswordEmailPage(),
+    ),
 
     // ─── T1: Media & Streaming (CE190036 - Nguyễn Trung Kiên) ─────────
     GoRoute(
@@ -96,12 +107,20 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: RouteNames.upload,
       name: 'upload',
-      builder: (context, state) => const UploadTrackScreen(),
+      builder: (context, state) {
+        final albumId = state.uri.queryParameters['albumId'] ?? (state.extra as String?);
+        return UploadTrackScreen(initialAlbumId: albumId);
+      },
     ),
     GoRoute(
       path: RouteNames.albumManagement,
       name: 'albumManagement',
       builder: (context, state) => const AlbumManagementScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.trackManagement,
+      name: 'trackManagement',
+      builder: (context, state) => const ArtistTrackManagementScreen(),
     ),
 
     // ─── T4: Content & Engagement (CE191634 - Nguyễn Việt Đan Quỳnh) ───

@@ -1,10 +1,19 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../../core/utils/image_url_helper.dart';
+import '../../../artist_profile/presentation/widgets/artist_name_link.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../player/domain/models/player_state_data.dart';
+import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/models/history_track_response.dart';
+import '../../domain/resume_position.dart';
 import '../providers/history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -12,6 +21,18 @@ class HistoryScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authNotifierProvider);
+
+    // History is authenticated-only: never request it for a guest.
+    if (authState is! AuthAuthenticated) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Lịch sử nghe nhạc')),
+        body: authState is AuthInitial || authState is AuthLoading
+            ? _buildLoadingState()
+            : _buildGuestState(context),
+      );
+    }
+
     final historyAsync = ref.watch(historyNotifierProvider);
 
     return Scaffold(
@@ -19,20 +40,41 @@ class HistoryScreen extends ConsumerWidget {
         title: const Text('Lịch sử nghe nhạc'),
       ),
       body: historyAsync.when(
-        data: (items) {
-          if (items.isEmpty) {
+        data: (history) {
+          if (history.items.isEmpty) {
             return _buildEmptyState(context, ref);
           }
           return RefreshIndicator(
             onRefresh: () => ref.read(historyNotifierProvider.notifier).refreshHistory(),
-            child: ListView.separated(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              itemCount: items.length,
-              separatorBuilder: (context, index) => const SizedBox(height: 8),
-              itemBuilder: (context, index) {
-                final item = items[index];
-                return _buildHistoryItem(context, item);
+            child: NotificationListener<ScrollNotification>(
+              onNotification: (notification) {
+                // Infinite scroll: load the next page near the bottom.
+                if (notification.metrics.extentAfter < 200) {
+                  ref.read(historyNotifierProvider.notifier).loadMore();
+                }
+                return false;
               },
+              child: ListView.separated(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                itemCount: history.items.length + (history.isLoadingMore ? 1 : 0),
+                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  if (index >= history.items.length) {
+                    return const Padding(
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      child: Center(
+                        child: SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      ),
+                    );
+                  }
+                  return _buildHistoryItem(context, ref, history.items, index);
+                },
+              ),
             ),
           );
         },
@@ -42,22 +84,128 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryItem(BuildContext context, HistoryTrackResponse item) {
+  /// Plays the loaded history through the existing Player flow, starting at
+  /// [index]. Resume playback: unless [fromStart], a partly listened track
+  /// continues from the position saved on the backend.
+  void _playTrack(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryTrackResponse> items,
+    int index, {
+    required bool fromStart,
+  }) {
+    final queue = items
+        .map(
+          (t) => TrackQueueItem(
+            id: t.id.toString(),
+            title: t.name,
+            artist: t.artists.isNotEmpty
+                ? t.artists.map((a) => a.name).join(', ')
+                : 'Không rõ nghệ sĩ',
+            coverUrl: ImageUrlHelper.resolve(t.img),
+            duration: Duration(seconds: t.duration),
+          ),
+        )
+        .toList();
+
+    final item = items[index];
+    final start = fromStart ? Duration.zero : _resumeOf(item);
+    final player = ref.read(playerNotifierProvider.notifier);
+
+    if (start > Duration.zero) {
+      player.resumePlaylist(queue, index, startPosition: start);
+    } else {
+      player.playPlaylist(queue, index);
+    }
+    context.push(RouteNames.player);
+  }
+
+  Duration _resumeOf(HistoryTrackResponse item) => resumePositionFor(
+        playbackPositionSeconds: item.playbackPosition,
+        durationSeconds: item.duration,
+      );
+
+  /// The ⋮ menu: resume / play from the start, track detail, artist profile.
+  void _showItemMenu(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryTrackResponse> items,
+    int index,
+  ) {
+    final item = items[index];
+    final resume = _resumeOf(item);
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (resume > Duration.zero)
+              ListTile(
+                leading: const Icon(Icons.play_arrow),
+                title: Text('Nghe tiếp từ ${formatListenTime(resume)}'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _playTrack(context, ref, items, index, fromStart: false);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.replay),
+              title: const Text('Phát từ đầu'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _playTrack(context, ref, items, index, fromStart: true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('Xem chi tiết bài hát'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/track/${item.id}');
+              },
+            ),
+            if (item.artists.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Xem hồ sơ nghệ sĩ'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  context.push('/artist/${item.artists.first.id}');
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryItem(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryTrackResponse> items,
+    int index,
+  ) {
+    final item = items[index];
     final artistName = item.artists.isNotEmpty
         ? item.artists.map((e) => e.name).join(', ')
         : 'Không rõ nghệ sĩ';
         
-    final positionText = item.playbackPosition > 0 
-        ? 'Đã nghe đến ${item.playbackPosition}s'
-        : 'Mới nghe';
+    // Backend returns an S3 object key (covers/...), not a full URL.
+    final coverUrl = ImageUrlHelper.resolve(item.img);
+
+    // A partly listened track offers to continue; a finished one does not.
+    final resume = _resumeOf(item);
+    final positionText = resume > Duration.zero
+        ? 'Nghe tiếp từ ${formatListenTime(resume)}'
+        : 'Đã nghe xong';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () {
-          // TODO: Navigate to player or track details
-        },
+        onTap: () => _playTrack(context, ref, items, index, fromStart: false),
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -68,20 +216,16 @@ class HistoryScreen extends ConsumerWidget {
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: CachedNetworkImage(
-                  imageUrl: item.img ?? '',
-                  width: 64,
-                  height: 64,
-                  fit: BoxFit.cover,
-                  placeholder: (context, url) => Container(
-                    color: AppColors.surface,
-                    child: const Center(child: Icon(Icons.music_note, color: AppColors.textMuted)),
-                  ),
-                  errorWidget: (context, url, error) => Container(
-                    color: AppColors.surface,
-                    child: const Center(child: Icon(Icons.music_note, color: AppColors.textMuted)),
-                  ),
-                ),
+                child: coverUrl == null
+                    ? _buildCoverPlaceholder()
+                    : CachedNetworkImage(
+                        imageUrl: coverUrl,
+                        width: 64,
+                        height: 64,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => _buildCoverPlaceholder(),
+                        errorWidget: (context, url, error) => _buildCoverPlaceholder(),
+                      ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -98,13 +242,14 @@ class HistoryScreen extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      artistName,
+                    ArtistNameLink(
+                      text: artistName,
+                      artistId: item.artists.isNotEmpty
+                          ? item.artists.first.id.toString()
+                          : null,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: AppColors.textSecondary,
                           ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
                     Text(
@@ -119,12 +264,56 @@ class HistoryScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-                onPressed: () {
-                  // TODO: Show context menu
-                },
+                tooltip: 'Tùy chọn',
+                onPressed: () => _showItemMenu(context, ref, items, index),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCoverPlaceholder() {
+    return Container(
+      width: 64,
+      height: 64,
+      color: AppColors.surface,
+      child: const Center(child: Icon(Icons.music_note, color: AppColors.textMuted)),
+    );
+  }
+
+  Widget _buildGuestState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.history, size: 80, color: AppColors.textMuted),
+            const SizedBox(height: 16),
+            Text(
+              'Đăng nhập để xem lịch sử',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Lịch sử nghe nhạc chỉ dành cho tài khoản đã đăng nhập.',
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: AppColors.textSecondary,
+                  ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton(
+              onPressed: () => context.push(RouteNames.login),
+              child: const Text('Đăng nhập'),
+            ),
+          ],
         ),
       ),
     );
@@ -224,7 +413,7 @@ class HistoryScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => ref.read(historyNotifierProvider.notifier).refreshHistory(),
+              onPressed: () => ref.read(historyNotifierProvider.notifier).fetchHistory(),
               icon: const Icon(Icons.refresh),
               label: const Text('Thử lại'),
             ),
@@ -260,7 +449,7 @@ class HistoryScreen extends ConsumerWidget {
             ),
             const SizedBox(height: 24),
             ElevatedButton(
-              onPressed: () => ref.read(historyNotifierProvider.notifier).refreshHistory(),
+              onPressed: () => ref.read(historyNotifierProvider.notifier).fetchHistory(),
               child: const Text('Tải lại'),
             ),
           ],

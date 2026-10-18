@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:shimmer/shimmer.dart';
 
+import '../../../../core/router/route_names.dart';
+import '../../../../core/utils/image_url_helper.dart';
+import '../../../player/domain/models/player_state_data.dart';
+import '../../../player/presentation/providers/player_provider.dart';
+import '../../../player/presentation/widgets/mini_player_widget.dart';
 import '../providers/search_provider.dart';
 import '../providers/voice_search_provider.dart';
-import '../../data/models/search_models.dart'; // Bắt buộc phải import model
+import '../../data/models/search_models.dart';
 
 class SearchScreen extends ConsumerStatefulWidget {
   const SearchScreen({super.key});
@@ -55,13 +62,17 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
       });
     }
   }
-  // Đã di chuyển _buildSectionTitle vào ĐÚNG VỊ TRÍ (bên trong _SearchScreenState)
   Widget _buildSectionTitle(
     String title,
     List<SearchItem>? items,
-    IconData icon,
-  ) {
+    IconData icon, {
+    void Function(SearchItem item, int index)? onItemTap,
+  }) {
     if (items == null || items.isEmpty) return const SizedBox.shrink();
+
+    final isArtist = title == 'Nghệ sĩ';
+    final isTrack = title == 'Bài hát';
+    final isAlbum = title == 'Album';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -76,17 +87,113 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
             ),
           ),
         ),
-        ...items.map(
-          (item) => Card(
-            elevation: 0,
-            margin: const EdgeInsets.only(bottom: 8),
-            color: Theme.of(context).colorScheme.surfaceContainer,
-            child: ListTile(
-              leading: Icon(icon),
-              title: Text(item.name),
-              trailing: const Icon(Icons.chevron_right, size: 20),
-            ),
-          ),
+        ...items.asMap().entries.map(
+          (entry) {
+            final index = entry.key;
+            final item = entry.value;
+            final resolvedImg = ImageUrlHelper.resolve(item.img);
+
+            Widget leadingWidget;
+            if (isArtist) {
+              leadingWidget = resolvedImg != null && resolvedImg.isNotEmpty
+                  ? CircleAvatar(
+                      radius: 24,
+                      backgroundImage: CachedNetworkImageProvider(resolvedImg),
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                    )
+                  : CircleAvatar(
+                      radius: 24,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: Icon(
+                        icon,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    );
+            } else if (isTrack || isAlbum) {
+              leadingWidget = resolvedImg != null && resolvedImg.isNotEmpty
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: CachedNetworkImage(
+                        imageUrl: resolvedImg,
+                        width: 48,
+                        height: 48,
+                        fit: BoxFit.cover,
+                        placeholder: (context, url) => Container(
+                          width: 48,
+                          height: 48,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: Icon(icon, size: 24),
+                        ),
+                        errorWidget: (context, url, error) => Container(
+                          width: 48,
+                          height: 48,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .surfaceContainerHighest,
+                          child: Icon(icon, size: 24),
+                        ),
+                      ),
+                    )
+                  : Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(icon, size: 24),
+                    );
+            } else {
+              leadingWidget = Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color:
+                      Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(icon, size: 24),
+              );
+            }
+
+            String? subtitleText;
+            if (isTrack) {
+              subtitleText = item.artistNames;
+            } else if (isAlbum) {
+              subtitleText = 'Album';
+            } else if (isArtist) {
+              subtitleText = 'Nghệ sĩ';
+            }
+
+            return Card(
+              elevation: 0,
+              margin: const EdgeInsets.only(bottom: 8),
+              color: Theme.of(context).colorScheme.surfaceContainer,
+              child: ListTile(
+                leading: leadingWidget,
+                title: Text(
+                  item.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                subtitle: subtitleText != null
+                    ? Text(
+                        subtitleText,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : null,
+                trailing: const Icon(Icons.chevron_right, size: 20),
+                onTap: onItemTap != null ? () => onItemTap(item, index) : null,
+              ),
+            );
+          },
         ),
         const Divider(height: 24),
       ],
@@ -166,9 +273,12 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Tìm kiếm'), centerTitle: true),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+      body: Column(
+        children: [
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
           children: [
             TextField(
               controller: _searchController,
@@ -249,24 +359,65 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           'Bài hát',
                           response.tracks?.content,
                           Icons.music_note,
+                          onItemTap: (item, index) {
+                            HapticFeedback.lightImpact();
+                            final tracks = response.tracks?.content ?? [];
+                            final queue = tracks
+                                .map(
+                                  (t) => TrackQueueItem(
+                                    id: t.id.toString(),
+                                    title: t.name,
+                                    artist: t.artistNames,
+                                    coverUrl: ImageUrlHelper.resolve(t.img),
+                                    duration:
+                                        Duration(seconds: t.duration ?? 0),
+                                  ),
+                                )
+                                .toList();
+
+                            ref
+                                .read(playerNotifierProvider.notifier)
+                                .playPlaylist(queue, index);
+                            context.push(RouteNames.player);
+                          },
                         ),
                       if (currentType == 'all' || currentType == 'album')
                         _buildSectionTitle(
                           'Album',
                           response.albums?.content,
                           Icons.album,
+                          onItemTap: (item, index) {
+                            HapticFeedback.lightImpact();
+                            context.push('/album/${item.id}');
+                          },
                         ),
                       if (currentType == 'all' || currentType == 'artist')
                         _buildSectionTitle(
                           'Nghệ sĩ',
                           response.artists?.content,
                           Icons.person,
+                          onItemTap: (item, index) {
+                            HapticFeedback.lightImpact();
+                            context.push('/artist/${item.id}');
+                          },
                         ),
                       if (currentType == 'all' || currentType == 'category')
                         _buildSectionTitle(
                           'Thể loại',
                           response.categories?.content,
                           Icons.category,
+                          onItemTap: (item, index) {
+                            HapticFeedback.lightImpact();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Tính năng chi tiết Thể loại đang được phát triển.',
+                                ),
+                                behavior: SnackBarBehavior.floating,
+                                duration: Duration(seconds: 2),
+                              ),
+                            );
+                          },
                         ),
                     ],
                   );
@@ -276,23 +427,69 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
           ],
         ),
       ),
-    );
+    ),
+    const MiniPlayerWidget(),
+  ],
+),
+);
   }
 
   Widget _buildShimmerLoading() {
+    final colorScheme = Theme.of(context).colorScheme;
+    final baseColor = colorScheme.surfaceContainerHighest;
+    final highlightColor = colorScheme.surfaceContainerLow;
+
     return ListView.builder(
       itemCount: 5,
       itemBuilder: (context, index) {
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 8.0),
-          child: Shimmer.fromColors(
-            baseColor: Colors.grey[300]!,
-            highlightColor: Colors.grey[100]!,
-            child: Container(
-              height: 72,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
+        return Card(
+          elevation: 0,
+          margin: const EdgeInsets.only(bottom: 8),
+          color: colorScheme.surfaceContainer,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: Shimmer.fromColors(
+              baseColor: baseColor,
+              highlightColor: highlightColor,
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: baseColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: double.infinity,
+                          height: 16,
+                          decoration: BoxDecoration(
+                            color: baseColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          width: 140,
+                          height: 12,
+                          decoration: BoxDecoration(
+                            color: baseColor,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
