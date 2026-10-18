@@ -22,14 +22,14 @@ class AccountSection extends StatelessWidget {
           icon: Icons.favorite_outline,
           iconColor: const Color(0xFFE91E63),
           title: 'Bài hát yêu thích',
-          subtitle: '${profile.likedTracksCount} bài hát',
+          subtitle: '${profile.stats.likedTracksCount} bài hát',
           onTap: () => context.push(RouteNames.favorites),
         ),
         ProfileMenuItem(
           icon: Icons.queue_music_outlined,
           iconColor: AppColors.primary,
           title: 'Playlist của tôi',
-          subtitle: '${profile.playlistCount} playlist',
+          subtitle: '${profile.stats.playlistCount} playlist',
           onTap: () => context.push(RouteNames.playlist),
         ),
         ProfileMenuItem(

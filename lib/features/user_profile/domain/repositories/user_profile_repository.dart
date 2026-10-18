@@ -1,3 +1,5 @@
+import 'package:music4_mobile/features/user_profile/domain/models/user_profile_stats.dart';
+
 import '../models/user_profile.dart';
 
 abstract interface class UserProfileRepository {
@@ -9,4 +11,6 @@ abstract interface class UserProfileRepository {
     bool? gender,
     String? avatarUrl,
   });
+
+  Future<UserProfileStats> getProfileStats(int userId);
 }
