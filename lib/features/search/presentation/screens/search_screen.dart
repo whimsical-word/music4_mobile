@@ -388,7 +388,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           Icons.album,
                           onItemTap: (item, index) {
                             HapticFeedback.lightImpact();
-                            context.push('/album/${item.id}');
+                            context.push(
+                              RouteNames.albumDetail
+                                  .replaceAll(':id', item.id.toString()),
+                            );
                           },
                         ),
                       if (currentType == 'all' || currentType == 'artist')
@@ -398,7 +401,10 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           Icons.person,
                           onItemTap: (item, index) {
                             HapticFeedback.lightImpact();
-                            context.push('/artist/${item.id}');
+                            context.push(
+                              RouteNames.artistProfile
+                                  .replaceAll(':id', item.id.toString()),
+                            );
                           },
                         ),
                       if (currentType == 'all' || currentType == 'category')
@@ -408,14 +414,9 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
                           Icons.category,
                           onItemTap: (item, index) {
                             HapticFeedback.lightImpact();
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Tính năng chi tiết Thể loại đang được phát triển.',
-                                ),
-                                behavior: SnackBarBehavior.floating,
-                                duration: Duration(seconds: 2),
-                              ),
+                            context.push(
+                              RouteNames.categoryDetail
+                                  .replaceAll(':id', item.id.toString()),
                             );
                           },
                         ),
