@@ -17,7 +17,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CẤU HÌNH IP MÁY TÍNH KHI TEST QUA WI-FI (KHÔNG DÙNG CÁP)
   // ==========================================
-  static const String _lanIp = '192.168.1.160';
+  static const String _lanIp = '192.168.38.47';
 
   // ==========================================
   // 🔴 2. CHẾ ĐỘ KẾT NỐI CHO THIẾT BỊ:
@@ -26,7 +26,7 @@ class ApiEndpoints {
   // - _isEmulator = true: Dùng máy ảo Android Emulator (10.0.2.2)
   // - Cả 2 đều false: Dùng điện thoại thật kết nối qua Wi-Fi nội bộ (_lanIp)
   // ==========================================
-  static const bool _useUsbCable = false;
+  static const bool _useUsbCable = true;
   static const bool _isEmulator = false;
 
   static String get baseUrl {
@@ -110,4 +110,7 @@ class ApiEndpoints {
 
   // User Profile
   static const String userProfile = '/api/users'; // + /{userId}
+
+  // Categories
+  static const String categories = '/api/categories';
 }
