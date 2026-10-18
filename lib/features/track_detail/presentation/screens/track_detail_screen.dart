@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:music4_mobile/features/user_profile/presentation/providers/user_profile_provider.dart';
 
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -17,6 +18,7 @@ import '../widgets/track_comment_section.dart';
 import '../widgets/track_detail_shimmer.dart';
 import '../widgets/track_header_info.dart';
 import '../../../../core/utils/image_url_helper.dart';
+
 import 'package:music4_mobile/features/track_management/data/repositories/track_management_repository.dart';
 import 'package:music4_mobile/features/track_management/presentation/widgets/edit_track_modal.dart';
 
@@ -45,12 +47,16 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
   Future<void> _loadUserFromToken() async {
     try {
       final token = await TokenStorage.instance.getAccessToken();
-      debugPrint('[AUTH DEBUG] Stored access_token: ${token != null ? "FOUND (${token.length} chars)" : "NULL"}');
+      debugPrint(
+        '[AUTH DEBUG] Stored access_token: ${token != null ? "FOUND (${token.length} chars)" : "NULL"}',
+      );
       if (token != null && mounted) {
         final uid = JwtHelper.getUserId(token);
         final dName = JwtHelper.getUserName(token);
         final uName = JwtHelper.getUsername(token);
-        debugPrint('[AUTH DEBUG] Decoded from JWT -> ID: $uid, Name: "$dName", Username: "$uName"');
+        debugPrint(
+          '[AUTH DEBUG] Decoded from JWT -> ID: $uid, Name: "$dName", Username: "$uName"',
+        );
         setState(() {
           _storedUserId = uid;
           _storedDisplayName = dName;
@@ -66,7 +72,9 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
 
   void _toggleLike() async {
     try {
-      await ref.read(trackDetailControllerProvider(_id).notifier).toggleFavorite();
+      await ref
+          .read(trackDetailControllerProvider(_id).notifier)
+          .toggleFavorite();
       if (!mounted) return;
       final isLikedNow =
           ref.read(trackDetailControllerProvider(_id)).value?.isLiked ?? false;
@@ -80,6 +88,7 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      ref.invalidate(userProfileProvider);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -110,6 +119,7 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
               behavior: SnackBarBehavior.floating,
             ),
           );
+          ref.invalidate(userProfileProvider);
         } catch (e) {
           if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
@@ -143,7 +153,10 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
       builder: (dialogCtx) => AlertDialog(
         backgroundColor: AppColors.card,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Xác nhận xóa bài hát', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text(
+          'Xác nhận xóa bài hát',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -165,7 +178,13 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
           TextButton(
             key: const Key('confirm_delete_track_btn'),
             onPressed: () => Navigator.pop(dialogCtx, true),
-            child: const Text('Xác nhận xóa', style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'Xác nhận xóa',
+              style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ),
         ],
       ),
@@ -319,10 +338,15 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
 
     final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
     final trackData = detailAsync.value?.track;
-    final isOwner = isArtist && trackData != null && (
-      (authState.user.id == trackData.album?.artistId) ||
-      trackData.artists.any((a) => a.id == authState.user.id && (a.role == 'MAIN' || a.role == null))
-    );
+    final isOwner =
+        isArtist &&
+        trackData != null &&
+        ((authState.user.id == trackData.album?.artistId) ||
+            trackData.artists.any(
+              (a) =>
+                  a.id == authState.user.id &&
+                  (a.role == 'MAIN' || a.role == null),
+            ));
 
     return Scaffold(
       appBar: AppBar(
@@ -343,8 +367,12 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                   initialAlbumId: track.album?.id,
                   initialAlbumName: track.album?.title,
                   initialCoverUrl: track.img,
-                  initialCategoryIds: track.categories.map((c) => c.id).toList(),
-                  onSuccess: () => ref.read(trackDetailControllerProvider(_id).notifier).refresh(),
+                  initialCategoryIds: track.categories
+                      .map((c) => c.id)
+                      .toList(),
+                  onSuccess: () => ref
+                      .read(trackDetailControllerProvider(_id).notifier)
+                      .refresh(),
                 );
               },
             ),
@@ -416,9 +444,8 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
               : 'Âm nhạc';
 
           return RefreshIndicator(
-            onRefresh: () => ref
-                .read(trackDetailControllerProvider(_id).notifier)
-                .refresh(),
+            onRefresh: () =>
+                ref.read(trackDetailControllerProvider(_id).notifier).refresh(),
             child: ListView(
               padding: const EdgeInsets.symmetric(vertical: 16.0),
               children: [
@@ -472,44 +499,69 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                         ),
                         child: ListTile(
                           key: const Key('track_detail_album_tile'),
-                          contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           onTap: () async {
                             await context.push('/album/${track.album!.id}');
                             if (context.mounted) {
-                              ref.read(trackDetailControllerProvider(_id).notifier).refresh();
+                              ref
+                                  .read(
+                                    trackDetailControllerProvider(_id).notifier,
+                                  )
+                                  .refresh();
                             }
                           },
-                        leading: ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: SizedBox(
-                            width: 48,
-                            height: 48,
-                            child: track.album!.coverUrl != null
-                                ? Image.network(
-                                    ImageUrlHelper.resolve(track.album!.coverUrl) ?? track.album!.coverUrl!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (_, _, _) => Container(
+                          leading: ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: SizedBox(
+                              width: 48,
+                              height: 48,
+                              child: track.album!.coverUrl != null
+                                  ? Image.network(
+                                      ImageUrlHelper.resolve(
+                                            track.album!.coverUrl,
+                                          ) ??
+                                          track.album!.coverUrl!,
+                                      fit: BoxFit.cover,
+                                      errorBuilder: (_, _, _) => Container(
+                                        color: AppColors.card,
+                                        child: const Icon(
+                                          Icons.album,
+                                          color: AppColors.primary,
+                                        ),
+                                      ),
+                                    )
+                                  : Container(
                                       color: AppColors.card,
-                                      child: const Icon(Icons.album, color: AppColors.primary),
+                                      child: const Icon(
+                                        Icons.album,
+                                        color: AppColors.primary,
+                                      ),
                                     ),
-                                  )
-                                : Container(
-                                    color: AppColors.card,
-                                    child: const Icon(Icons.album, color: AppColors.primary),
-                                  ),
+                            ),
                           ),
-                        ),
-                        title: Text(
-                          track.album!.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: const Text(
-                          'Thuộc Album • Bấm để nghe toàn bộ Album',
-                          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
-                        ),
-                        trailing: const Icon(Icons.chevron_right, color: AppColors.textSecondary),
+                          title: Text(
+                            track.album!.title,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          subtitle: const Text(
+                            'Thuộc Album • Bấm để nghe toàn bộ Album',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textMuted,
+                            ),
+                          ),
+                          trailing: const Icon(
+                            Icons.chevron_right,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ),
                     ),
@@ -534,7 +586,11 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                       children: [
                         const Row(
                           children: [
-                            Icon(Icons.info_outline, size: 18, color: AppColors.primary),
+                            Icon(
+                              Icons.info_outline,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
                             SizedBox(width: 8),
                             Text(
                               'Thông tin bài hát',
@@ -547,15 +603,30 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        if (track.uploadDate != null && track.uploadDate!.isNotEmpty) ...[
+                        if (track.uploadDate != null &&
+                            track.uploadDate!.isNotEmpty) ...[
                           Row(
                             children: [
-                              const Icon(Icons.calendar_today_outlined, size: 14, color: AppColors.textMuted),
+                              const Icon(
+                                Icons.calendar_today_outlined,
+                                size: 14,
+                                color: AppColors.textMuted,
+                              ),
                               const SizedBox(width: 6),
-                              const Text('Ngày phát hành: ', style: TextStyle(color: AppColors.textMuted, fontSize: 13)),
+                              const Text(
+                                'Ngày phát hành: ',
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 13,
+                                ),
+                              ),
                               Text(
                                 track.uploadDate!,
-                                style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.w600, fontSize: 13),
+                                style: const TextStyle(
+                                  color: AppColors.textPrimary,
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 13,
+                                ),
                               ),
                             ],
                           ),
@@ -565,27 +636,39 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                           const SizedBox(height: 4),
                           const Text(
                             'Nghệ sĩ tham gia:',
-                            style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+                            style: TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 13,
+                            ),
                           ),
                           const SizedBox(height: 6),
                           Wrap(
                             spacing: 8,
                             runSpacing: 6,
                             children: track.artists.map((artist) {
-                              final isMain = artist.role == 'MAIN' || artist.role == null;
+                              final isMain =
+                                  artist.role == 'MAIN' || artist.role == null;
                               return InkWell(
-                                onTap: () => context.push('/artist/${artist.id}'),
+                                onTap: () =>
+                                    context.push('/artist/${artist.id}'),
                                 borderRadius: BorderRadius.circular(16),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: isMain
-                                        ? AppColors.primary.withValues(alpha: 0.15)
+                                        ? AppColors.primary.withValues(
+                                            alpha: 0.15,
+                                          )
                                         : AppColors.card,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: isMain
-                                          ? AppColors.primary.withValues(alpha: 0.4)
+                                          ? AppColors.primary.withValues(
+                                              alpha: 0.4,
+                                            )
                                           : AppColors.divider,
                                     ),
                                   ),
@@ -593,9 +676,13 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Icon(
-                                        isMain ? Icons.star_rounded : Icons.person_outline,
+                                        isMain
+                                            ? Icons.star_rounded
+                                            : Icons.person_outline,
                                         size: 14,
-                                        color: isMain ? AppColors.primary : AppColors.textSecondary,
+                                        color: isMain
+                                            ? AppColors.primary
+                                            : AppColors.textSecondary,
                                       ),
                                       const SizedBox(width: 4),
                                       Text(
@@ -603,7 +690,9 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                                         style: TextStyle(
                                           fontSize: 12,
                                           fontWeight: FontWeight.w600,
-                                          color: isMain ? AppColors.primary : AppColors.textPrimary,
+                                          color: isMain
+                                              ? AppColors.primary
+                                              : AppColors.textPrimary,
                                         ),
                                       ),
                                       const SizedBox(width: 4),
@@ -611,7 +700,11 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                                         isMain ? '(Chính)' : '(Collab)',
                                         style: TextStyle(
                                           fontSize: 10,
-                                          color: isMain ? AppColors.primary.withValues(alpha: 0.8) : AppColors.textMuted,
+                                          color: isMain
+                                              ? AppColors.primary.withValues(
+                                                  alpha: 0.8,
+                                                )
+                                              : AppColors.textMuted,
                                         ),
                                       ),
                                     ],
