@@ -1,72 +1,169 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
-class CategoryDetailScreen extends StatefulWidget {
+import '../../../../core/constants/api_endpoints.dart';
+import '../../../../core/router/route_names.dart';
+import '../../../player/domain/models/player_state_data.dart';
+import '../../../player/presentation/providers/player_provider.dart';
+import '../../data/models/category_detail_model.dart';
+import '../providers/category_detail_provider.dart';
+import '../widgets/category_detail_shimmer.dart';
+import '../widgets/category_track_tile.dart';
+
+class CategoryDetailScreen extends ConsumerWidget {
   final String categoryId;
-  
+
   const CategoryDetailScreen({super.key, required this.categoryId});
 
   @override
-  State<CategoryDetailScreen> createState() => _CategoryDetailScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catId = int.tryParse(categoryId) ?? 1;
+    final categoryAsync = ref.watch(categoryDetailProvider(catId));
 
-class _CategoryDetailScreenState extends State<CategoryDetailScreen> {
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 2), () {
-      if (mounted) setState(() => isLoading = false);
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Chi tiết Thể loại')),
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          if (isLoading) return _buildShimmer(constraints);
-          return ListView.separated(
-            padding: const EdgeInsets.all(16.0),
-            itemCount: 0, 
-            separatorBuilder: (context, index) => const SizedBox(height: 8),
-            itemBuilder: (context, index) => const SizedBox.shrink(),
-          );
-        }
-      ),
-      bottomSheet: isLoading ? null : const Padding(
-        padding: EdgeInsets.all(32.0),
-        child: Text('Chưa có bài hát nào trong thể loại này.'),
+      body: categoryAsync.when(
+        loading: () => const CategoryDetailShimmer(),
+        error: (error, _) => _buildError(context, ref, catId, error),
+        data: (category) => _buildContent(context, ref, category),
       ),
     );
   }
 
-  Widget _buildShimmer(BoxConstraints constraints) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16.0),
-      itemCount: 6,
-      separatorBuilder: (context, index) => const SizedBox(height: 16),
-      itemBuilder: (context, index) => Shimmer.fromColors(
-        baseColor: Colors.grey[800]!, highlightColor: Colors.grey[600]!,
-        child: Row(
-          children: [
-            Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(width: constraints.maxWidth * 0.5, height: 16, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Container(width: constraints.maxWidth * 0.3, height: 12, color: Colors.white),
-                ],
+  Widget _buildError(
+    BuildContext context,
+    WidgetRef ref,
+    int catId,
+    Object error,
+  ) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Chi tiết Thể loại')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error_outline, size: 48, color: Colors.red),
+              const SizedBox(height: 12),
+              Text(error.toString(), textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: () =>
+                    ref.read(categoryDetailProvider(catId).notifier).refresh(),
+                icon: const Icon(Icons.refresh),
+                label: const Text('Thử lại'),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildContent(
+    BuildContext context,
+    WidgetRef ref,
+    CategoryDetailModel category,
+  ) {
+    final theme = Theme.of(context);
+    final tracks = category.tracks;
+
+    return CustomScrollView(
+      slivers: [
+        SliverAppBar(
+          expandedHeight: 180,
+          pinned: true,
+          flexibleSpace: FlexibleSpaceBar(
+            title: Text(
+              category.name,
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            background: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    theme.colorScheme.primaryContainer,
+                    theme.colorScheme.surface,
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+        if (tracks.isEmpty)
+          const SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Text(
+                'Chưa có bài hát nào trong thể loại này.',
+                style: TextStyle(fontSize: 16),
+              ),
+            ),
+          )
+        else ...[
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Row(
+                children: [
+                  Text(
+                    '${tracks.length} bài hát',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  FilledButton.icon(
+                    onPressed: () => _playTrack(context, ref, tracks, 0),
+                    icon: const Icon(Icons.play_arrow),
+                    label: const Text('Phát tất cả'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverList(
+            delegate: SliverChildBuilderDelegate(
+              (context, index) {
+                final track = tracks[index];
+                return CategoryTrackTile(
+                  track: track,
+                  index: index,
+                  onTap: () => _playTrack(context, ref, tracks, index),
+                );
+              },
+              childCount: tracks.length,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  void _playTrack(
+    BuildContext context,
+    WidgetRef ref,
+    List<CategoryTrackModel> tracks,
+    int index,
+  ) {
+    final playlist = tracks
+        .map(
+          (t) => TrackQueueItem(
+            id: t.id.toString(),
+            title: t.name,
+            artist: t.artists.isNotEmpty
+                ? t.artists.map((a) => a.name).join(', ')
+                : 'Nhiều nghệ sĩ',
+            coverUrl: ApiEndpoints.buildImageUrl(t.img),
+            duration: Duration(seconds: t.duration ?? 0),
+          ),
+        )
+        .toList();
+
+    ref.read(playerNotifierProvider.notifier).playPlaylist(playlist, index);
+    context.push(RouteNames.player);
   }
 }
