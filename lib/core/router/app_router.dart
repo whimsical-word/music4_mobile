@@ -27,12 +27,16 @@ import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
+final RouteObserver<ModalRoute<dynamic>> appRouteObserver =
+    RouteObserver<ModalRoute<dynamic>>();
+
 /// Dùng để hiện SnackBar/banner toàn cục (VD: thông báo real-time qua SSE).
 final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
     GlobalKey<ScaffoldMessengerState>();
 
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
+  observers: [appRouteObserver],
   initialLocation: RouteNames.login,
   routes: [
     // ─── T3: Discovery & AI (CE190284 - Nguyễn Hữu Tài) ────────────────
@@ -108,7 +112,8 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.upload,
       name: 'upload',
       builder: (context, state) {
-        final albumId = state.uri.queryParameters['albumId'] ?? (state.extra as String?);
+        final albumId =
+            state.uri.queryParameters['albumId'] ?? (state.extra as String?);
         return UploadTrackScreen(initialAlbumId: albumId);
       },
     ),

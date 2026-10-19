@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/router/app_router.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/user_profile.dart';
 import '../providers/user_profile_provider.dart';
@@ -11,11 +14,53 @@ import '../widgets/profile_error_view.dart';
 import '../widgets/user_profile_header.dart';
 import '../widgets/user_profile_shimmer.dart';
 
-class UserProfileScreen extends ConsumerWidget {
+class UserProfileScreen extends ConsumerStatefulWidget {
   const UserProfileScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
+}
+
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
+    with RouteAware {
+  ModalRoute<dynamic>? _subscribedRoute;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final route = ModalRoute.of(context);
+    if (route != null && route != _subscribedRoute) {
+      if (_subscribedRoute != null) {
+        appRouteObserver.unsubscribe(this);
+      }
+      _subscribedRoute = route;
+      appRouteObserver.subscribe(this, route);
+    }
+  }
+
+  @override
+  void dispose() {
+    appRouteObserver.unsubscribe(this);
+    super.dispose();
+  }
+
+  @override
+  void didPush() {
+    _refreshProfile();
+  }
+
+  @override
+  void didPopNext() {
+    _refreshProfile();
+  }
+
+  void _refreshProfile() {
+    if (!mounted) return;
+    unawaited(ref.read(userProfileProvider.notifier).refresh());
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
 
     return Scaffold(
@@ -81,7 +126,7 @@ class _ProfileBody extends ConsumerWidget {
           ),
           SliverToBoxAdapter(child: AccountSection(profile: profile)),
 
-          // BOTTOM PADDING: Tạo khoảng đệm thoáng đáy màn hình
+          // Tạo khoảng đệm thoáng đáy màn hình
           const SliverToBoxAdapter(child: SizedBox(height: 40)),
         ],
       ),
