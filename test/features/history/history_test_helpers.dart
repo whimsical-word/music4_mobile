@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
@@ -134,6 +135,11 @@ class RecordingPlayerNotifier extends PlayerNotifier {
   /// Null when History used playPlaylist (start from 0); set when it used
   /// resumePlaylist.
   Duration? lastStartPosition;
+
+  /// Shows a loaded track in the mini player.
+  void showTrack(PlayerStateData data) {
+    state = AsyncValue.data(data);
+  }
 
   RecordingPlayerNotifier()
     : super(
