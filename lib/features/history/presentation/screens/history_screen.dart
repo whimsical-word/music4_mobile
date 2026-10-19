@@ -12,6 +12,7 @@ import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../auth/presentation/notifiers/auth_state.dart';
 import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
+import '../../../player/presentation/widgets/mini_player_widget.dart';
 import '../../data/models/history_track_response.dart';
 import '../../domain/resume_position.dart';
 import '../providers/history_provider.dart';
@@ -30,6 +31,9 @@ class HistoryScreen extends ConsumerWidget {
         body: authState is AuthInitial || authState is AuthLoading
             ? _buildLoadingState()
             : _buildGuestState(context),
+        // Keep the playing track visible (and controllable) after the Player
+        // is collapsed.
+        bottomNavigationBar: const SafeArea(top: false, child: MiniPlayerWidget()),
       );
     }
 
@@ -39,6 +43,7 @@ class HistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Lịch sử nghe nhạc'),
       ),
+      bottomNavigationBar: const SafeArea(top: false, child: MiniPlayerWidget()),
       body: historyAsync.when(
         data: (history) {
           if (history.items.isEmpty) {
@@ -87,13 +92,13 @@ class HistoryScreen extends ConsumerWidget {
   /// Plays the loaded history through the existing Player flow, starting at
   /// [index]. Resume playback: unless [fromStart], a partly listened track
   /// continues from the position saved on the backend.
-  void _playTrack(
+  Future<void> _playTrack(
     BuildContext context,
     WidgetRef ref,
     List<HistoryTrackResponse> items,
     int index, {
     required bool fromStart,
-  }) {
+  }) async {
     final queue = items
         .map(
           (t) => TrackQueueItem(
@@ -117,7 +122,13 @@ class HistoryScreen extends ConsumerWidget {
     } else {
       player.playPlaylist(queue, index);
     }
-    context.push(RouteNames.player);
+    await context.push(RouteNames.player);
+
+    // Listening changes the saved position (and moves a finished track to the
+    // top). This list stays alive under the Player, so reload it silently,
+    // keeping what is on screen, once the Player is closed.
+    if (!context.mounted) return;
+    await ref.read(historyNotifierProvider.notifier).refreshHistory();
   }
 
   Duration _resumeOf(HistoryTrackResponse item) => resumePositionFor(

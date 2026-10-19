@@ -14,7 +14,9 @@ import 'package:music4_mobile/features/history/data/models/history_track_respons
 import 'package:music4_mobile/features/history/data/repositories/history_repository.dart';
 import 'package:music4_mobile/features/history/presentation/providers/history_provider.dart';
 import 'package:music4_mobile/features/history/presentation/screens/history_screen.dart';
+import 'package:music4_mobile/features/player/domain/models/player_state_data.dart';
 import 'package:music4_mobile/features/player/presentation/providers/player_provider.dart';
+import 'package:music4_mobile/features/player/presentation/widgets/mini_player_widget.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../history_test_helpers.dart';
@@ -47,7 +49,10 @@ void main() {
         ),
         GoRoute(
           path: '/player',
-          builder: (_, _) => const Scaffold(body: Text('player-page')),
+          builder: (_, _) => Scaffold(
+            appBar: AppBar(),
+            body: const Text('player-page'),
+          ),
         ),
         GoRoute(
           path: '/artist/:id',
@@ -356,6 +361,152 @@ void main() {
 
       expect(find.textContaining('Nghe tiếp từ'), findsNothing);
       expect(find.text('Phát từ đầu'), findsOneWidget);
+    });
+
+    testWidgets('8. Closing the Player reloads the history (the saved position is updated)', (tester) async {
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [historyTrack(5, name: 'Lạc Trôi', playbackPosition: 20)],
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+      expect(find.text('Nghe tiếp từ 0:20'), findsOneWidget);
+
+      await tester.tap(find.text('Lạc Trôi'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('player-page'), findsOneWidget);
+
+      // While the Player was open the position was synced further.
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [historyTrack(5, name: 'Lạc Trôi', playbackPosition: 70)],
+        ),
+      );
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Nghe tiếp từ 1:10'), findsOneWidget);
+      expect(find.text('Nghe tiếp từ 0:20'), findsNothing);
+    });
+
+    testWidgets('8-1. A track listened to the end moves to the top after the Player closes', (tester) async {
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [
+            historyTrack(5, name: 'Bài đầu', playbackPosition: 30),
+            historyTrack(6, name: 'Bài cuối', playbackPosition: 40),
+          ],
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      await tester.tap(find.text('Bài cuối'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      // Finished: the backend now has a newer row (position 0) for track 6.
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [
+            historyTrack(6, name: 'Bài cuối'),
+            historyTrack(5, name: 'Bài đầu', playbackPosition: 30),
+          ],
+        ),
+      );
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      final firstRowY = tester.getTopLeft(find.text('Bài cuối')).dy;
+      final secondRowY = tester.getTopLeft(find.text('Bài đầu')).dy;
+      expect(firstRowY, lessThan(secondRowY));
+      expect(find.text('Đã nghe xong'), findsOneWidget);
+    });
+
+    testWidgets('8-2. A failed reload keeps the history that is already shown', (tester) async {
+      stubPage(
+        0,
+        HistoryPageResponse(
+          content: [historyTrack(5, name: 'Lạc Trôi', playbackPosition: 20)],
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      await tester.tap(find.text('Lạc Trôi'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      when(
+        // The screen is signed in as user 1 (see buildApp).
+        () => repository.getListeningHistory(
+          1,
+          page: 0,
+          size: _pageSize,
+        ),
+      ).thenAnswer((_) async => throw const HistoryException('Lỗi'));
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Lạc Trôi'), findsOneWidget);
+      expect(find.text('Nghe tiếp từ 0:20'), findsOneWidget);
+    });
+
+    testWidgets('9. The mini player stays at the bottom while a track is loaded', (tester) async {
+      stubPage(0, HistoryPageResponse(content: [historyTrack(5, name: 'Lạc Trôi')]));
+      player.showTrack(
+        const PlayerStateData(
+          currentTrackId: '5',
+          title: 'Bài đang phát',
+          artist: 'Nghệ sĩ',
+          isPlaying: true,
+        ),
+      );
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      expect(find.byType(MiniPlayerWidget), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(MiniPlayerWidget),
+          matching: find.text('Bài đang phát'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('9-1. Nothing is shown at the bottom when no track is loaded', (tester) async {
+      stubPage(0, HistoryPageResponse(content: [historyTrack(5, name: 'Lạc Trôi')]));
+
+      await tester.pumpWidget(buildApp());
+      await tester.pump();
+
+      expect(
+        find.descendant(
+          of: find.byType(MiniPlayerWidget),
+          matching: find.byType(Text),
+        ),
+        findsNothing,
+      );
     });
 
     testWidgets('7a. The options menu opens the track detail', (tester) async {
