@@ -7,6 +7,7 @@ import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart'
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/login_use_case.dart';
+import 'package:music4_mobile/features/auth/domain/usecases/login_with_google_use_case.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:music4_mobile/features/notifications/data/models/notification_model.dart';
@@ -26,6 +27,8 @@ class MockLoginUseCase extends Mock implements LoginUseCase {}
 class MockLogoutUseCase extends Mock implements LogoutUseCase {}
 
 class MockTokenStorage extends Mock implements TokenStorage {}
+
+class MockLoginWithGoogleUseCase extends Mock implements LoginWithGoogleUseCase {}
 
 void main() {
   late MockNotificationRepository repository;
@@ -86,6 +89,7 @@ void main() {
             logoutUseCase: MockLogoutUseCase(),
             repository: authRepository,
             tokenStorage: tokenStorage,
+            loginWithGoogleUseCase: MockLoginWithGoogleUseCase(),
           ),
         ),
       ],
