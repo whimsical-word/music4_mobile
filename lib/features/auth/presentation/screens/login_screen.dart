@@ -35,6 +35,10 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .login(_usernameController.text.trim(), _passwordController.text);
   }
 
+  Future<void> _onGoogleLogin() async {
+    await ref.read(authNotifierProvider.notifier).loginWithGoogle();
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
@@ -244,7 +248,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [_buildSocialButton('G', null, () {})],
+                    children: [_buildSocialButton('G', null, isLoading ?  () {} : _onGoogleLogin)],
                   ),
                   const SizedBox(height: 48),
                   Row(

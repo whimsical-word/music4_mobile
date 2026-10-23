@@ -6,6 +6,7 @@ import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart'
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/login_use_case.dart';
+import 'package:music4_mobile/features/auth/domain/usecases/login_with_google_use_case.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
@@ -34,6 +35,7 @@ void main() {
             logoutUseCase: LogoutUseCase(authRepository),
             repository: authRepository,
             tokenStorage: TokenStorage(),
+            loginWithGoogleUseCase: LoginWithGoogleUseCase(authRepository),
           )
           ..state = const AuthAuthenticated(
             UserEntity(

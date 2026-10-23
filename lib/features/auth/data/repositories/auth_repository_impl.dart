@@ -1,6 +1,8 @@
 import 'package:dio/dio.dart';
 import 'package:music4_mobile/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:music4_mobile/features/auth/data/datasources/google_sign_in_data_source.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
+import 'package:music4_mobile/features/auth/data/models/auth_response_model.dart';
 import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
@@ -8,10 +10,11 @@ import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.
 class AuthRemoteRepositoryImpl implements AuthRepository {
   final AuthRemoteDataSource remoteDataSource;
   final TokenStorage tokenStorage;
+  final GoogleSignInDataSource googleSignInDataSource;
 
   AuthRemoteRepositoryImpl({
     required this.remoteDataSource,
-    required this.tokenStorage,
+    required this.tokenStorage, required this.googleSignInDataSource,
   });
 
   @override
@@ -61,6 +64,7 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
       return Error(ServerFailure(e.toString()));
     } finally {
       await tokenStorage.clearSession();
+      await googleSignInDataSource.signOut();
     }
   }
 
@@ -117,4 +121,40 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
     }
 
   }
+
+  @override
+  Future<Result<UserEntity>> loginWithGoogle() async {
+    try {
+      final idToken = await googleSignInDataSource.getIdToken();
+      if (idToken == null) return const Error(GoogleSignInCancelledFailure());
+      final authData = await remoteDataSource.loginWithGoogle(idToken);
+      return Success(await _persistSession(authData));
+    } on DioException catch (e) {
+    await googleSignInDataSource.signOut(); // để lần sau được chọn lại tài khoản
+    return Error(_mapGoogleFailure(e));
+    } catch (_) {
+    await googleSignInDataSource.signOut();
+    return const Error(ServerFailure('Đăng nhập Google không thành công'));
+    }
+  }
+
+  Future<UserEntity> _persistSession(AuthResponseModel authData) async {
+    await tokenStorage.saveTokens(
+      accessToken: authData.accessToken,
+      refreshToken: authData.refreshToken,
+    );
+    final entity = authData.toEntity();
+    await tokenStorage.saveUser(entity);
+    return entity;
+  }
+  Failure _mapGoogleFailure(DioException e) {
+    if (e.type == DioExceptionType.connectionTimeout ||
+        e.type == DioExceptionType.connectionError) {
+      return const NetworkFailure();
+    }
+    final data = e.response?.data;
+    final message = data is Map ? data['message'] as String? : null;
+    return ServerFailure(message ?? 'Đăng nhập Google không thành công');
+  }
+
 }

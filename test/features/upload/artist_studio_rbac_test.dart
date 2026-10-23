@@ -9,6 +9,7 @@ import 'package:music4_mobile/features/album/presentation/screens/album_manageme
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/login_use_case.dart';
+import 'package:music4_mobile/features/auth/domain/usecases/login_with_google_use_case.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
@@ -27,6 +28,7 @@ class _MockLoginUseCase extends Mock implements LoginUseCase {}
 class _MockLogoutUseCase extends Mock implements LogoutUseCase {}
 class _MockAuthRepository extends Mock implements AuthRepository {}
 class _MockTokenStorage extends Mock implements TokenStorage {}
+class _MockLoginWithGoogleUseCase extends Mock implements LoginWithGoogleUseCase {}
 class _MockAudioPlayer extends Mock implements AudioPlayer {}
 class _MockTrackDetailRepo extends Mock implements TrackDetailRepository {}
 class _MockAppAudioHandler extends Mock implements AppAudioHandler {}
@@ -38,6 +40,7 @@ class FakeAuthNotifier extends AuthNotifier {
           logoutUseCase: _MockLogoutUseCase(),
           repository: _MockAuthRepository(),
           tokenStorage: _MockTokenStorage(),
+          loginWithGoogleUseCase: _MockLoginWithGoogleUseCase(),
         ) {
     state = initial;
   }
