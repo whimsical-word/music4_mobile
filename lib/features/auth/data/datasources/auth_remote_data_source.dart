@@ -23,6 +23,8 @@ abstract class AuthRemoteDataSource {
     required String newPassword,
     required String confirmPassword,
   });
+
+  Future<bool> checkCanChangePassword();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -138,6 +140,16 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       throw Exception(message);
     }
 
+  }
+
+  @override
+  Future<bool> checkCanChangePassword() async {
+    try {
+      final response = await dioClient.dio.get(ApiEndpoints.passwordStatus);
+      return response.data['canChangePassword'] as bool? ?? false;
+    } catch (_) {
+      return false;
+    }
   }
 
   @override

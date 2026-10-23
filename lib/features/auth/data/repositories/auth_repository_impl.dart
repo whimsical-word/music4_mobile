@@ -123,6 +123,16 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<bool>> checkCanChangePassword() async {
+    try {
+      final canChange = await remoteDataSource.checkCanChangePassword();
+      return Success(canChange);
+    } on Exception catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  @override
   Future<Result<UserEntity>> loginWithGoogle() async {
     try {
       final idToken = await googleSignInDataSource.getIdToken();

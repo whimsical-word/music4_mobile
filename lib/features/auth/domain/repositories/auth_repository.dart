@@ -20,5 +20,6 @@ abstract class AuthRepository {
     required String newPassword,
     required String confirmPassword,
   });
+  Future<Result<bool>> checkCanChangePassword();
   Future<Result<UserEntity>> loginWithGoogle();
 }

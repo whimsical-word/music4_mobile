@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:music4_mobile/features/auth/presentation/screens/change_password_screen.dart';
 import 'package:music4_mobile/features/auth/presentation/screens/forgot_password_email_page.dart';
 
 import '../../features/user_profile/presentation/screens/user_profile_screen.dart';
@@ -82,6 +83,11 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.forgotPassword,
       name: 'forgot-password',
       builder: (context, state) => const ForgotPasswordEmailPage(),
+    ),
+    GoRoute(
+      path: RouteNames.changePassword,
+      name: 'change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
     ),
 
     // ─── T1: Media & Streaming (CE190036 - Nguyễn Trung Kiên) ─────────
