@@ -62,7 +62,7 @@ class ApiEndpoints {
   static const String logout = '/api/auth/logout';
   static const String forgotPassword = '/api/auth/forgot-password';
   static const String resetPassword = '/api/auth/reset-password';
-
+  static const String changePassword = '/api/auth/change-password';
   // Tracks & Media
   static const String tracks = '/api/tracks/all';
   static const String trackDetail = '/api/tracks'; // + /{id}

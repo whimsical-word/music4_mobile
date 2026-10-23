@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:music4_mobile/core/constants/api_endpoints.dart';
 import 'package:music4_mobile/core/network/dio_client.dart';
 import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 
@@ -14,6 +15,12 @@ abstract class AuthRemoteDataSource {
     required String email,
     required String otp,
     required String newPassword,
+  });
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
   });
 }
 
@@ -110,5 +117,25 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           e.response?.data?['message'] ?? 'Đặt lại mật khẩu thất bại';
       throw Exception(message);
     }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      await dioClient.dio.post(ApiEndpoints.changePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      });
+  } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Đổi mật khẩu thất bại';
+      throw Exception(message);
+    }
+
   }
 }

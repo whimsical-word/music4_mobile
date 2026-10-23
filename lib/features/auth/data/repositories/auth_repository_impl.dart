@@ -106,4 +106,15 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
       return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
     }
   }
+
+  @override
+  Future<Result<void>> changePassword({required String currentPassword, required String newPassword, required String confirmPassword}) async {
+    try {
+      await remoteDataSource.changePassword(currentPassword: currentPassword, newPassword: newPassword, confirmPassword: confirmPassword);
+      return const Success(null);
+    } on Exception catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+
+  }
 }
