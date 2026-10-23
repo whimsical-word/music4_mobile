@@ -8,7 +8,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:music4_mobile/features/player/presentation/providers/player_provider.dart';
 import 'package:music4_mobile/features/player/domain/models/player_state_data.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
 import 'dart:async';

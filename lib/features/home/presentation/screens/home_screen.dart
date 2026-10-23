@@ -16,7 +16,7 @@ import '../widgets/ai_recommendation_section.dart';
 import '../widgets/home_empty_state.dart';
 import '../widgets/home_error_state.dart';
 import '../widgets/home_header_greeting.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../widgets/artist_studio_quick_banner.dart';
 import '../widgets/home_shimmer_skeleton.dart';
 import '../widgets/home_album_section.dart';

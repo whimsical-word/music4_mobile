@@ -12,7 +12,7 @@ import 'package:music4_mobile/features/auth/domain/usecases/login_use_case.dart'
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/home/data/sources/home_mock_data.dart';
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_controller.dart';
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_state.dart';

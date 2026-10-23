@@ -9,7 +9,7 @@ import '../../data/services/audio_cache_service.dart';
 import '../../domain/models/player_state_data.dart';
 import '../../../auth/data/datasources/token_storage.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../../../features/track_detail/data/repositories/track_detail_repository.dart';
 import '../../data/services/app_audio_handler.dart';
 import '../../../tracking/application/playback_tracker.dart';
