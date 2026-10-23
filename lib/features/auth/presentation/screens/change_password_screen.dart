@@ -112,8 +112,9 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   onToggle: () =>
                       setState(() => _obscureCurrent = !_obscureCurrent),
                   validator: (val) {
-                    if (val == null || val.isEmpty)
+                    if (val == null || val.isEmpty) {
                       return 'Vui lòng nhập mật khẩu hiện tại';
+                    }
                     return null;
                   },
                 ),
@@ -124,11 +125,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   obscureText: _obscureNew,
                   onToggle: () => setState(() => _obscureNew = !_obscureNew),
                   validator: (val) {
-                    if (val == null || val.isEmpty)
+                    if (val == null || val.isEmpty) {
                       return 'Vui lòng nhập mật khẩu mới';
+                    }
                     if (val.length < 6) return 'Mật khẩu tối thiểu 6 ký tự';
                     if (val == _currentPasswordController.text) {
-                      return 'Mật khẩu mới không được trùng mật khẩu cũ';
+                      return 'Mật khẩu mới khan được trùng mật khẩu cũ';
                     }
                     return null;
                   },
@@ -141,10 +143,12 @@ class _ChangePasswordScreenState extends ConsumerState<ChangePasswordScreen> {
                   onToggle: () =>
                       setState(() => _obscureConfirm = !_obscureConfirm),
                   validator: (val) {
-                    if (val == null || val.isEmpty)
+                    if (val == null || val.isEmpty) {
                       return 'Vui lòng xác nhận mật khẩu';
-                    if (val != _newPasswordController.text)
+                    }
+                    if (val != _newPasswordController.text) {
                       return 'Mật khẩu xác nhận không khớp';
+                    }
                     return null;
                   },
                 ),
