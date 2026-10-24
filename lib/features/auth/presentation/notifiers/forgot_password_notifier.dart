@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/forgot_password_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/forgot_password_state.dart';
 
 final forgotPasswordNotifierProvider =
 StateNotifierProvider<ForgotPasswordNotifier, ForgotPasswordState>((ref) {

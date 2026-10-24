@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/home/data/models/track_artist_info.dart';
 import 'package:music4_mobile/features/home/data/models/track_detail_model.dart';
 import 'package:music4_mobile/features/track_detail/data/repositories/track_detail_repository.dart';

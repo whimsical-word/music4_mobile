@@ -5,7 +5,7 @@ import 'package:music4_mobile/features/user_profile/presentation/providers/user_
 
 import '../../../auth/presentation/notifiers/auth_notifier.dart'
     hide dioClientProvider;
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../../home/data/models/track_detail_model.dart';
 import '../../data/mappers/artist_profile_mapper.dart';
 import '../../data/models/artist_response.dart';

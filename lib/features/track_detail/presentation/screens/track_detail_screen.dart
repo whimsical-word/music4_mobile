@@ -9,7 +9,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/jwt_helper.dart';
 import '../../../auth/data/datasources/token_storage.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../../playlist/data/models/playlist_model.dart';
 import '../controllers/track_detail_controller.dart';
 import '../widgets/select_playlist_modal.dart';

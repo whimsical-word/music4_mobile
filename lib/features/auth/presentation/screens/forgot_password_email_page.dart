@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/forgot_password_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/forgot_password_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/forgot_password_state.dart';
 import 'package:music4_mobile/features/auth/presentation/screens/forgot_password_reset_page.dart';
 
 class ForgotPasswordEmailPage extends ConsumerStatefulWidget {

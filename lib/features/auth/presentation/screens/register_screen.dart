@@ -10,7 +10,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/register_request.dart';
 import '../notifiers/register_notifier.dart';
-import '../notifiers/register_state.dart';
+import '../state/register_state.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});

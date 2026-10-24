@@ -8,7 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:music4_mobile/core/utils/image_url_helper.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/history/data/models/history_page_response.dart';
 import 'package:music4_mobile/features/history/data/models/history_track_response.dart';
 import 'package:music4_mobile/features/history/data/repositories/history_repository.dart';

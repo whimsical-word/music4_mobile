@@ -7,7 +7,7 @@ import 'package:music4_mobile/features/artist_profile/data/repositories/artist_p
 import 'package:music4_mobile/features/artist_profile/domain/models/artist_profile_data.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/providers/artist_profile_provider.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/home/data/models/track_detail_model.dart';
 
 import '../../artist_profile_test_helpers.dart';

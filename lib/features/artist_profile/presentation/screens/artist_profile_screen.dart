@@ -7,7 +7,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/shared/widgets/settings_bottom_sheet.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/repositories/artist_profile_repository.dart';

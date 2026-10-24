@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../router/route_names.dart';
 import '../../theme/app_colors.dart';
+import 'change_password_action.dart';
 import 'logout_dialog.dart';
 
 void showSettingsBottomSheet(BuildContext context) {
@@ -46,24 +47,42 @@ class _SettingsBottomSheetContent extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           ListTile(
-            leading: const Icon(Icons.lock_outline, color: AppColors.textSecondary),
-            title: const Text('Đổi mật khẩu', style: TextStyle(color: AppColors.textPrimary)),
+            leading: const Icon(
+              Icons.lock_outline,
+              color: AppColors.textSecondary,
+            ),
+            title: const Text(
+              'Đổi mật khẩu',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
             onTap: () {
               Navigator.pop(context);
-              // TODO: Navigate to ChangePasswordScreen
+              handleOpenChangePassword(context, ref);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.notifications_outlined, color: AppColors.warning),
-            title: const Text('Thông báo', style: TextStyle(color: AppColors.textPrimary)),
+            leading: const Icon(
+              Icons.notifications_outlined,
+              color: AppColors.warning,
+            ),
+            title: const Text(
+              'Thông báo',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
             onTap: () {
               Navigator.pop(context);
               context.push(RouteNames.notifications);
             },
           ),
           ListTile(
-            leading: const Icon(Icons.help_outline, color: AppColors.textSecondary),
-            title: const Text('Trợ giúp & Phản hồi', style: TextStyle(color: AppColors.textPrimary)),
+            leading: const Icon(
+              Icons.help_outline,
+              color: AppColors.textSecondary,
+            ),
+            title: const Text(
+              'Trợ giúp & Phản hồi',
+              style: TextStyle(color: AppColors.textPrimary),
+            ),
             onTap: () {
               Navigator.pop(context);
               // TODO: Open help page
@@ -72,7 +91,13 @@ class _SettingsBottomSheetContent extends ConsumerWidget {
           const Divider(color: AppColors.divider),
           ListTile(
             leading: const Icon(Icons.logout, color: AppColors.error),
-            title: const Text('Đăng xuất', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.bold)),
+            title: const Text(
+              'Đăng xuất',
+              style: TextStyle(
+                color: AppColors.error,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
             onTap: () {
               Navigator.pop(context); // Close bottom sheet
               showLogoutDialog(context); // Show confirmation dialog

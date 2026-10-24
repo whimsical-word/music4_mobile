@@ -7,7 +7,7 @@ import 'package:music4_mobile/features/auth/domain/usecases/login_use_case.dart'
 import 'package:music4_mobile/features/auth/domain/usecases/login_with_google_use_case.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 
 class MockArtistProfileRepository extends Mock
     implements ArtistProfileRepository {}

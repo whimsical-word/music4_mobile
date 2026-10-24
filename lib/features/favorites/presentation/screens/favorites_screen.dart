@@ -5,7 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/repositories/favorites_repository.dart';

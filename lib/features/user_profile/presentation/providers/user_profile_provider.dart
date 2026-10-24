@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:music4_mobile/features/playlist/data/repositories/playlist_repository.dart';
 

@@ -62,6 +62,8 @@ class ApiEndpoints {
   static const String googleLogin = '/api/auth/google';
   static const String logout = '/api/auth/logout';
   static const String forgotPassword = '/api/auth/forgot-password';
+  static const String changePassword = '/api/auth/change-password';
+  static const String passwordStatus = '/api/auth/password-status';
   static const String resetPasswordOtp = '/api/auth/reset-password-otp';
 
   // Tracks & Media

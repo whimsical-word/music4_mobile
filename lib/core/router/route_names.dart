@@ -22,4 +22,5 @@ class RouteNames {
   static const String admin = '/admin';
   static const String userProfile = '/users/:id';
   static const String forgotPassword = '/forgot-password';
+  static const String changePassword = '/change-password';
 }

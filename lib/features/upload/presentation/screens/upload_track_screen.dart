@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../data/models/category_model.dart';
 import '../providers/categories_provider.dart';
 import '../providers/upload_provider.dart';

@@ -9,7 +9,7 @@ import 'package:music4_mobile/features/auth/domain/usecases/login_with_google_us
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
 import 'package:music4_mobile/core/network/dio_client.dart';
 
-import 'auth_state.dart';
+import '../state/auth_state.dart';
 
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 

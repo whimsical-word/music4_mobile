@@ -4,7 +4,7 @@ import '../../domain/entities/register_request.dart';
 import '../../domain/entities/user_entity.dart';
 import '../../domain/usecases/register_use_case.dart';
 import 'auth_notifier.dart';
-import 'register_state.dart';
+import '../state/register_state.dart';
 
 final registerUseCaseProvider = Provider<RegisterUseCase>((ref) {
   return RegisterUseCase(ref.read(authRepositoryProvider));

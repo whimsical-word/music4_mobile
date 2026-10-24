@@ -112,6 +112,27 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<Result<void>> changePassword({required String currentPassword, required String newPassword, required String confirmPassword}) async {
+    try {
+      await remoteDataSource.changePassword(currentPassword: currentPassword, newPassword: newPassword, confirmPassword: confirmPassword);
+      return const Success(null);
+    } on Exception catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+
+  }
+
+  @override
+  Future<Result<bool>> checkCanChangePassword() async {
+    try {
+      final canChange = await remoteDataSource.checkCanChangePassword();
+      return Success(canChange);
+    } on Exception catch (e) {
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  @override
   Future<Result<UserEntity>> loginWithGoogle() async {
     try {
       final idToken = await googleSignInDataSource.getIdToken();

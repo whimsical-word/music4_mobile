@@ -17,6 +17,14 @@ abstract class AuthRemoteDataSource {
     required String newPassword,
   });
   Future<AuthResponseModel> loginWithGoogle(String idToken);
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  });
+
+  Future<bool> checkCanChangePassword();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -111,6 +119,36 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       final message =
           e.response?.data?['message'] ?? 'Đặt lại mật khẩu thất bại';
       throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      await dioClient.dio.post(ApiEndpoints.changePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      });
+  } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Đổi mật khẩu thất bại';
+      throw Exception(message);
+    }
+
+  }
+
+  @override
+  Future<bool> checkCanChangePassword() async {
+    try {
+      final response = await dioClient.dio.get(ApiEndpoints.passwordStatus);
+      return response.data['canChangePassword'] as bool? ?? false;
+    } catch (_) {
+      return false;
     }
   }
 

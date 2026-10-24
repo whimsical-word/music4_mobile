@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../data/models/artist_track_model.dart';
 import '../../data/repositories/track_management_repository.dart';
 
