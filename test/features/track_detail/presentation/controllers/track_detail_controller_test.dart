@@ -135,7 +135,7 @@ void main() {
       expect(state.value?.isLiked, false);
     });
 
-    test('setRating cập nhật userRating trong state và gọi submitRating', () async {
+    test('setRating cập nhật userRating trong state và gọi submitRating #UC45', () async {
       when(() => mockRepository.getTrackDetail(trackId))
           .thenAnswer((_) async => mockTrack);
       when(() => mockRepository.checkIsFavorite(trackId))

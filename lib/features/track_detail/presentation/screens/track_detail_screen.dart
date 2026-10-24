@@ -367,14 +367,23 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                           .read(trackDetailControllerProvider(_id).notifier)
                           .setRating(newRating);
                       if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
-                          content: Text('⭐ Đã đánh giá $newRating sao thành công!'),
+                          content: Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: AppColors.warning, size: 20),
+                              const SizedBox(width: 8),
+                              Text('Đã đánh giá $newRating/5 sao thành công!'),
+                            ],
+                          ),
+                          duration: const Duration(seconds: 2),
                           behavior: SnackBarBehavior.floating,
                         ),
                       );
                     } catch (e) {
                       if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text(
