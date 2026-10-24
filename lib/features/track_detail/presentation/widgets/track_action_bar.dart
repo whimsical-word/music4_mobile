@@ -29,13 +29,13 @@ class TrackActionBar extends StatelessWidget {
           children: [
             IconButton(
               icon: Icon(
-                isLiked ? Icons.favorite : Icons.favorite_border,
+                isLiked ? Icons.favorite_rounded : Icons.favorite_border_rounded,
                 color: isLiked ? AppColors.error : AppColors.textPrimary,
                 size: 28,
               ),
               tooltip: isLiked ? 'Bỏ thích' : 'Yêu thích',
               onPressed: () {
-                HapticFeedback.lightImpact();
+                HapticFeedback.mediumImpact();
                 onLikeToggle();
               },
             ),

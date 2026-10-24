@@ -88,7 +88,7 @@ void main() {
       expect(state.hasError, true);
     });
 
-    test('toggleFavorite cập nhật isLiked thành công', () async {
+    test('toggleFavorite cập nhật isLiked thành công #UC44', () async {
       when(() => mockRepository.getTrackDetail(trackId))
           .thenAnswer((_) async => mockTrack);
       when(() => mockRepository.checkIsFavorite(trackId))
@@ -110,7 +110,7 @@ void main() {
       verify(() => mockRepository.toggleFavorite(trackId)).called(1);
     });
 
-    test('toggleFavorite gặp lỗi -> Hoàn tác lại isLiked ban đầu (Rollback)', () async {
+    test('toggleFavorite gặp lỗi -> Hoàn tác lại isLiked ban đầu (Rollback) #UC44', () async {
       when(() => mockRepository.getTrackDetail(trackId))
           .thenAnswer((_) async => mockTrack);
       when(() => mockRepository.checkIsFavorite(trackId))

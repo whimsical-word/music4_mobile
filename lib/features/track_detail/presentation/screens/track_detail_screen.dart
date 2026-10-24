@@ -67,18 +67,31 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
       if (!mounted) return;
       final isLikedNow =
           ref.read(trackDetailControllerProvider(_id)).value?.isLiked ?? false;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            isLikedNow
-                ? '❤️ Đã thêm vào bài hát yêu thích'
-                : 'Đã xóa khỏi bài hát yêu thích',
+          content: Row(
+            children: [
+              Icon(
+                isLikedNow ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                color: isLikedNow ? AppColors.error : AppColors.textSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isLikedNow
+                    ? 'Đã thêm vào bài hát yêu thích'
+                    : 'Đã xóa khỏi bài hát yêu thích',
+              ),
+            ],
           ),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
       );
     } catch (e) {
       if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
