@@ -15,4 +15,5 @@ abstract class AuthRepository {
     required String otp,
     required String newPassword,
   });
+  Future<Result<UserEntity>> loginWithGoogle();
 }
