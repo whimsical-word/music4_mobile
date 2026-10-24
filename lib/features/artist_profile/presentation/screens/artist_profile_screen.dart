@@ -78,23 +78,59 @@ class _ArtistProfileScreenState extends ConsumerState<ArtistProfileScreen> {
         .read(artistProfileProvider(params).notifier)
         .toggleFollow();
 
+    if (!context.mounted) return;
+
     switch (result) {
       case FollowResult.success:
+        final isNowFollowing =
+            ref.read(artistProfileProvider(params)).value?.isFollowing ?? false;
+        final artistName =
+            ref.read(artistProfileProvider(params)).value?.artist.name ?? 'nghệ sĩ';
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  isNowFollowing ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+                  color: isNowFollowing ? AppColors.primary : AppColors.textSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isNowFollowing
+                      ? 'Đã theo dõi $artistName'
+                      : 'Đã hủy theo dõi $artistName',
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         break;
       case FollowResult.needsLogin:
+        messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
-          const SnackBar(content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ.')),
+          const SnackBar(
+            content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ.'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       case FollowResult.notSupported:
+        messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Tài khoản nghệ sĩ không thể theo dõi nghệ sĩ khác.'),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       case FollowResult.failed:
+        messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Không thể cập nhật theo dõi. Vui lòng thử lại.'),
+            behavior: SnackBarBehavior.floating,
           ),
         );
     }

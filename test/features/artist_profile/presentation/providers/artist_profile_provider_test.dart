@@ -252,7 +252,7 @@ void main() {
       );
     });
 
-    test('following updates the state and the follower count', () async {
+    test('following updates the state and the follower count #UC16', () async {
       stubSuccess();
       when(
         () => repository.toggleFollow(userId: 7, artistId: 3),
@@ -268,7 +268,7 @@ void main() {
       expect(data.artist.followersCount, 43);
     });
 
-    test('unfollowing lowers the follower count', () async {
+    test('unfollowing lowers the follower count #UC16', () async {
       stubSuccess();
       when(
         () => repository.isFollowing(userId: 7, artistId: 3),
