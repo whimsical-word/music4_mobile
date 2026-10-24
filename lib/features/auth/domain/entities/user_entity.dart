@@ -14,6 +14,24 @@ class UserEntity {
     this.imageUrl,
     required this.isArtist,
   });
+
+  UserEntity copyWith({
+    int? id,
+    String? displayName,
+    String? username,
+    String? imageUrl,
+    String? email,
+    bool? isArtist,
+  }) {
+    return UserEntity(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      username: username ?? this.username,
+      imageUrl: imageUrl ?? this.imageUrl,
+      email: email ?? this.email,
+      isArtist: isArtist ?? this.isArtist,
+    );
+  }
 }
 
 sealed class Failure {

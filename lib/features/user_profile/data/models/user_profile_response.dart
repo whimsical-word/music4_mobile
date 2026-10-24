@@ -1,4 +1,5 @@
 import '../../domain/models/user_profile.dart';
+import '../../domain/models/user_profile_stats.dart';
 
 class UserProfileResponse {
   final int id;
@@ -50,9 +51,11 @@ class UserProfileResponse {
       email: email,
       avatarUrl: img ?? '',
       bio: '',
-      followingCount: 0,
-      playlistCount: 0,
-      likedTracksCount: 0,
+      stats: UserProfileStats(
+        followingCount: 0,
+        playlistCount: 0,
+        likedTracksCount: 0,
+      ),
     );
   }
 

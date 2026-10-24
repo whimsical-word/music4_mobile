@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/favorites/data/repositories/favorites_repository.dart';
+import 'package:music4_mobile/features/playlist/data/repositories/playlist_repository.dart';
 
 import '../../../../core/network/dio_client.dart';
 import '../../data/datasources/user_profile_remote_data_source.dart';
@@ -9,7 +11,13 @@ import '../../domain/repositories/user_profile_repository.dart';
 import '../state/user_profile_state.dart';
 
 final dioClientProvider = Provider<DioClient>((ref) => DioClient());
+final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
+  return FavoritesRepository(ref.read(dioClientProvider));
+});
 
+final playlistRepositoryProvider = Provider<PlaylistRepository>((ref) {
+  return PlaylistRepository(ref.read(dioClientProvider).dio);
+});
 final userProfileRemoteDataSourceProvider =
     Provider<UserProfileRemoteDataSource>((ref) {
       return UserProfileRemoteDataSourceImpl(
@@ -20,6 +28,8 @@ final userProfileRemoteDataSourceProvider =
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
   return UserProfileRepositoryImpl(
     ref.read(userProfileRemoteDataSourceProvider),
+    favoritesRepository: ref.read(favoritesRepositoryProvider),
+    playlistRepository: ref.read(playlistRepositoryProvider),
   );
 });
 
@@ -41,7 +51,12 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
 
   Future<UserProfileState> _fetchProfile(int userId) async {
     final profile = await _repository.getProfile(userId);
-    return UserProfileState(profile: profile);
+    try {
+      final stats = await _repository.getProfileStats(userId);
+      return UserProfileState(profile: profile.copyWith(stats: stats));
+    } catch (_) {
+      return UserProfileState(profile: profile);
+    }
   }
 
   Future<void> retry() async {
@@ -79,8 +94,30 @@ class UserProfileNotifier extends AsyncNotifier<UserProfileState> {
         gender: gender,
         avatarUrl: avatarFilePath,
       );
-      return UserProfileState(profile: updatedProfile);
+      await ref
+          .read(authNotifierProvider.notifier)
+          .updateUser(
+            displayName: updatedProfile.displayName,
+            imageUrl: updatedProfile.avatarUrl,
+          );
+      final stats = await _repository.getProfileStats(authState.user.id);
+
+      return UserProfileState(profile: updatedProfile.copyWith(stats: stats));
     });
+  }
+
+  Future<void> refresh() async {
+    final authState = ref.read(authNotifierProvider);
+    if (authState is! AuthAuthenticated) return;
+
+    try {
+      final updatedProfile = await _fetchProfile(authState.user.id);
+      state = AsyncData(UserProfileState(profile: updatedProfile.profile));
+    } catch (e, st) {
+      if (!state.hasValue) {
+        state = AsyncError(e, st);
+      }
+    }
   }
 }
 

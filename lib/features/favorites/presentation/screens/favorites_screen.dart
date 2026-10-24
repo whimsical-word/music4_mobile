@@ -18,12 +18,12 @@ class FavoritesScreen extends ConsumerWidget {
   /// Plays the favorites through the existing Player flow, starting at the
   /// tapped track. The backend does not return durations, so the Player takes
   /// the real duration from the audio stream.
-  void _playTrack(
+  Future<void> _playTrack(
     BuildContext context,
     WidgetRef ref,
     List<FavoriteTrack> tracks,
     int index,
-  ) {
+  ) async {
     final queue = tracks
         .map(
           (t) => TrackQueueItem(
@@ -37,7 +37,13 @@ class FavoritesScreen extends ConsumerWidget {
         .toList();
 
     ref.read(playerNotifierProvider.notifier).playPlaylist(queue, index);
-    context.push(RouteNames.player);
+    await context.push(RouteNames.player);
+
+    // The user can like or unlike tracks inside the Player. This list is kept
+    // alive underneath it, so reload it (silently, keeping the list on screen)
+    // once the Player is closed.
+    if (!context.mounted) return;
+    await ref.read(favoritesProvider.notifier).refresh();
   }
 
   Future<void> _removeFavorite(

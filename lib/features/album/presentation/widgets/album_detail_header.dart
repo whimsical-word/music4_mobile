@@ -6,13 +6,17 @@ import '../../../../core/utils/image_url_helper.dart';
 class AlbumDetailHeader extends StatelessWidget {
   final String title, artist, metadata;
   final String? imageUrl;
-  final bool isFavorite;
-  final VoidCallback onPlay, onShuffle, onToggleFavorite, onShare;
+  final VoidCallback onPlay, onShuffle, onShare;
 
   const AlbumDetailHeader({
-    super.key, required this.title, required this.artist, required this.metadata,
-    this.imageUrl, required this.isFavorite, required this.onPlay,
-    required this.onShuffle, required this.onToggleFavorite, required this.onShare,
+    super.key,
+    required this.title,
+    required this.artist,
+    required this.metadata,
+    this.imageUrl,
+    required this.onPlay,
+    required this.onShuffle,
+    required this.onShare,
   });
 
   @override
@@ -67,12 +71,6 @@ class AlbumDetailHeader extends StatelessWidget {
               icon: const Icon(Icons.shuffle, size: 18),
               label: const Text('Trộn'),
               style: OutlinedButton.styleFrom(shape: const StadiumBorder()),
-            ),
-            const SizedBox(width: 4),
-            IconButton(
-              onPressed: () { HapticFeedback.lightImpact(); onToggleFavorite(); },
-              icon: Icon(isFavorite ? Icons.favorite : Icons.favorite_border, color: isFavorite ? Colors.redAccent : AppColors.textPrimary),
-              tooltip: 'Yêu thích album',
             ),
             IconButton(
               onPressed: () { HapticFeedback.lightImpact(); onShare(); },

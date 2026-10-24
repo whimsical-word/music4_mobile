@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
+import '../../../player/domain/models/player_state_data.dart';
+import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/models/playlist_model.dart';
 import '../../data/models/playlist_track_model.dart';
 import '../controllers/playlist_controller.dart';
@@ -128,6 +130,49 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
     }
   }
 
+  void _playPlaylist(List<PlaylistTrackModel> tracks, {bool shuffle = false}) {
+    if (tracks.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Playlist này chưa có bài hát nào để phát.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
+
+    final playList =
+        shuffle ? (List<PlaylistTrackModel>.from(tracks)..shuffle()) : tracks;
+
+    final queue = playList.map((t) {
+      return TrackQueueItem(
+        id: t.id.toString(),
+        title: t.name,
+        artist: t.artistNames,
+        coverUrl: ImageUrlHelper.resolve(t.img),
+        duration: Duration(seconds: t.duration),
+      );
+    }).toList();
+
+    ref.read(playerNotifierProvider.notifier).playPlaylist(queue, 0);
+    context.push(RouteNames.player);
+  }
+
+  void _playSingleTrack(List<PlaylistTrackModel> tracks, int index) {
+    final queue = tracks.map((t) {
+      return TrackQueueItem(
+        id: t.id.toString(),
+        title: t.name,
+        artist: t.artistNames,
+        coverUrl: ImageUrlHelper.resolve(t.img),
+        duration: Duration(seconds: t.duration),
+      );
+    }).toList();
+
+    ref.read(playerNotifierProvider.notifier).playPlaylist(queue, index);
+    context.push(RouteNames.player);
+  }
+
   @override
   Widget build(BuildContext context) {
     final detailState = ref.watch(playlistDetailControllerProvider(_id));
@@ -191,8 +236,8 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                   description: playlist.description,
                   coverUrl: playlist.coverUrl,
                   trackCount: tracks.length,
-                  onPlayAll: () => context.push(RouteNames.player),
-                  onShuffle: () => context.push(RouteNames.player),
+                  onPlayAll: () => _playPlaylist(tracks),
+                  onShuffle: () => _playPlaylist(tracks, shuffle: true),
                   onAddTrack: () => _showAddTrackSheet(state.availableTracks),
                   onEdit: () => _showEditDialog(playlist),
                   onShare: () {
@@ -263,7 +308,7 @@ class _PlaylistDetailScreenState extends ConsumerState<PlaylistDetailScreen> {
                       artist: track.artistNames,
                       duration: track.formattedDuration,
                       imageUrl: ImageUrlHelper.resolve(track.img),
-                      onTap: () => context.push(RouteNames.player),
+                      onTap: () => _playSingleTrack(tracks, index),
                       onRemove: () => _removeTrack(track.id, track.name),
                     );
                   }),

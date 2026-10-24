@@ -34,6 +34,7 @@ class PlayerStateData {
   final RepeatState repeatMode;
   final bool isPreview;
   final bool showLoginPrompt;
+  final bool isOfflineCached;
 
   const PlayerStateData({
     this.currentTrackId,
@@ -51,6 +52,7 @@ class PlayerStateData {
     this.repeatMode = RepeatState.off,
     this.isPreview = false,
     this.showLoginPrompt = false,
+    this.isOfflineCached = false,
   });
 
   PlayerStateData copyWith({
@@ -69,6 +71,7 @@ class PlayerStateData {
     RepeatState? repeatMode,
     bool? isPreview,
     bool? showLoginPrompt,
+    bool? isOfflineCached,
   }) {
     return PlayerStateData(
       currentTrackId: currentTrackId ?? this.currentTrackId,
@@ -86,6 +89,7 @@ class PlayerStateData {
       repeatMode: repeatMode ?? this.repeatMode,
       isPreview: isPreview ?? this.isPreview,
       showLoginPrompt: showLoginPrompt ?? this.showLoginPrompt,
+      isOfflineCached: isOfflineCached ?? this.isOfflineCached,
     );
   }
 

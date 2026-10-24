@@ -10,7 +10,11 @@ import '../../../../core/utils/image_url_helper.dart';
 import '../../../artist_profile/presentation/widgets/artist_name_link.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../player/domain/models/player_state_data.dart';
+import '../../../player/presentation/providers/player_provider.dart';
+import '../../../player/presentation/widgets/mini_player_widget.dart';
 import '../../data/models/history_track_response.dart';
+import '../../domain/resume_position.dart';
 import '../providers/history_provider.dart';
 
 class HistoryScreen extends ConsumerWidget {
@@ -27,6 +31,9 @@ class HistoryScreen extends ConsumerWidget {
         body: authState is AuthInitial || authState is AuthLoading
             ? _buildLoadingState()
             : _buildGuestState(context),
+        // Keep the playing track visible (and controllable) after the Player
+        // is collapsed.
+        bottomNavigationBar: const SafeArea(top: false, child: MiniPlayerWidget()),
       );
     }
 
@@ -36,6 +43,7 @@ class HistoryScreen extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Lịch sử nghe nhạc'),
       ),
+      bottomNavigationBar: const SafeArea(top: false, child: MiniPlayerWidget()),
       body: historyAsync.when(
         data: (history) {
           if (history.items.isEmpty) {
@@ -69,7 +77,7 @@ class HistoryScreen extends ConsumerWidget {
                       ),
                     );
                   }
-                  return _buildHistoryItem(context, history.items[index]);
+                  return _buildHistoryItem(context, ref, history.items, index);
                 },
               ),
             ),
@@ -81,7 +89,116 @@ class HistoryScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHistoryItem(BuildContext context, HistoryTrackResponse item) {
+  /// Plays the loaded history through the existing Player flow, starting at
+  /// [index]. Resume playback: unless [fromStart], a partly listened track
+  /// continues from the position saved on the backend.
+  Future<void> _playTrack(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryTrackResponse> items,
+    int index, {
+    required bool fromStart,
+  }) async {
+    final queue = items
+        .map(
+          (t) => TrackQueueItem(
+            id: t.id.toString(),
+            title: t.name,
+            artist: t.artists.isNotEmpty
+                ? t.artists.map((a) => a.name).join(', ')
+                : 'Không rõ nghệ sĩ',
+            coverUrl: ImageUrlHelper.resolve(t.img),
+            duration: Duration(seconds: t.duration),
+          ),
+        )
+        .toList();
+
+    final item = items[index];
+    final start = fromStart ? Duration.zero : _resumeOf(item);
+    final player = ref.read(playerNotifierProvider.notifier);
+
+    if (start > Duration.zero) {
+      player.resumePlaylist(queue, index, startPosition: start);
+    } else {
+      player.playPlaylist(queue, index);
+    }
+    await context.push(RouteNames.player);
+
+    // Listening changes the saved position (and moves a finished track to the
+    // top). This list stays alive under the Player, so reload it silently,
+    // keeping what is on screen, once the Player is closed.
+    if (!context.mounted) return;
+    await ref.read(historyNotifierProvider.notifier).refreshHistory();
+  }
+
+  Duration _resumeOf(HistoryTrackResponse item) => resumePositionFor(
+        playbackPositionSeconds: item.playbackPosition,
+        durationSeconds: item.duration,
+      );
+
+  /// The ⋮ menu: resume / play from the start, track detail, artist profile.
+  void _showItemMenu(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryTrackResponse> items,
+    int index,
+  ) {
+    final item = items[index];
+    final resume = _resumeOf(item);
+
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (resume > Duration.zero)
+              ListTile(
+                leading: const Icon(Icons.play_arrow),
+                title: Text('Nghe tiếp từ ${formatListenTime(resume)}'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  _playTrack(context, ref, items, index, fromStart: false);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.replay),
+              title: const Text('Phát từ đầu'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _playTrack(context, ref, items, index, fromStart: true);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('Xem chi tiết bài hát'),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                context.push('/track/${item.id}');
+              },
+            ),
+            if (item.artists.isNotEmpty)
+              ListTile(
+                leading: const Icon(Icons.person_outline),
+                title: const Text('Xem hồ sơ nghệ sĩ'),
+                onTap: () {
+                  Navigator.of(sheetContext).pop();
+                  context.push('/artist/${item.artists.first.id}');
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHistoryItem(
+    BuildContext context,
+    WidgetRef ref,
+    List<HistoryTrackResponse> items,
+    int index,
+  ) {
+    final item = items[index];
     final artistName = item.artists.isNotEmpty
         ? item.artists.map((e) => e.name).join(', ')
         : 'Không rõ nghệ sĩ';
@@ -89,15 +206,17 @@ class HistoryScreen extends ConsumerWidget {
     // Backend returns an S3 object key (covers/...), not a full URL.
     final coverUrl = ImageUrlHelper.resolve(item.img);
 
-    final positionText = item.playbackPosition > 0 
-        ? 'Đã nghe đến ${item.playbackPosition}s'
-        : 'Mới nghe';
+    // A partly listened track offers to continue; a finished one does not.
+    final resume = _resumeOf(item);
+    final positionText = resume > Duration.zero
+        ? 'Nghe tiếp từ ${formatListenTime(resume)}'
+        : 'Đã nghe xong';
 
     return Material(
       color: Colors.transparent,
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
-        onTap: () => context.push('/track/${item.id}'),
+        onTap: () => _playTrack(context, ref, items, index, fromStart: false),
         child: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
@@ -156,9 +275,8 @@ class HistoryScreen extends ConsumerWidget {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
-                onPressed: () {
-                  // TODO: Show context menu
-                },
+                tooltip: 'Tùy chọn',
+                onPressed: () => _showItemMenu(context, ref, items, index),
               ),
             ],
           ),

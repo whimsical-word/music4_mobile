@@ -95,17 +95,17 @@ class UserProfileHeader extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   _StatChip(
-                    value: profile.followingCount.toString(),
+                    value: profile.stats.followingCount.toString(),
                     label: 'Đang theo dõi',
                   ),
                   Container(width: 1, height: 36, color: AppColors.divider),
                   _StatChip(
-                    value: profile.playlistCount.toString(),
+                    value: profile.stats.playlistCount.toString(),
                     label: 'Playlist',
                   ),
                   Container(width: 1, height: 36, color: AppColors.divider),
                   _StatChip(
-                    value: profile.likedTracksCount.toString(),
+                    value: profile.stats.likedTracksCount.toString(),
                     label: 'Bài yêu thích',
                   ),
                 ],

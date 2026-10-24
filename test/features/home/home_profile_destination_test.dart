@@ -28,10 +28,10 @@ void main() {
       );
     });
 
-    test('a guest opens the listener profile screen', () {
+    test('a guest opens the login screen', () {
       expect(
         profileRouteFor(const AuthUnauthenticated()),
-        RouteNames.userProfile,
+        RouteNames.login,
       );
     });
   });
