@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../widgets/admin_reported_comments_tab_view.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
@@ -59,7 +60,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         ref.watch(adminCategoriesProvider).value?.length ?? 0;
 
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(
@@ -84,12 +85,18 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
           ),
           actions: [
             IconButton(
-              icon: const Icon(Icons.home_outlined, color: AppColors.textSecondary),
+              icon: const Icon(
+                Icons.home_outlined,
+                color: AppColors.textSecondary,
+              ),
               tooltip: 'Vào giao diện nghe nhạc',
               onPressed: () => context.go(RouteNames.home),
             ),
             IconButton(
-              icon: const Icon(Icons.logout_outlined, color: AppColors.textSecondary),
+              icon: const Icon(
+                Icons.logout_outlined,
+                color: AppColors.textSecondary,
+              ),
               tooltip: 'Đăng xuất',
               onPressed: () => _confirmLogout(context),
             ),
@@ -181,6 +188,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
                         icon: Icon(Icons.category_outlined, size: 20),
                         text: 'Thể loại',
                       ),
+                      Tab(
+                        icon: Icon(Icons.flag_outlined, size: 20),
+                        text: 'Comment',
+                      ),
                     ],
                   ),
                 ),
@@ -192,6 +203,7 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               AdminUsersTabView(),
               AdminArtistsTabView(),
               AdminCategoriesTabView(),
+              AdminReportedCommentsTabView(),
             ],
           ),
         ),
@@ -277,7 +289,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textMuted,
+                  ),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -306,7 +321,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text(
           'Đăng xuất',
-          style: TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold),
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.bold,
+          ),
         ),
         content: const Text(
           'Bạn có chắc chắn muốn đăng xuất khỏi tài khoản Quản trị không?',
@@ -315,7 +333,10 @@ class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Hủy', style: TextStyle(color: AppColors.textSecondary)),
+            child: const Text(
+              'Hủy',
+              style: TextStyle(color: AppColors.textSecondary),
+            ),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -355,10 +376,7 @@ class _SliverTabBarDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return Container(
-      color: AppColors.background,
-      child: tabBar,
-    );
+    return Container(color: AppColors.background, child: tabBar);
   }
 
   @override

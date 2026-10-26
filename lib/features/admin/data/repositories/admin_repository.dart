@@ -1,4 +1,5 @@
 import 'dart:io';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -177,8 +178,9 @@ class AdminRepository {
       final response = await _dio.get(ApiEndpoints.categories);
       final list = response.data as List<dynamic>;
       return list
-          .map((item) =>
-              AdminCategoryModel.fromJson(item as Map<String, dynamic>))
+          .map(
+            (item) => AdminCategoryModel.fromJson(item as Map<String, dynamic>),
+          )
           .toList();
     } on DioException catch (e) {
       throw AdminException(_handleDioError(e));
@@ -193,9 +195,7 @@ class AdminRepository {
         ApiEndpoints.categories,
         data: {'name': name.trim()},
       );
-      return AdminCategoryModel.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      return AdminCategoryModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw AdminException(_handleDioError(e));
     } catch (e) {
@@ -209,9 +209,7 @@ class AdminRepository {
         '${ApiEndpoints.categories}/$id',
         data: {'name': name.trim()},
       );
-      return AdminCategoryModel.fromJson(
-        response.data as Map<String, dynamic>,
-      );
+      return AdminCategoryModel.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throw AdminException(_handleDioError(e));
     } catch (e) {
@@ -226,6 +224,52 @@ class AdminRepository {
       throw AdminException(_handleDioError(e));
     } catch (e) {
       throw AdminException('Không thể xóa thể loại: $e');
+    }
+  }
+
+  // ── Comment Report Moderation ──────────────────────────────────────────────
+
+  Future<List<AdminReportedCommentModel>> getPendingReportedComments() async {
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
+      return const [];
+    }
+
+    try {
+      final response = await _dio.get(
+        '${ApiEndpoints.comments}/reported/pending',
+      );
+      final list = response.data as List<dynamic>;
+      return list
+          .map(
+            (item) => AdminReportedCommentModel.fromJson(
+              item as Map<String, dynamic>,
+            ),
+          )
+          .toList();
+    } on DioException catch (e) {
+      throw AdminException(_handleDioError(e));
+    } catch (e) {
+      throw AdminException('Không thể tải danh sách báo cáo bình luận: $e');
+    }
+  }
+
+  Future<void> dismissCommentReports(int commentId) async {
+    try {
+      await _dio.put('${ApiEndpoints.comments}/$commentId/reports/dismiss');
+    } on DioException catch (e) {
+      throw AdminException(_handleDioError(e));
+    } catch (e) {
+      throw AdminException('Không thể khôi phục bình luận: $e');
+    }
+  }
+
+  Future<void> approveDeleteReportedComment(int commentId) async {
+    try {
+      await _dio.delete('${ApiEndpoints.comments}/$commentId/reports/approve');
+    } on DioException catch (e) {
+      throw AdminException(_handleDioError(e));
+    } catch (e) {
+      throw AdminException('Không thể xóa bình luận vi phạm: $e');
     }
   }
 
@@ -257,5 +301,41 @@ class AdminRepository {
       default:
         return 'Đã xảy ra sự cố mạng. Vui lòng thử lại.';
     }
+  }
+}
+
+class AdminReportedCommentModel {
+  final int commentId;
+  final int? trackId;
+  final String commenterName;
+  final String content;
+  final int reportCount;
+  final bool isTemporarilyHidden;
+  final List<String> reasons;
+
+  const AdminReportedCommentModel({
+    required this.commentId,
+    this.trackId,
+    required this.commenterName,
+    required this.content,
+    required this.reportCount,
+    required this.isTemporarilyHidden,
+    required this.reasons,
+  });
+
+  factory AdminReportedCommentModel.fromJson(Map<String, dynamic> json) {
+    return AdminReportedCommentModel(
+      commentId: (json['commentId'] as num?)?.toInt() ?? 0,
+      trackId: (json['trackId'] as num?)?.toInt(),
+      commenterName: json['commenterName'] as String? ?? 'Ẩn danh',
+      content: json['content'] as String? ?? '',
+      reportCount: (json['reportCount'] as num?)?.toInt() ?? 1,
+      isTemporarilyHidden: json['isTemporarilyHidden'] as bool? ?? false,
+      reasons:
+          (json['reasons'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          const [],
+    );
   }
 }
