@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/utils/image_url_helper.dart';
 import '../../data/models/track_comment_model.dart';
+import 'report_comment_bottom_sheet.dart';
 
 class TrackCommentSection extends StatefulWidget {
   final List<TrackCommentModel> comments;
@@ -12,6 +14,9 @@ class TrackCommentSection extends StatefulWidget {
   final ValueChanged<String> onAddComment;
   final void Function(int commentId, String newContent)? onEditComment;
   final void Function(int commentId)? onDeleteComment;
+  final Set<int> reportedCommentIds;
+  final void Function(int commentId, String reason, String? description)?
+  onReportComment;
 
   const TrackCommentSection({
     super.key,
@@ -22,6 +27,8 @@ class TrackCommentSection extends StatefulWidget {
     required this.onAddComment,
     this.onEditComment,
     this.onDeleteComment,
+    this.reportedCommentIds = const {},
+    this.onReportComment,
   });
 
   @override
@@ -30,6 +37,15 @@ class TrackCommentSection extends StatefulWidget {
 
 class _TrackCommentSectionState extends State<TrackCommentSection> {
   final TextEditingController _controller = TextEditingController();
+  final Set<int> _reportedCommentIds = {}; // <--- Thêm dòng này
+
+  @override
+  void didUpdateWidget(covariant TrackCommentSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.currentUserId != widget.currentUserId) {
+      _reportedCommentIds.clear();
+    }
+  }
 
   @override
   void dispose() {
@@ -64,9 +80,11 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
       final trimmedCommenter = comment.commenterName.trim().toLowerCase();
       if (widget.currentDisplayName != null &&
           widget.currentDisplayName!.trim().isNotEmpty) {
-        if (trimmedCommenter == widget.currentDisplayName!.trim().toLowerCase()) {
+        if (trimmedCommenter ==
+            widget.currentDisplayName!.trim().toLowerCase()) {
           isMatch = true;
-          reason = 'Trùng displayName ("${comment.commenterName}" == "${widget.currentDisplayName}")';
+          reason =
+              'Trùng displayName ("${comment.commenterName}" == "${widget.currentDisplayName}")';
         }
       }
 
@@ -76,7 +94,8 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
           widget.currentUsername!.trim().isNotEmpty) {
         if (trimmedCommenter == widget.currentUsername!.trim().toLowerCase()) {
           isMatch = true;
-          reason = 'Trùng username ("${comment.commenterName}" == "${widget.currentUsername}")';
+          reason =
+              'Trùng username ("${comment.commenterName}" == "${widget.currentUsername}")';
         }
       }
     }
@@ -84,7 +103,8 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
     // 4. Dự phòng khi chưa đồng bộ được state đăng nhập: nếu ID bình luận là 1
     if (!isMatch && widget.currentUserId == null && comment.userId == 1) {
       isMatch = true;
-      reason = 'Dự phòng fallback: currentUserId đang null và comment.userId == 1';
+      reason =
+          'Dự phòng fallback: currentUserId đang null và comment.userId == 1';
     }
 
     debugPrint(
@@ -174,6 +194,16 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
     );
   }
 
+  void _showReportSheet(TrackCommentModel comment) {
+    ReportCommentBottomSheet.show(
+      context,
+      comment: comment,
+      onSubmit: (reason, description) {
+        widget.onReportComment?.call(comment.commentId, reason, description);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -197,7 +227,11 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
               const CircleAvatar(
                 radius: 18,
                 backgroundColor: AppColors.surface,
-                child: Icon(Icons.person, size: 20, color: AppColors.textSecondary),
+                child: Icon(
+                  Icons.person,
+                  size: 20,
+                  color: AppColors.textSecondary,
+                ),
               ),
               const SizedBox(width: 8),
               Expanded(
@@ -206,11 +240,16 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
                   decoration: InputDecoration(
                     hintText: 'Thêm bình luận...',
                     suffixIcon: IconButton(
-                      icon: const Icon(Icons.send_rounded, color: AppColors.primary),
+                      icon: const Icon(
+                        Icons.send_rounded,
+                        color: AppColors.primary,
+                      ),
                       onPressed: _submit,
                     ),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                   ),
                   onSubmitted: (_) => _submit(),
                 ),
@@ -235,18 +274,54 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
             itemCount: widget.comments.length,
             itemBuilder: (context, index) {
               final comment = widget.comments[index];
-              final hasAvatar = comment.commenterImg != null &&
+              final hasAvatar =
+                  comment.commenterImg != null &&
                   comment.commenterImg!.isNotEmpty;
               final avatarUrl = hasAvatar
                   ? ImageUrlHelper.resolve(comment.commenterImg)
                   : null;
               final isMine = _isMyComment(comment);
+              final isReported =
+                  widget.reportedCommentIds.contains(comment.commentId) ||
+                  _reportedCommentIds.contains(comment.commentId);
+
+              if (isReported) {
+                return ListTile(
+                  dense: true,
+                  leading: const Icon(
+                    Icons.visibility_off_outlined,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
+                  title: const Text(
+                    'Bình luận này đã bị ẩn do bạn đã báo cáo vi phạm.',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                  trailing: TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _reportedCommentIds.remove(comment.commentId);
+                      });
+                    },
+                    child: const Text(
+                      'Hoàn tác',
+                      style: TextStyle(fontSize: 12),
+                    ),
+                  ),
+                );
+              }
 
               return ListTile(
                 leading: CircleAvatar(
                   radius: 16,
                   backgroundColor: AppColors.card,
-                  backgroundImage: avatarUrl != null ? NetworkImage(avatarUrl) : null,
+                  backgroundImage: avatarUrl != null
+                      ? NetworkImage(avatarUrl)
+                      : null,
                   child: avatarUrl == null
                       ? Text(
                           comment.commenterName.isNotEmpty
@@ -313,6 +388,36 @@ class _TrackCommentSectionState extends State<TrackCommentSection> {
                         ),
                       ),
                       const SizedBox(width: 8),
+                    ] else ...[
+                      InkWell(
+                        onTap: () => _showReportSheet(comment),
+                        borderRadius: BorderRadius.circular(4),
+                        child: const Padding(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.flag_outlined,
+                                size: 13,
+                                color: AppColors.textMuted,
+                              ),
+                              SizedBox(width: 2),
+                              Text(
+                                'Báo cáo',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 6),
                     ],
                     Text(
                       comment.formattedTimeAgo,

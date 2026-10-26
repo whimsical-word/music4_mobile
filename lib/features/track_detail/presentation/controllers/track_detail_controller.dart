@@ -12,6 +12,7 @@ class TrackDetailState {
   final List<PlaylistModel> userPlaylists;
   final Set<int> playlistsContainingTrack;
   final List<TrackCommentModel> comments;
+  final Set<int> reportedCommentIds;
 
   const TrackDetailState({
     required this.track,
@@ -20,6 +21,7 @@ class TrackDetailState {
     this.userPlaylists = const [],
     this.playlistsContainingTrack = const {},
     this.comments = const [],
+    this.reportedCommentIds = const {},
   });
 
   TrackDetailState copyWith({
@@ -29,23 +31,30 @@ class TrackDetailState {
     List<PlaylistModel>? userPlaylists,
     Set<int>? playlistsContainingTrack,
     List<TrackCommentModel>? comments,
+    Set<int>? reportedCommentIds,
   }) {
     return TrackDetailState(
       track: track ?? this.track,
       isLiked: isLiked ?? this.isLiked,
       userRating: userRating ?? this.userRating,
       userPlaylists: userPlaylists ?? this.userPlaylists,
-      playlistsContainingTrack: playlistsContainingTrack ?? this.playlistsContainingTrack,
+      playlistsContainingTrack:
+          playlistsContainingTrack ?? this.playlistsContainingTrack,
       comments: comments ?? this.comments,
+      reportedCommentIds: reportedCommentIds ?? this.reportedCommentIds,
     );
   }
 }
 
-final trackDetailControllerProvider = StateNotifierProvider.family<
-    TrackDetailController, AsyncValue<TrackDetailState>, int>((ref, trackId) {
-  final repository = ref.watch(trackDetailRepositoryProvider);
-  return TrackDetailController(repository, trackId);
-});
+final trackDetailControllerProvider =
+    StateNotifierProvider.family<
+      TrackDetailController,
+      AsyncValue<TrackDetailState>,
+      int
+    >((ref, trackId) {
+      final repository = ref.watch(trackDetailRepositoryProvider);
+      return TrackDetailController(repository, trackId);
+    });
 
 class TrackDetailController
     extends StateNotifier<AsyncValue<TrackDetailState>> {
@@ -53,7 +62,7 @@ class TrackDetailController
   final int _trackId;
 
   TrackDetailController(this._repository, this._trackId)
-      : super(const AsyncValue.loading()) {
+    : super(const AsyncValue.loading()) {
     loadTrackDetail();
   }
 
@@ -65,8 +74,12 @@ class TrackDetailController
         _repository.getTrackDetail(_trackId),
         _repository.checkIsFavorite(_trackId),
         _repository.getUserPlaylists().catchError((_) => <PlaylistModel>[]),
-        _repository.getComments(_trackId).catchError((_) => <TrackCommentModel>[]),
+        _repository
+            .getComments(_trackId)
+            .catchError((_) => <TrackCommentModel>[]),
         _repository.getUserRating(_trackId).catchError((_) => null),
+        Future(() async => await _repository.getReportedCommentIds())
+            .catchError((_) => <int>{}),
       ]);
 
       final track = results[0] as TrackDetailModel;
@@ -74,6 +87,7 @@ class TrackDetailController
       final rawPlaylists = results[2] as List<PlaylistModel>;
       final comments = results[3] as List<TrackCommentModel>;
       final userRating = results[4] as int?;
+      final reportedCommentIds = results[5] as Set<int>;
 
       // Tải số lượng bài hát và kiểm tra bài hiện tại đã có trong từng playlist chưa
       final Set<int> containingTrack = {};
@@ -99,6 +113,7 @@ class TrackDetailController
           userPlaylists: updatedPlaylists,
           playlistsContainingTrack: containingTrack,
           comments: comments,
+          reportedCommentIds: reportedCommentIds,
         ),
       );
     } catch (e, stackTrace) {
@@ -112,33 +127,86 @@ class TrackDetailController
   }
 
   /// Thêm bình luận mới vào bài hát và tải lại danh sách bình luận
-  Future<void> addComment(String content, {int? userId}) async {
+  Future<void> addComment(
+    String content, {
+    int? userId,
+    bool isArtist = false,
+  }) async {
     await _repository.addComment(
       trackId: _trackId,
       content: content,
       userId: userId,
+      isArtist: isArtist,
     );
-    final updatedComments = await _repository.getComments(_trackId).catchError((_) => <TrackCommentModel>[]);
+    final updatedComments = await _repository
+        .getComments(_trackId)
+        .catchError((_) => <TrackCommentModel>[]);
     if (mounted) {
-      state = state.whenData((current) => current.copyWith(comments: updatedComments));
+      state = state.whenData(
+        (current) => current.copyWith(comments: updatedComments),
+      );
     }
   }
 
   /// Chỉnh sửa bình luận và cập nhật lại danh sách bình luận
-  Future<void> updateComment({required int commentId, required String content}) async {
+  Future<void> updateComment({
+    required int commentId,
+    required String content,
+  }) async {
     await _repository.updateComment(commentId: commentId, content: content);
-    final updatedComments = await _repository.getComments(_trackId).catchError((_) => <TrackCommentModel>[]);
+    final updatedComments = await _repository
+        .getComments(_trackId)
+        .catchError((_) => <TrackCommentModel>[]);
     if (mounted) {
-      state = state.whenData((current) => current.copyWith(comments: updatedComments));
+      state = state.whenData(
+        (current) => current.copyWith(comments: updatedComments),
+      );
     }
   }
 
   /// Xóa bình luận và cập nhật lại danh sách bình luận
   Future<void> deleteComment(int commentId) async {
     await _repository.deleteComment(commentId);
-    final updatedComments = await _repository.getComments(_trackId).catchError((_) => <TrackCommentModel>[]);
+    final updatedComments = await _repository
+        .getComments(_trackId)
+        .catchError((_) => <TrackCommentModel>[]);
     if (mounted) {
-      state = state.whenData((current) => current.copyWith(comments: updatedComments));
+      state = state.whenData(
+        (current) => current.copyWith(comments: updatedComments),
+      );
+    }
+  }
+
+  /// Báo cáo bình luận vi phạm lên Backend và cập nhật danh sách đã báo cáo
+  Future<void> reportComment({
+    required int commentId,
+    required String reason,
+    String? description,
+    int? userId,
+  }) async {
+    await _repository.reportComment(
+      commentId: commentId,
+      reason: reason,
+      description: description,
+      userId: userId,
+    );
+    final updatedComments = await _repository
+        .getComments(_trackId)
+        .catchError((_) => <TrackCommentModel>[]);
+    final updatedReportedIds = await _repository
+        .getReportedCommentIds(userId: userId)
+        .catchError((_) => <int>{commentId});
+    if (mounted) {
+      state = state.whenData(
+        (current) => current.copyWith(
+          comments: updatedComments,
+          reportedCommentIds: {
+            ...current.reportedCommentIds,
+            ...updatedReportedIds,
+            commentId,
+          },
+        ),
+      );
     }
   }
 
@@ -179,10 +247,7 @@ class TrackDetailController
 
     try {
       // 2. Gửi API lưu đánh giá
-      await _repository.submitRating(
-        trackId: _trackId,
-        ratingValue: rating,
-      );
+      await _repository.submitRating(trackId: _trackId, ratingValue: rating);
     } catch (e) {
       // 3. Hoàn tác nếu API thất bại
       if (mounted) {
@@ -197,8 +262,9 @@ class TrackDetailController
     await _repository.addTrackToPlaylist(playlistId, _trackId);
     if (mounted) {
       state.whenData((current) {
-        final updatedContaining = Set<int>.from(current.playlistsContainingTrack)
-          ..add(playlistId);
+        final updatedContaining = Set<int>.from(
+          current.playlistsContainingTrack,
+        )..add(playlistId);
         final updatedPlaylists = current.userPlaylists.map((p) {
           if (p.id == playlistId) {
             return p.copyWith(trackCount: p.trackCount + 1);

@@ -42,6 +42,12 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
   void initState() {
     super.initState();
     _loadUserFromToken();
+    // Luôn làm mới lại dữ liệu theo tài khoản hiện tại mỗi khi mở màn hình
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        ref.read(trackDetailControllerProvider(_id).notifier).refresh();
+      }
+    });
   }
 
   Future<void> _loadUserFromToken() async {
@@ -84,7 +90,9 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
           content: Row(
             children: [
               Icon(
-                isLikedNow ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                isLikedNow
+                    ? Icons.favorite_rounded
+                    : Icons.favorite_border_rounded,
                 color: isLikedNow ? AppColors.error : AppColors.textSecondary,
                 size: 20,
               ),
@@ -140,7 +148,8 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
         } catch (e) {
           if (!mounted) return;
           final errorText = e.toString();
-          final message = errorText.contains('đã tồn tại') ||
+          final message =
+              errorText.contains('đã tồn tại') ||
                   errorText.contains('Duplicate')
               ? 'Bài hát này đã có trong "${playlist.name}" rồi.'
               : 'Thêm vào playlist thất bại: ${errorText.replaceAll("Exception: ", "")}';
@@ -242,10 +251,12 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
       final userId = authState is AuthAuthenticated
           ? authState.user.id
           : _storedUserId;
+      final isArtist =
+          authState is AuthAuthenticated && authState.user.isArtist;
 
       await ref
           .read(trackDetailControllerProvider(_id).notifier)
-          .addComment(text, userId: userId);
+          .addComment(text, userId: userId, isArtist: isArtist);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -311,6 +322,56 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
         SnackBar(
           content: Text(
             'Không thể xóa bình luận: ${e.toString().replaceAll("Exception: ", "")}',
+          ),
+          backgroundColor: AppColors.error,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
+  void _reportComment(int commentId, String reason, String? description) async {
+    try {
+      final authState = ref.read(authNotifierProvider);
+      final userId = authState is AuthAuthenticated
+          ? authState.user.id
+          : _storedUserId;
+
+      await ref
+          .read(trackDetailControllerProvider(_id).notifier)
+          .reportComment(
+            commentId: commentId,
+            reason: reason,
+            description: description,
+            userId: userId,
+          );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(
+                Icons.check_circle_rounded,
+                color: AppColors.primary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text('Đã gửi báo cáo vi phạm ($reason) lên hệ thống!'),
+              ),
+            ],
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Không thể gửi báo cáo: ${e.toString().replaceAll("Exception: ", "")}',
           ),
           backgroundColor: AppColors.error,
           behavior: SnackBarBehavior.floating,
@@ -499,7 +560,11 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                         SnackBar(
                           content: Row(
                             children: [
-                              const Icon(Icons.star_rounded, color: AppColors.warning, size: 20),
+                              const Icon(
+                                Icons.star_rounded,
+                                color: AppColors.warning,
+                                size: 20,
+                              ),
                               const SizedBox(width: 8),
                               Text('Đã đánh giá $newRating/5 sao thành công!'),
                             ],
@@ -774,6 +839,8 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                   onAddComment: _addComment,
                   onEditComment: _editComment,
                   onDeleteComment: _deleteComment,
+                  reportedCommentIds: state.reportedCommentIds,
+                  onReportComment: _reportComment,
                 ),
               ],
             ),
