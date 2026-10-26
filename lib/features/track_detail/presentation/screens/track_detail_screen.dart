@@ -251,10 +251,12 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
       final userId = authState is AuthAuthenticated
           ? authState.user.id
           : _storedUserId;
+      final isArtist =
+          authState is AuthAuthenticated && authState.user.isArtist;
 
       await ref
           .read(trackDetailControllerProvider(_id).notifier)
-          .addComment(text, userId: userId);
+          .addComment(text, userId: userId, isArtist: isArtist);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

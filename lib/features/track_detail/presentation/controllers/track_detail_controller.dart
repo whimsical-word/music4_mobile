@@ -127,11 +127,16 @@ class TrackDetailController
   }
 
   /// Thêm bình luận mới vào bài hát và tải lại danh sách bình luận
-  Future<void> addComment(String content, {int? userId}) async {
+  Future<void> addComment(
+    String content, {
+    int? userId,
+    bool isArtist = false,
+  }) async {
     await _repository.addComment(
       trackId: _trackId,
       content: content,
       userId: userId,
+      isArtist: isArtist,
     );
     final updatedComments = await _repository
         .getComments(_trackId)

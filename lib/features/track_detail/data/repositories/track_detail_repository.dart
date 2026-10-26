@@ -199,15 +199,15 @@ class TrackDetailRepository {
     required int trackId,
     required String content,
     int? userId,
+    bool isArtist = false,
   }) async {
     try {
       final effectiveUserId = await _resolveUserId(userId);
-
       await _dio.post(
         ApiEndpoints.comments,
         data: {
           'trackId': trackId,
-          'userId': ?effectiveUserId,
+          if (isArtist) 'artistId': effectiveUserId else 'userId': effectiveUserId,
           'content': content,
         },
       );

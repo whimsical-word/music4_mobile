@@ -41,7 +41,11 @@ class FakeTrackDetailController
   Future<void> addTrackToPlaylist(int playlistId) async {}
 
   @override
-  Future<void> addComment(String content, {int? userId}) async {}
+  Future<void> addComment(
+    String content, {
+    int? userId,
+    bool isArtist = false,
+  }) async {}
 
   @override
   Future<void> updateComment({
