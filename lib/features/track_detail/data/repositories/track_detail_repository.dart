@@ -207,7 +207,8 @@ class TrackDetailRepository {
         ApiEndpoints.comments,
         data: {
           'trackId': trackId,
-          if (isArtist) 'artistId': effectiveUserId else 'userId': effectiveUserId,
+          if (effectiveUserId != null)
+            (isArtist ? 'artistId' : 'userId'): effectiveUserId,
           'content': content,
         },
       );

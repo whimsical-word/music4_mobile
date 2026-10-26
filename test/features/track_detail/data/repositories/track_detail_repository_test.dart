@@ -279,6 +279,37 @@ void main() {
       ).called(1);
     });
 
+    test('addComment gửi artistId khi isArtist = true', () async {
+      const artistId = 5;
+      when(
+        () => mockDio.post(
+          ApiEndpoints.comments,
+          data: {'trackId': trackId, 'artistId': artistId, 'content': 'Hay lắm'},
+        ),
+      ).thenAnswer(
+        (_) async => Response(
+          requestOptions: RequestOptions(path: ApiEndpoints.comments),
+          statusCode: 200,
+        ),
+      );
+
+      await expectLater(
+        repository.addComment(
+          trackId: trackId,
+          content: 'Hay lắm',
+          userId: artistId,
+          isArtist: true,
+        ),
+        completes,
+      );
+      verify(
+        () => mockDio.post(
+          ApiEndpoints.comments,
+          data: {'trackId': trackId, 'artistId': artistId, 'content': 'Hay lắm'},
+        ),
+      ).called(1);
+    });
+
     test('updateComment gọi đúng endpoint PUT với commentId và body content', () async {
       const commentId = 101;
       when(
