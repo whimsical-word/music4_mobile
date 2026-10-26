@@ -101,6 +101,9 @@ class ApiEndpoints {
 
   // Recommendations & History
   static const String recommendations = '/api/recommendations';
+  static const String recommendationsSync = '/api/recommendations/sync';
+  static const String recommendationsSyncStatus =
+      '/api/recommendations/sync/status';
   static const String history = '/api/tracking/history';
   static const String syncPlaybackTime = '/api/tracking/sync-time';
 
@@ -114,9 +117,12 @@ class ApiEndpoints {
   static const String notificationBase =
       '/api/notifications'; // + /{id}/read | /{id} | /clear-all
 
-  // User Profile
+  // User Profile & Admin
   static const String userProfile = '/api/users'; // + /{userId}
+  static const String users = '/api/users';
+  static const String userCount = '/api/users/count';
 
   // Categories
   static const String categories = '/api/categories';
+  static const String categoryStats = '/api/categories/stats';
 }

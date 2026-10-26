@@ -5,6 +5,10 @@ class UserEntity {
   final String? imageUrl;
   final String email;
   final bool isArtist;
+  final String role;
+
+  /// `ROLE_ADMIN` accounts (the backend still enforces every admin API).
+  final bool isAdmin;
 
   const UserEntity({
     required this.id,
@@ -13,6 +17,8 @@ class UserEntity {
     required this.username,
     this.imageUrl,
     required this.isArtist,
+    this.role = '',
+    this.isAdmin = false,
   });
 
   UserEntity copyWith({
@@ -22,7 +28,10 @@ class UserEntity {
     String? imageUrl,
     String? email,
     bool? isArtist,
+    String? role,
+    bool? isAdmin,
   }) {
+    final effectiveRole = role ?? this.role;
     return UserEntity(
       id: id ?? this.id,
       displayName: displayName ?? this.displayName,
@@ -30,6 +39,8 @@ class UserEntity {
       imageUrl: imageUrl ?? this.imageUrl,
       email: email ?? this.email,
       isArtist: isArtist ?? this.isArtist,
+      role: effectiveRole,
+      isAdmin: isAdmin ?? (role != null ? effectiveRole.contains('ADMIN') : this.isAdmin),
     );
   }
 }
