@@ -28,6 +28,9 @@ class AdminUsersNotifier extends AsyncNotifier<List<AdminUserModel>> {
     state = await AsyncValue.guard(() => _fetchUsers());
   }
 
+  /// Vô hiệu hóa tài khoản người dùng (#UC61)
+  Future<bool> disableUser(int id) => deleteUser(id);
+
   Future<bool> deleteUser(int id) async {
     final previousState = state.value;
     if (previousState != null) {
