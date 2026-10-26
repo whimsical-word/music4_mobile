@@ -72,6 +72,7 @@ class TokenStorage {
         email: decoded['email'] as String? ?? '',
         imageUrl: decoded['imageUrl'] as String?,
         isArtist: decoded['isArtist'] as bool? ?? false,
+        isAdmin: decoded['isAdmin'] as bool? ?? false,
       );
     } catch (_) {
       return null;
@@ -86,6 +87,7 @@ class TokenStorage {
       'email': user.email,
       'imageUrl': user.imageUrl,
       'isArtist': user.isArtist,
+      'isAdmin': user.isAdmin,
     });
     await _storage.write(key: _keyCachedUser, value: userJson);
   }

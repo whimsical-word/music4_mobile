@@ -50,6 +50,7 @@ class AuthResponseModel {
       username: username,
       imageUrl: img,
       isArtist: role == 'ROLE_ARTIST',
+      isAdmin: role == 'ROLE_ADMIN',
     );
   }
 }

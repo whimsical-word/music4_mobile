@@ -48,6 +48,7 @@ class HomeScreen extends ConsumerWidget {
     final filter = ref.watch(homeFilterProvider);
     final authState = ref.watch(authNotifierProvider);
     final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
+    final isAdmin = authState is AuthAuthenticated && authState.user.isAdmin;
 
     return Scaffold(
       appBar: AppBar(
@@ -76,6 +77,13 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () => context.push(RouteNames.albumManagement),
             ),
           ],
+          if (isAdmin)
+            IconButton(
+              key: const Key('home_appbar_admin_btn'),
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              tooltip: 'Quản trị',
+              onPressed: () => context.push(RouteNames.admin),
+            ),
           const NotificationBellButton(),
           IconButton(
             icon: const Icon(Icons.person_outline),
