@@ -56,6 +56,7 @@ class AdminUsersNotifier extends AsyncNotifier<List<AdminUserModel>> {
     }
   }
 
+  /// Khôi phục tài khoản người dùng đã vô hiệu hóa (#UC62)
   Future<bool> reactivateUser(int id) async {
     final previousState = state.value;
     if (previousState != null) {
