@@ -7,7 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:music4_mobile/core/utils/image_url_helper.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/favorites/data/models/favorite_response.dart';
 import 'package:music4_mobile/features/favorites/data/repositories/favorites_repository.dart';
 import 'package:music4_mobile/features/favorites/presentation/screens/favorites_screen.dart';
@@ -34,7 +34,10 @@ void main() {
         GoRoute(path: '/', builder: (_, _) => const FavoritesScreen()),
         GoRoute(
           path: '/player',
-          builder: (_, _) => const Scaffold(body: Text('player-page')),
+          builder: (_, _) => Scaffold(
+            appBar: AppBar(),
+            body: const Text('player-page'),
+          ),
         ),
         GoRoute(
           path: '/login',
@@ -178,6 +181,55 @@ void main() {
       expect(player.lastQueue?[1].coverUrl, 'https://cdn.example.com/t13.jpg');
       expect(player.lastQueue?[1].duration, Duration.zero);
       expect(find.text('player-page'), findsOneWidget);
+    });
+  });
+
+  group('[CE190284] FavoritesScreen - stays in sync with the Player', () {
+    testWidgets('11. Closing the Player reloads the list (a track unliked there disappears)', (tester) async {
+      stubList();
+      await pumpLoaded(tester);
+
+      await tester.tap(find.text('Hai nghệ sĩ'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('player-page'), findsOneWidget);
+
+      // While the Player was open, the user unliked that track: the backend
+      // now only returns the first favorite.
+      when(
+        () => repository.getMyFavorites(),
+      ).thenAnswer((_) async => [favoriteResponses().first]);
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      // Total calls: the first load plus the reload after closing the Player.
+      verify(() => repository.getMyFavorites()).called(2);
+      expect(find.text('Hai nghệ sĩ'), findsNothing);
+      expect(find.text('Lạc Trôi'), findsOneWidget);
+    });
+
+    testWidgets('12. A failed reload keeps the list that is already shown', (tester) async {
+      stubList();
+      await pumpLoaded(tester);
+
+      await tester.tap(find.text('Hai nghệ sĩ'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      when(
+        () => repository.getMyFavorites(),
+      ).thenAnswer((_) async => throw const FavoritesException('Lỗi'));
+
+      await tester.tap(find.byType(BackButton));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 500));
+      await tester.pump();
+
+      expect(find.text('Hai nghệ sĩ'), findsOneWidget);
+      expect(find.text('Đã xảy ra lỗi'), findsNothing);
     });
   });
 

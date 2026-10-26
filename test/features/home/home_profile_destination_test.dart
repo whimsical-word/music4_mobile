@@ -1,7 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:music4_mobile/core/router/route_names.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/home/presentation/utils/profile_destination.dart';
 
 AuthAuthenticated _user({required int id, required bool isArtist}) {

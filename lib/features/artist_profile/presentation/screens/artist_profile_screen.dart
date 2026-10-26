@@ -7,7 +7,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/shared/widgets/settings_bottom_sheet.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../../player/domain/models/player_state_data.dart';
 import '../../../player/presentation/providers/player_provider.dart';
 import '../../data/repositories/artist_profile_repository.dart';
@@ -78,23 +78,59 @@ class _ArtistProfileScreenState extends ConsumerState<ArtistProfileScreen> {
         .read(artistProfileProvider(params).notifier)
         .toggleFollow();
 
+    if (!context.mounted) return;
+
     switch (result) {
       case FollowResult.success:
+        final isNowFollowing =
+            ref.read(artistProfileProvider(params)).value?.isFollowing ?? false;
+        final artistName =
+            ref.read(artistProfileProvider(params)).value?.artist.name ?? 'nghệ sĩ';
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(
+                  isNowFollowing ? Icons.check_circle_rounded : Icons.info_outline_rounded,
+                  color: isNowFollowing ? AppColors.primary : AppColors.textSecondary,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  isNowFollowing
+                      ? 'Đã theo dõi $artistName'
+                      : 'Đã hủy theo dõi $artistName',
+                ),
+              ],
+            ),
+            duration: const Duration(seconds: 2),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
         break;
       case FollowResult.needsLogin:
+        messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
-          const SnackBar(content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ.')),
+          const SnackBar(
+            content: Text('Vui lòng đăng nhập để theo dõi nghệ sĩ.'),
+            behavior: SnackBarBehavior.floating,
+          ),
         );
       case FollowResult.notSupported:
+        messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Tài khoản nghệ sĩ không thể theo dõi nghệ sĩ khác.'),
+            behavior: SnackBarBehavior.floating,
           ),
         );
       case FollowResult.failed:
+        messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
           const SnackBar(
             content: Text('Không thể cập nhật theo dõi. Vui lòng thử lại.'),
+            behavior: SnackBarBehavior.floating,
           ),
         );
     }
@@ -160,52 +196,86 @@ class _ArtistProfileScreenState extends ConsumerState<ArtistProfileScreen> {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(16.0, 12.0, 16.0, 4.0),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            key: const Key('artist_profile_upload_btn'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primary,
-                              foregroundColor: Colors.black,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton.icon(
+                                key: const Key('artist_profile_upload_btn'),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primary,
+                                  foregroundColor: Colors.black,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.cloud_upload_outlined, size: 20),
+                                label: const Text(
+                                  'Upload Nhạc Mới',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () => context.push(RouteNames.upload),
                               ),
                             ),
-                            icon: const Icon(Icons.cloud_upload_outlined, size: 20),
-                            label: const Text(
-                              'Upload Nhạc',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: () => context.push(RouteNames.upload),
-                          ),
+                          ],
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            key: const Key('artist_profile_album_btn'),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: AppColors.textPrimary,
-                              side: const BorderSide(color: AppColors.divider),
-                              backgroundColor: AppColors.surface,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                key: const Key('artist_profile_track_btn'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.textPrimary,
+                                  side: const BorderSide(color: AppColors.divider),
+                                  backgroundColor: AppColors.surface,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.library_music_outlined,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
+                                label: const Text(
+                                  'Quản lý Bài hát',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () =>
+                                    context.push(RouteNames.trackManagement),
                               ),
                             ),
-                            icon: const Icon(
-                              Icons.album_outlined,
-                              size: 20,
-                              color: AppColors.textSecondary,
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                key: const Key('artist_profile_album_btn'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: AppColors.textPrimary,
+                                  side: const BorderSide(color: AppColors.divider),
+                                  backgroundColor: AppColors.surface,
+                                  padding: const EdgeInsets.symmetric(vertical: 12),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                icon: const Icon(
+                                  Icons.album_outlined,
+                                  size: 20,
+                                  color: AppColors.textSecondary,
+                                ),
+                                label: const Text(
+                                  'Quản lý Album',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                                onPressed: () =>
+                                    context.push(RouteNames.albumManagement),
+                              ),
                             ),
-                            label: const Text(
-                              'Quản lý Album',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            onPressed: () =>
-                                context.push(RouteNames.albumManagement),
-                          ),
+                          ],
                         ),
                       ],
                     ),

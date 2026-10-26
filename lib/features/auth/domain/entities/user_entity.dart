@@ -45,6 +45,10 @@ sealed class Failure {
   const Failure(this.message);
 }
 
+class GoogleSignInCancelledFailure extends Failure {
+  const GoogleSignInCancelledFailure() : super('Đã huỷ đăng nhập Google');
+}
+
 class InvalidCredentialsFailure extends Failure {
   const InvalidCredentialsFailure() : super('Sai email hoặc mật khẩu');
 }

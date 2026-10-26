@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:music4_mobile/features/user_profile/presentation/providers/user_profile_provider.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../data/models/playlist_model.dart';
@@ -39,6 +40,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
             behavior: SnackBarBehavior.floating,
           ),
         );
+        ref.invalidate(userProfileProvider);
       } catch (e) {
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,6 +66,7 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+      ref.invalidate(userProfileProvider);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -87,7 +90,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
     );
     if (result != null) {
       try {
-        await ref.read(playlistControllerProvider.notifier).updatePlaylist(
+        await ref
+            .read(playlistControllerProvider.notifier)
+            .updatePlaylist(
               item.id,
               name: result.name,
               description: result.description,
@@ -182,9 +187,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                       Text(
                         '${filtered.length} danh sách phát',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: AppColors.textSecondary,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          color: AppColors.textSecondary,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       IconButton(
                         icon: Icon(
@@ -194,7 +199,9 @@ class _PlaylistScreenState extends ConsumerState<PlaylistScreen> {
                           size: 20,
                           color: AppColors.textSecondary,
                         ),
-                        tooltip: _isGrid ? 'Xem dạng danh sách' : 'Xem dạng lưới',
+                        tooltip: _isGrid
+                            ? 'Xem dạng danh sách'
+                            : 'Xem dạng lưới',
                         onPressed: () {
                           HapticFeedback.lightImpact();
                           setState(() => _isGrid = !_isGrid);

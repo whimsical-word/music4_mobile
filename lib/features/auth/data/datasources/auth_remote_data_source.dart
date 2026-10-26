@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:music4_mobile/core/constants/api_endpoints.dart';
 import 'package:music4_mobile/core/network/dio_client.dart';
 import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 
@@ -8,6 +9,22 @@ abstract class AuthRemoteDataSource {
   Future<AuthResponseModel> login(String username, String password);
   Future<void> logout(String refreshToken);
   Future<void> register(RegisterRequest request);
+
+  Future<void> forgotPassword({required String email});
+  Future<void> resetPasswordOtp({
+    required String email,
+    required String otp,
+    required String newPassword,
+  });
+  Future<AuthResponseModel> loginWithGoogle(String idToken);
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  });
+
+  Future<bool> checkCanChangePassword();
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -19,7 +36,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<AuthResponseModel> login(String username, String password) async {
     try {
       final response = await dioClient.dio.post(
-        '/api/auth/login',
+        ApiEndpoints.login,
         data: {'username': username, 'password': password},
       );
 
@@ -35,7 +52,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<void> logout(String refreshToken) async {
     try {
       await dioClient.dio.post(
-        '/api/auth/logout',
+        ApiEndpoints.logout,
         data: {'refreshToken': refreshToken},
       );
     } on DioException catch (e) {
@@ -61,7 +78,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       });
 
       await dioClient.dio.post(
-        '/api/auth/register',
+        ApiEndpoints.register,
         queryParameters: {'role': request.role},
         data: formData,
       );
@@ -72,5 +89,75 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'Đăng ký không thành công';
       throw Exception(message);
     }
+  }
+
+  @override
+  Future<void> forgotPassword({required String email}) async {
+    try {
+      await dioClient.dio.post(
+        ApiEndpoints.forgotPassword,
+        data: {'email': email, 'verificationMethod': 'OTP'},
+      );
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Gửi OTP thất bại';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> resetPasswordOtp({
+    required String email,
+    required String otp,
+    required String newPassword,
+  }) async {
+    try {
+      await dioClient.dio.post(
+        ApiEndpoints.resetPasswordOtp,
+        data: {'email': email, 'otp': otp, 'newPassword': newPassword},
+      );
+    } on DioException catch (e) {
+      final message =
+          e.response?.data?['message'] ?? 'Đặt lại mật khẩu thất bại';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+    required String confirmPassword,
+  }) async {
+    try {
+      await dioClient.dio.post(ApiEndpoints.changePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+        'confirmPassword': confirmPassword,
+      });
+  } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Đổi mật khẩu thất bại';
+      throw Exception(message);
+    }
+
+  }
+
+  @override
+  Future<bool> checkCanChangePassword() async {
+    try {
+      final response = await dioClient.dio.get(ApiEndpoints.passwordStatus);
+      return response.data['canChangePassword'] as bool? ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  @override
+  Future<AuthResponseModel> loginWithGoogle(String idToken) async {
+    final response = await dioClient.dio.post(
+      ApiEndpoints.googleLogin,
+      data: {'idToken': idToken},
+    );
+    return AuthResponseModel.fromJson(response.data);
   }
 }

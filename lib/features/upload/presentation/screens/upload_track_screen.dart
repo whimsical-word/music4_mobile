@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../data/models/category_model.dart';
 import '../providers/categories_provider.dart';
 import '../providers/upload_provider.dart';
@@ -14,9 +14,11 @@ import '../widgets/file_picker_area.dart';
 import '../widgets/image_crop_dialog.dart';
 import '../widgets/upload_form_fields.dart';
 import '../widgets/upload_progress_widget.dart';
+import '../../../track_management/presentation/providers/artist_tracks_provider.dart';
 
 class UploadTrackScreen extends ConsumerStatefulWidget {
-  const UploadTrackScreen({super.key});
+  final String? initialAlbumId;
+  const UploadTrackScreen({super.key, this.initialAlbumId});
 
   @override
   ConsumerState<UploadTrackScreen> createState() => _UploadTrackScreenState();
@@ -26,6 +28,14 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
   final _titleController = TextEditingController();
   final _albumController = TextEditingController();
   final _collabArtistsController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialAlbumId != null && widget.initialAlbumId!.isNotEmpty) {
+      _albumController.text = widget.initialAlbumId!;
+    }
+  }
 
   File? _selectedAudioFile;
   String? _audioFileName;
@@ -261,6 +271,7 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
 
     ref.listen<UploadState>(uploadNotifierProvider, (previous, next) {
       if (next.isSuccess && (previous == null || !previous.isSuccess)) {
+        ref.read(artistTracksNotifierProvider.notifier).refresh();
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('Tải lên thành công! Bài hát đang chờ duyệt.'),
@@ -309,6 +320,38 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
             const SizedBox(height: 24),
             if (uploadState.isLoading)
               UploadProgressWidget(progress: uploadState.progress),
+            if (widget.initialAlbumId != null && widget.initialAlbumId!.isNotEmpty) ...[
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.album_outlined, color: AppColors.primary, size: 24),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Đang gán bài hát vào Album',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                          ),
+                          Text(
+                            'Mã Album ID: #${widget.initialAlbumId}',
+                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             UploadFormFields(
               titleController: _titleController,
               collabArtistsController: _collabArtistsController,

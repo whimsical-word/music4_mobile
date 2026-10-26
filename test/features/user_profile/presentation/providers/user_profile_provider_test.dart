@@ -5,10 +5,12 @@ import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart'
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/login_use_case.dart';
+import 'package:music4_mobile/features/auth/domain/usecases/login_with_google_use_case.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/user_profile/domain/models/user_profile.dart';
+import 'package:music4_mobile/features/user_profile/domain/models/user_profile_stats.dart';
 import 'package:music4_mobile/features/user_profile/domain/repositories/user_profile_repository.dart';
 import 'package:music4_mobile/features/user_profile/presentation/providers/user_profile_provider.dart';
 import 'package:music4_mobile/features/user_profile/presentation/state/user_profile_state.dart';
@@ -37,9 +39,12 @@ void main() {
     email: 'test@example.com',
     avatarUrl: '',
     bio: 'Test Bio',
-    followingCount: 10,
-    playlistCount: 5,
-    likedTracksCount: 20,
+    gender: true,
+    stats: UserProfileStats(
+      followingCount: 5,
+      playlistCount: 3,
+      likedTracksCount: 10,
+    ),
   );
 
   setUp(() {
@@ -51,6 +56,7 @@ void main() {
             logoutUseCase: LogoutUseCase(authRepository),
             repository: authRepository,
             tokenStorage: TokenStorage(),
+            loginWithGoogleUseCase: LoginWithGoogleUseCase(authRepository),
           )
           ..state = const AuthAuthenticated(
             UserEntity(

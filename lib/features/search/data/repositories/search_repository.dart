@@ -8,11 +8,21 @@ class SearchRepository {
 
   SearchRepository(this._dio);
 
-  Future<SearchResponse> search(String query, {String type = 'all'}) async {
+  Future<SearchResponse> search(
+    String query, {
+    String type = 'all',
+    int page = 0,
+    int size = 20,
+  }) async {
     try {
       final response = await _dio.get(
         ApiEndpoints.search,
-        queryParameters: {'q': query, 'type': type},
+        queryParameters: {
+          'q': query,
+          'type': type,
+          'page': page,
+          'size': size,
+        },
       );
       return SearchResponse.fromJson(response.data);
     } on DioException catch (e) {

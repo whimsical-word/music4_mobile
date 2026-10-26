@@ -17,7 +17,7 @@ class ApiEndpoints {
   // ==========================================
   // 1. CẤU HÌNH IP MÁY TÍNH KHI TEST QUA WI-FI (KHÔNG DÙNG CÁP)
   // ==========================================
-  static const String _lanIp = '192.168.88.149';
+  static const String _lanIp = '192.168.38.47';
 
   // ==========================================
   // 🔴 2. CHẾ ĐỘ KẾT NỐI CHO THIẾT BỊ:
@@ -26,8 +26,8 @@ class ApiEndpoints {
   // - _isEmulator = true: Dùng máy ảo Android Emulator (10.0.2.2)
   // - Cả 2 đều false: Dùng điện thoại thật kết nối qua Wi-Fi nội bộ (_lanIp)
   // ==========================================
-  static const bool _useUsbCable = true;
-  static const bool _isEmulator = false;
+  static const bool _useUsbCable = false;
+  static const bool _isEmulator = true;
 
   static String get baseUrl {
     if (kIsWeb || Platform.isWindows || Platform.isMacOS || Platform.isLinux) {
@@ -59,9 +59,12 @@ class ApiEndpoints {
   static const String login = '/api/auth/login';
   static const String register = '/api/auth/register';
   static const String refresh = '/api/auth/refresh';
+  static const String googleLogin = '/api/auth/google';
   static const String logout = '/api/auth/logout';
   static const String forgotPassword = '/api/auth/forgot-password';
-  static const String resetPassword = '/api/auth/reset-password';
+  static const String changePassword = '/api/auth/change-password';
+  static const String passwordStatus = '/api/auth/password-status';
+  static const String resetPasswordOtp = '/api/auth/reset-password-otp';
 
   // Tracks & Media
   static const String tracks = '/api/tracks/all';
@@ -89,6 +92,9 @@ class ApiEndpoints {
   static const String follows = '/api/follows';
   static const String analytics = '/api/analytics';
 
+  // Ratings
+  static const String ratings = '/api/ratings';
+
   // Comments
   static const String comments = '/api/comments';
   static const String trackComments = '/api/comments/track'; // + /{trackId}
@@ -104,7 +110,9 @@ class ApiEndpoints {
   // Notifications
   static const String notifications = '/api/notifications/user'; // + /{userId}
   static const String subscribeNotification =
-      '/api/notifications/subscribe'; // + /{userId}
+      '/api/notifications/subscribe'; // + /{userId} (SSE)
+  static const String notificationBase =
+      '/api/notifications'; // + /{id}/read | /{id} | /clear-all
 
   // User Profile & Admin
   static const String userProfile = '/api/users'; // + /{userId}
