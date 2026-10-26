@@ -28,6 +28,9 @@ class AdminArtistsNotifier extends AsyncNotifier<List<AdminArtistModel>> {
     state = await AsyncValue.guard(() => _fetchArtists());
   }
 
+  /// Vô hiệu hóa nghệ sĩ (#UC66)
+  Future<bool> disableArtist(int id) => deleteArtist(id);
+
   Future<bool> deleteArtist(int id) async {
     final previousState = state.value;
     if (previousState != null) {
