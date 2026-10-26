@@ -7,6 +7,9 @@ class UserEntity {
   final bool isArtist;
   final String role;
 
+  /// `ROLE_ADMIN` accounts (the backend still enforces every admin API).
+  final bool isAdmin;
+
   const UserEntity({
     required this.id,
     this.email = '',
@@ -15,9 +18,8 @@ class UserEntity {
     this.imageUrl,
     required this.isArtist,
     this.role = '',
+    this.isAdmin = false,
   });
-
-  bool get isAdmin => role.toUpperCase().contains('ADMIN');
 
   UserEntity copyWith({
     int? id,
@@ -27,7 +29,9 @@ class UserEntity {
     String? email,
     bool? isArtist,
     String? role,
+    bool? isAdmin,
   }) {
+    final effectiveRole = role ?? this.role;
     return UserEntity(
       id: id ?? this.id,
       displayName: displayName ?? this.displayName,
@@ -35,7 +39,8 @@ class UserEntity {
       imageUrl: imageUrl ?? this.imageUrl,
       email: email ?? this.email,
       isArtist: isArtist ?? this.isArtist,
-      role: role ?? this.role,
+      role: effectiveRole,
+      isAdmin: isAdmin ?? (role != null ? effectiveRole.contains('ADMIN') : this.isAdmin),
     );
   }
 }

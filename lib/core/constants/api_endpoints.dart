@@ -101,6 +101,9 @@ class ApiEndpoints {
 
   // Recommendations & History
   static const String recommendations = '/api/recommendations';
+  static const String recommendationsSync = '/api/recommendations/sync';
+  static const String recommendationsSyncStatus =
+      '/api/recommendations/sync/status';
   static const String history = '/api/tracking/history';
   static const String syncPlaybackTime = '/api/tracking/sync-time';
 

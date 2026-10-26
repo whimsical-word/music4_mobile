@@ -51,6 +51,7 @@ class AuthResponseModel {
       imageUrl: img,
       isArtist: role == 'ROLE_ARTIST',
       role: role,
+      isAdmin: role == 'ROLE_ADMIN',
     );
   }
 }

@@ -47,9 +47,8 @@ class HomeScreen extends ConsumerWidget {
     final homeFeedAsync = ref.watch(homeFeedControllerProvider);
     final filter = ref.watch(homeFilterProvider);
     final authState = ref.watch(authNotifierProvider);
-    final user = authState is AuthAuthenticated ? authState.user : null;
-    final isArtist = user?.isArtist ?? false;
-    final isAdmin = user?.isAdmin ?? false;
+    final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
+    final isAdmin = authState is AuthAuthenticated && authState.user.isAdmin;
 
     return Scaffold(
       appBar: AppBar(

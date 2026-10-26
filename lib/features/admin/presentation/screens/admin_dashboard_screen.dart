@@ -5,18 +5,54 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 import '../providers/admin_artists_provider.dart';
 import '../providers/admin_categories_provider.dart';
 import '../providers/admin_users_provider.dart';
 import '../widgets/admin_artists_tab_view.dart';
 import '../widgets/admin_categories_tab_view.dart';
+import '../widgets/admin_shimmer_skeleton.dart';
 import '../widgets/admin_users_tab_view.dart';
+import '../widgets/vector_sync_card.dart';
 
-class AdminDashboardScreen extends ConsumerWidget {
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
+}
+
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => isLoading = false);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isAdmin = authState is AuthAuthenticated && authState.user.isAdmin;
+
+    if (!isAdmin) return _buildAccessDenied(context);
+
+    if (isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: AppColors.background,
+          elevation: 0,
+          title: const Text('Music4 Admin Console'),
+        ),
+        body: const AdminShimmerSkeleton(),
+      );
+    }
+
     final usersCount = ref.watch(adminUsersProvider).value?.length ?? 0;
     final artistsCount = ref.watch(adminArtistsProvider).value?.length ?? 0;
     final categoriesCount =
@@ -55,7 +91,7 @@ class AdminDashboardScreen extends ConsumerWidget {
             IconButton(
               icon: const Icon(Icons.logout_outlined, color: AppColors.textSecondary),
               tooltip: 'Đăng xuất',
-              onPressed: () => _confirmLogout(context, ref),
+              onPressed: () => _confirmLogout(context),
             ),
           ],
         ),
@@ -64,35 +100,61 @@ class AdminDashboardScreen extends ConsumerWidget {
             return [
               SliverToBoxAdapter(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-                  child: Row(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: _buildMetricCard(
-                          title: 'Người dùng',
-                          value: '$usersCount',
-                          icon: Icons.people_alt_outlined,
-                          color: AppColors.primary,
+                      const Text(
+                        'Hệ thống gợi ý',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildMetricCard(
-                          title: 'Nghệ sĩ',
-                          value: '$artistsCount',
-                          icon: Icons.mic_external_on_outlined,
-                          color: AppColors.secondary,
+                      const SizedBox(height: 12),
+                      const VectorSyncCard(),
+                      const SizedBox(height: 20),
+                      const Text(
+                        'Thống kê tổng quan',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _buildMetricCard(
-                          title: 'Thể loại',
-                          value: '$categoriesCount',
-                          icon: Icons.category_outlined,
-                          color: const Color(0xFFFFB74D),
-                        ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _buildMetricCard(
+                              title: 'Người dùng',
+                              value: '$usersCount',
+                              icon: Icons.people_alt_outlined,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildMetricCard(
+                              title: 'Nghệ sĩ',
+                              value: '$artistsCount',
+                              icon: Icons.mic_external_on_outlined,
+                              color: AppColors.secondary,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: _buildMetricCard(
+                              title: 'Thể loại',
+                              value: '$categoriesCount',
+                              icon: Icons.category_outlined,
+                              color: const Color(0xFFFFB74D),
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 8),
                     ],
                   ),
                 ),
@@ -130,6 +192,53 @@ class AdminDashboardScreen extends ConsumerWidget {
               AdminUsersTabView(),
               AdminArtistsTabView(),
               AdminCategoriesTabView(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAccessDenied(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      appBar: AppBar(
+        backgroundColor: AppColors.background,
+        elevation: 0,
+        title: const Text('Admin Dashboard'),
+      ),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_outline, size: 64, color: AppColors.error),
+              const SizedBox(height: 16),
+              const Text(
+                'Chỉ dành cho Quản trị viên',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Trang này chỉ dành cho tài khoản ADMIN. Vui lòng đăng nhập bằng tài khoản quản trị để truy cập.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.black,
+                ),
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Quay lại'),
+              ),
             ],
           ),
         ),
@@ -189,7 +298,7 @@ class AdminDashboardScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _confirmLogout(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirmLogout(BuildContext context) async {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
