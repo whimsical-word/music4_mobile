@@ -1,14 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shimmer/shimmer.dart';
 
-class AdminDashboardScreen extends StatefulWidget {
+import '../../../auth/presentation/notifiers/auth_notifier.dart';
+import '../../../auth/presentation/state/auth_state.dart';
+import '../widgets/vector_sync_card.dart';
+
+class AdminDashboardScreen extends ConsumerStatefulWidget {
   const AdminDashboardScreen({super.key});
 
   @override
-  State<AdminDashboardScreen> createState() => _AdminDashboardScreenState();
+  ConsumerState<AdminDashboardScreen> createState() =>
+      _AdminDashboardScreenState();
 }
 
-class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
+class _AdminDashboardScreenState extends ConsumerState<AdminDashboardScreen> {
   bool isLoading = true;
 
   @override
@@ -21,6 +27,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authState = ref.watch(authNotifierProvider);
+    final isAdmin = authState is AuthAuthenticated && authState.user.isAdmin;
+
+    if (!isAdmin) return _buildAccessDenied(context);
+
     return Scaffold(
       appBar: AppBar(title: const Text('Admin Dashboard')),
       body: LayoutBuilder(
@@ -31,6 +42,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text('Hệ thống gợi ý', style: Theme.of(context).textTheme.titleLarge),
+                const SizedBox(height: 16),
+                const VectorSyncCard(),
+                const SizedBox(height: 32),
                 Text('Thống kê tổng quan', style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 16),
                 Row(
@@ -48,6 +63,39 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _buildAccessDenied(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Admin Dashboard')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.lock_outline, size: 64),
+              const SizedBox(height: 16),
+              Text(
+                'Chỉ dành cho Quản trị viên',
+                style: Theme.of(context).textTheme.titleLarge,
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Trang này chỉ dành cho tài khoản ADMIN. Vui lòng đăng nhập bằng tài khoản quản trị để truy cập.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.of(context).maybePop(),
+                icon: const Icon(Icons.arrow_back),
+                label: const Text('Quay lại'),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
