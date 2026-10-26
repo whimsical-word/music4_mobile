@@ -106,6 +106,12 @@ class ApiEndpoints {
   static const String subscribeNotification =
       '/api/notifications/subscribe'; // + /{userId}
 
-  // User Profile
+  // User Profile & Admin
   static const String userProfile = '/api/users'; // + /{userId}
+  static const String users = '/api/users';
+  static const String userCount = '/api/users/count';
+
+  // Categories
+  static const String categories = '/api/categories';
+  static const String categoryStats = '/api/categories/stats';
 }

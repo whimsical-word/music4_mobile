@@ -5,6 +5,7 @@ class UserEntity {
   final String? imageUrl;
   final String email;
   final bool isArtist;
+  final String role;
 
   const UserEntity({
     required this.id,
@@ -13,7 +14,10 @@ class UserEntity {
     required this.username,
     this.imageUrl,
     required this.isArtist,
+    this.role = '',
   });
+
+  bool get isAdmin => role.toUpperCase().contains('ADMIN');
 
   UserEntity copyWith({
     int? id,
@@ -22,6 +26,7 @@ class UserEntity {
     String? imageUrl,
     String? email,
     bool? isArtist,
+    String? role,
   }) {
     return UserEntity(
       id: id ?? this.id,
@@ -30,6 +35,7 @@ class UserEntity {
       imageUrl: imageUrl ?? this.imageUrl,
       email: email ?? this.email,
       isArtist: isArtist ?? this.isArtist,
+      role: role ?? this.role,
     );
   }
 }

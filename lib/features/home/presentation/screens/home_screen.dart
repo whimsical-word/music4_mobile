@@ -25,7 +25,9 @@ class HomeScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeFeedAsync = ref.watch(homeFeedControllerProvider);
     final authState = ref.watch(authNotifierProvider);
-    final isArtist = authState is AuthAuthenticated && authState.user.isArtist;
+    final user = authState is AuthAuthenticated ? authState.user : null;
+    final isArtist = user?.isArtist ?? false;
+    final isAdmin = user?.isAdmin ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -34,6 +36,13 @@ class HomeScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         actions: [
+          if (isAdmin)
+            IconButton(
+              key: const Key('home_appbar_admin_btn'),
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              tooltip: 'Quản trị hệ thống',
+              onPressed: () => context.push(RouteNames.admin),
+            ),
           if (isArtist) ...[
             IconButton(
               key: const Key('home_appbar_upload_btn'),

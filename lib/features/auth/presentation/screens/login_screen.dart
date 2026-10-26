@@ -39,8 +39,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       switch (next) {
-        case AuthAuthenticated():
-          context.go(RouteNames.home);
+        case AuthAuthenticated(:final user):
+          if (user.isAdmin) {
+            context.go(RouteNames.admin);
+          } else {
+            context.go(RouteNames.home);
+          }
         case AuthError(:final message):
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
