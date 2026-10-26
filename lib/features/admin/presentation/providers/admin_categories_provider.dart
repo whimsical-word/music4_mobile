@@ -27,6 +27,7 @@ class AdminCategoriesNotifier extends AsyncNotifier<List<AdminCategoryModel>> {
     state = await AsyncValue.guard(() => _fetchCategories());
   }
 
+  /// Tạo mới thể loại nhạc (#UC58)
   Future<void> createCategory(String name) async {
     final newCat = await _repository.createCategory(name);
     final current = state.value ?? [];
