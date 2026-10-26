@@ -34,6 +34,7 @@ class AdminCategoriesNotifier extends AsyncNotifier<List<AdminCategoryModel>> {
     state = AsyncValue.data([...current, newCat]);
   }
 
+  /// Cập nhật thông tin thể loại nhạc (#UC59)
   Future<void> updateCategory(int id, String name) async {
     final updated = await _repository.updateCategory(id, name);
     final current = state.value ?? [];
