@@ -5,8 +5,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:just_audio/just_audio.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../../../album/presentation/providers/album_provider.dart';
 import '../../../auth/presentation/notifiers/auth_notifier.dart';
 import '../../../auth/presentation/state/auth_state.dart';
+import '../../../search/data/models/search_models.dart';
+import '../../../track_management/presentation/providers/artist_tracks_provider.dart';
 import '../../data/models/category_model.dart';
 import '../providers/categories_provider.dart';
 import '../providers/upload_provider.dart';
@@ -14,7 +17,6 @@ import '../widgets/file_picker_area.dart';
 import '../widgets/image_crop_dialog.dart';
 import '../widgets/upload_form_fields.dart';
 import '../widgets/upload_progress_widget.dart';
-import '../../../track_management/presentation/providers/artist_tracks_provider.dart';
 
 class UploadTrackScreen extends ConsumerStatefulWidget {
   final String? initialAlbumId;
@@ -26,14 +28,14 @@ class UploadTrackScreen extends ConsumerStatefulWidget {
 
 class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
   final _titleController = TextEditingController();
-  final _albumController = TextEditingController();
-  final _collabArtistsController = TextEditingController();
+  int? _selectedAlbumId;
+  List<SearchItem> _selectedCollabArtists = [];
 
   @override
   void initState() {
     super.initState();
     if (widget.initialAlbumId != null && widget.initialAlbumId!.isNotEmpty) {
-      _albumController.text = widget.initialAlbumId!;
+      _selectedAlbumId = int.tryParse(widget.initialAlbumId!);
     }
   }
 
@@ -49,8 +51,6 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
   @override
   void dispose() {
     _titleController.dispose();
-    _albumController.dispose();
-    _collabArtistsController.dispose();
     super.dispose();
   }
 
@@ -80,7 +80,11 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
       if (!allowedExts.contains(extension)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Định dạng .$extension không được hỗ trợ! Chỉ chấp nhận MP3, WAV, FLAC, M4A, AAC.')),
+            SnackBar(
+              content: Text(
+                'Định dạng .$extension không được hỗ trợ! Chỉ chấp nhận MP3, WAV, FLAC, M4A, AAC.',
+              ),
+            ),
           );
         }
         return;
@@ -91,7 +95,11 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
       if (sizeBytes > 30 * 1024 * 1024) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Dung lượng file nhạc vượt quá 30MB! Vui lòng chọn file nhẹ hơn.')),
+            const SnackBar(
+              content: Text(
+                'Dung lượng file nhạc vượt quá 30MB! Vui lòng chọn file nhẹ hơn.',
+              ),
+            ),
           );
         }
         return;
@@ -117,7 +125,9 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
         final secs = duration.inSeconds % 60;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Thời lượng bài hát ($mins phút $secs giây) vượt quá giới hạn 10 phút cho phép!'),
+            content: Text(
+              'Thời lượng bài hát ($mins phút $secs giây) vượt quá giới hạn 10 phút cho phép!',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -131,7 +141,10 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
         _audioFileSize = '$sizeMb MB';
         _audioDuration = duration;
         if (_titleController.text.trim().isEmpty) {
-          final cleanName = file.name.replaceAll(RegExp(r'\.[a-zA-Z0-9]+$'), '');
+          final cleanName = file.name.replaceAll(
+            RegExp(r'\.[a-zA-Z0-9]+$'),
+            '',
+          );
           _titleController.text = cleanName;
         }
       });
@@ -157,7 +170,11 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
       if (!allowedImgExts.contains(ext)) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Định dạng ảnh .$ext không hợp lệ! Chỉ chấp nhận JPG, JPEG, PNG, WEBP.')),
+            SnackBar(
+              content: Text(
+                'Định dạng ảnh .$ext không hợp lệ! Chỉ chấp nhận JPG, JPEG, PNG, WEBP.',
+              ),
+            ),
           );
         }
         return;
@@ -183,31 +200,29 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
   void _onUpload() {
     if (_selectedAudioFile == null || _selectedCoverFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng chọn đủ File Âm thanh và Ảnh bìa!')),
+        const SnackBar(
+          content: Text('Vui lòng chọn đủ File Âm thanh và Ảnh bìa!'),
+        ),
       );
       return;
     }
     if (_titleController.text.trim().isEmpty || _selectedCategory == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Vui lòng nhập Tên bài hát và chọn Thể loại!')),
+        const SnackBar(
+          content: Text('Vui lòng nhập Tên bài hát và chọn Thể loại!'),
+        ),
       );
       return;
     }
 
-    List<int>? artistIds;
-    final collabText = _collabArtistsController.text.trim();
-    if (collabText.isNotEmpty) {
-      artistIds = collabText
-          .split(RegExp(r'[,;\s]+'))
-          .map((s) => int.tryParse(s.trim()))
-          .whereType<int>()
-          .toList();
-    }
+    final List<int>? artistIds = _selectedCollabArtists.isNotEmpty
+        ? _selectedCollabArtists.map((a) => a.id).toList()
+        : null;
 
     ref.read(uploadNotifierProvider.notifier).uploadTrack(
       title: _titleController.text.trim(),
       categoryIds: [_selectedCategory!.id],
-      albumId: _albumController.text.trim(),
+      albumId: _selectedAlbumId?.toString(),
       artistIds: artistIds,
       audioFilePath: _selectedAudioFile!.path,
       coverFilePath: _selectedCoverFile!.path,
@@ -267,14 +282,18 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
     final uploadState = ref.watch(uploadNotifierProvider);
     final categoriesAsync = ref.watch(categoriesProvider);
     final categories = categoriesAsync.value ?? defaultBackendCategories;
+    final albumsAsync = ref.watch(albumNotifierProvider);
+    final albums = albumsAsync.value ?? [];
     final isUploading = uploadState.isLoading || _isValidatingAudio;
+    final currentArtistId = authState.user.id;
 
     ref.listen<UploadState>(uploadNotifierProvider, (previous, next) {
       if (next.isSuccess && (previous == null || !previous.isSuccess)) {
         ref.read(artistTracksNotifierProvider.notifier).refresh();
+        ref.read(albumNotifierProvider.notifier).fetchMyAlbums(currentArtistId);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Tải lên thành công! Bài hát đang chờ duyệt.'),
+            content: Text('Tải lên thành công!'),
             backgroundColor: Colors.green,
           ),
         );
@@ -285,10 +304,12 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
           _audioDuration = null;
           _selectedCoverFile = null;
           _selectedCategory = null;
+          _selectedAlbumId = widget.initialAlbumId != null
+              ? int.tryParse(widget.initialAlbumId!)
+              : null;
+          _selectedCollabArtists = [];
         });
         _titleController.clear();
-        _albumController.clear();
-        _collabArtistsController.clear();
         ref.read(uploadNotifierProvider.notifier).reset();
       } else if (next.error != null && next.error != previous?.error) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -301,7 +322,10 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
     });
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Artist Studio - Upload Nhạc'), centerTitle: true),
+      appBar: AppBar(
+        title: const Text('Artist Studio - Upload Nhạc'),
+        centerTitle: true,
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
@@ -320,18 +344,27 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
             const SizedBox(height: 24),
             if (uploadState.isLoading)
               UploadProgressWidget(progress: uploadState.progress),
-            if (widget.initialAlbumId != null && widget.initialAlbumId!.isNotEmpty) ...[
+            if (widget.initialAlbumId != null &&
+                widget.initialAlbumId!.isNotEmpty &&
+                _selectedAlbumId == int.tryParse(widget.initialAlbumId!)) ...[
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 decoration: BoxDecoration(
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.4)),
+                  border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.4),
+                  ),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.album_outlined, color: AppColors.primary, size: 24),
+                    const Icon(
+                      Icons.album_outlined,
+                      color: AppColors.primary,
+                      size: 24,
+                    ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: Column(
@@ -339,11 +372,18 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
                         children: [
                           const Text(
                             'Đang gán bài hát vào Album',
-                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppColors.primary),
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 13,
+                              color: AppColors.primary,
+                            ),
                           ),
                           Text(
                             'Mã Album ID: #${widget.initialAlbumId}',
-                            style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
                           ),
                         ],
                       ),
@@ -354,12 +394,28 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
             ],
             UploadFormFields(
               titleController: _titleController,
-              collabArtistsController: _collabArtistsController,
-              albumController: _albumController,
               isUploading: isUploading,
               selectedCategory: _selectedCategory,
               categories: categories,
-              onCategoryChanged: (val) => setState(() => _selectedCategory = val),
+              onCategoryChanged: (val) =>
+                  setState(() => _selectedCategory = val),
+              selectedAlbumId: _selectedAlbumId,
+              albums: albums,
+              onAlbumChanged: (val) => setState(() => _selectedAlbumId = val),
+              selectedCollabArtists: _selectedCollabArtists,
+              onCollabArtistAdded: (artist) {
+                if (!_selectedCollabArtists.any((a) => a.id == artist.id)) {
+                  setState(() {
+                    _selectedCollabArtists.add(artist);
+                  });
+                }
+              },
+              onCollabArtistRemoved: (artist) {
+                setState(() {
+                  _selectedCollabArtists.removeWhere((a) => a.id == artist.id);
+                });
+              },
+              currentArtistId: currentArtistId,
             ),
             const SizedBox(height: 32),
             SizedBox(
@@ -369,7 +425,9 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
                 ),
                 child: isUploading
                     ? Row(
@@ -378,20 +436,29 @@ class _UploadTrackScreenState extends ConsumerState<UploadTrackScreen> {
                           const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.black),
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.black,
+                            ),
                           ),
                           const SizedBox(width: 12),
                           Text(
                             _isValidatingAudio
                                 ? 'ĐANG KIỂM TRA FILE...'
                                 : 'ĐANG TẢI LÊN (${(uploadState.progress * 100).toInt()}%)...',
-                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       )
                     : const Text(
                         'TẢI LÊN & XUẤT BẢN',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
               ),
             ),
