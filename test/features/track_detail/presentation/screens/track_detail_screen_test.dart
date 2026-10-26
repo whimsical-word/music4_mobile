@@ -15,12 +15,15 @@ import 'package:music4_mobile/features/track_management/data/repositories/track_
 import '../../../artist_profile/artist_profile_test_helpers.dart';
 
 class MockTrackDetailRepository extends Mock implements TrackDetailRepository {}
-class MockTrackManagementRepo extends Mock implements TrackManagementRepository {}
 
-class FakeTrackDetailController extends StateNotifier<AsyncValue<TrackDetailState>>
+class MockTrackManagementRepo extends Mock
+    implements TrackManagementRepository {}
+
+class FakeTrackDetailController
+    extends StateNotifier<AsyncValue<TrackDetailState>>
     implements TrackDetailController {
   FakeTrackDetailController(TrackDetailState initial)
-      : super(AsyncData(initial));
+    : super(AsyncData(initial));
 
   @override
   Future<void> loadTrackDetail() async {}
@@ -41,10 +44,21 @@ class FakeTrackDetailController extends StateNotifier<AsyncValue<TrackDetailStat
   Future<void> addComment(String content, {int? userId}) async {}
 
   @override
-  Future<void> updateComment({required int commentId, required String content}) async {}
+  Future<void> updateComment({
+    required int commentId,
+    required String content,
+  }) async {}
 
   @override
   Future<void> deleteComment(int commentId) async {}
+
+  @override
+  Future<void> reportComment({
+    required int commentId,
+    required String reason,
+    String? description,
+    int? userId,
+  }) async {}
 }
 
 void main() {
@@ -66,9 +80,7 @@ void main() {
       TrackArtistInfo(id: 5, name: 'Sơn Tùng M-TP', role: 'MAIN'),
       TrackArtistInfo(id: 7, name: 'Snoop Dogg', role: 'COLLAB'),
     ],
-    categories: [
-      TrackCategoryInfo(id: 1, name: 'Pop'),
-    ],
+    categories: [TrackCategoryInfo(id: 1, name: 'Pop')],
   );
 
   final sampleState = const TrackDetailState(
@@ -93,11 +105,13 @@ void main() {
         ),
         GoRoute(
           path: '/album/:id',
-          builder: (_, s) => Scaffold(body: Text('album-page-${s.pathParameters['id']}')),
+          builder: (_, s) =>
+              Scaffold(body: Text('album-page-${s.pathParameters['id']}')),
         ),
         GoRoute(
           path: '/artist/:id',
-          builder: (_, s) => Scaffold(body: Text('artist-page-${s.pathParameters['id']}')),
+          builder: (_, s) =>
+              Scaffold(body: Text('artist-page-${s.pathParameters['id']}')),
         ),
         GoRoute(
           path: '/player',
@@ -119,96 +133,127 @@ void main() {
   }
 
   group('[CE190036] TrackDetailScreen Unit & Widget Tests (UC48, UC49, UC50, UC51)', () {
-    testWidgets('Displays album tile and tapping navigates to Album Detail (UC49)', (tester) async {
-      await tester.pumpWidget(buildApp(authState: authenticated(1)));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Displays album tile and tapping navigates to Album Detail (UC49)',
+      (tester) async {
+        await tester.pumpWidget(buildApp(authState: authenticated(1)));
+        await tester.pumpAndSettle();
 
-      // Check Album tile
-      expect(find.byKey(const Key('track_detail_album_tile')), findsOneWidget);
-      expect(find.text('Album Mùa Hè 2026'), findsOneWidget);
-      expect(find.text('Thuộc Album • Bấm để nghe toàn bộ Album'), findsOneWidget);
+        // Check Album tile
+        expect(
+          find.byKey(const Key('track_detail_album_tile')),
+          findsOneWidget,
+        );
+        expect(find.text('Album Mùa Hè 2026'), findsOneWidget);
+        expect(
+          find.text('Thuộc Album • Bấm để nghe toàn bộ Album'),
+          findsOneWidget,
+        );
 
-      // Tap Album tile
-      await tester.tap(find.byKey(const Key('track_detail_album_tile')));
-      await tester.pumpAndSettle();
+        // Tap Album tile
+        await tester.tap(find.byKey(const Key('track_detail_album_tile')));
+        await tester.pumpAndSettle();
 
-      expect(find.text('album-page-5'), findsOneWidget);
-    });
+        expect(find.text('album-page-5'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Does NOT display album tile when track is Single or album is null', (tester) async {
-      const sampleTrackSingle = TrackDetailModel(
-        id: 102,
-        name: 'Single Test',
-        uploadDate: '2026-03-01',
-        album: null,
-        artists: [TrackArtistInfo(id: 5, name: 'Sơn Tùng M-TP', role: 'MAIN')],
-      );
+    testWidgets(
+      'Does NOT display album tile when track is Single or album is null',
+      (tester) async {
+        const sampleTrackSingle = TrackDetailModel(
+          id: 102,
+          name: 'Single Test',
+          uploadDate: '2026-03-01',
+          album: null,
+          artists: [
+            TrackArtistInfo(id: 5, name: 'Sơn Tùng M-TP', role: 'MAIN'),
+          ],
+        );
 
-      await tester.pumpWidget(buildApp(
-        authState: authenticated(1),
-        state: const TrackDetailState(track: sampleTrackSingle),
-      ));
-      await tester.pumpAndSettle();
+        await tester.pumpWidget(
+          buildApp(
+            authState: authenticated(1),
+            state: const TrackDetailState(track: sampleTrackSingle),
+          ),
+        );
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('track_detail_album_tile')), findsNothing);
-    });
+        expect(find.byKey(const Key('track_detail_album_tile')), findsNothing);
+      },
+    );
 
-    testWidgets('Displays release date, main artist and collab artist with badges (UC48)', (tester) async {
-      await tester.pumpWidget(buildApp(authState: authenticated(1)));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Displays release date, main artist and collab artist with badges (UC48)',
+      (tester) async {
+        await tester.pumpWidget(buildApp(authState: authenticated(1)));
+        await tester.pumpAndSettle();
 
-      // Scroll to Thông tin bài hát
-      await tester.scrollUntilVisible(find.text('Thông tin bài hát'), 200);
-      await tester.pumpAndSettle();
+        // Scroll to Thông tin bài hát
+        await tester.scrollUntilVisible(find.text('Thông tin bài hát'), 200);
+        await tester.pumpAndSettle();
 
-      expect(find.text('Thông tin bài hát'), findsOneWidget);
-      expect(find.text('Ngày phát hành: '), findsOneWidget);
-      expect(find.text('2026-03-01'), findsOneWidget);
+        expect(find.text('Thông tin bài hát'), findsOneWidget);
+        expect(find.text('Ngày phát hành: '), findsOneWidget);
+        expect(find.text('2026-03-01'), findsOneWidget);
 
-      // Artists with roles
-      expect(find.text('Sơn Tùng M-TP'), findsWidgets);
-      expect(find.text('(Chính)'), findsOneWidget);
-      expect(find.text('Snoop Dogg'), findsOneWidget);
-      expect(find.text('(Collab)'), findsOneWidget);
+        // Artists with roles
+        expect(find.text('Sơn Tùng M-TP'), findsWidgets);
+        expect(find.text('(Chính)'), findsOneWidget);
+        expect(find.text('Snoop Dogg'), findsOneWidget);
+        expect(find.text('(Collab)'), findsOneWidget);
 
-      // Tapping artist navigates to artist profile
-      await tester.tap(find.text('Snoop Dogg'));
-      await tester.pumpAndSettle();
+        // Tapping artist navigates to artist profile
+        await tester.tap(find.text('Snoop Dogg'));
+        await tester.pumpAndSettle();
 
-      expect(find.text('artist-page-7'), findsOneWidget);
-    });
+        expect(find.text('artist-page-7'), findsOneWidget);
+      },
+    );
 
-    testWidgets('Owner artist sees edit and delete buttons in AppBar (UC50, UC51)', (tester) async {
-      when(() => mockTrackMgmtRepo.deleteTrack(101)).thenAnswer((_) async {});
+    testWidgets(
+      'Owner artist sees edit and delete buttons in AppBar (UC50, UC51)',
+      (tester) async {
+        when(() => mockTrackMgmtRepo.deleteTrack(101)).thenAnswer((_) async {});
 
-      // Signed in as artist ID 5 (MAIN artist of this track)
-      await tester.pumpWidget(buildApp(authState: authenticatedArtist(5)));
-      await tester.pumpAndSettle();
+        // Signed in as artist ID 5 (MAIN artist of this track)
+        await tester.pumpWidget(buildApp(authState: authenticatedArtist(5)));
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('track_detail_edit_btn')), findsOneWidget);
-      expect(find.byKey(const Key('track_detail_delete_btn')), findsOneWidget);
+        expect(find.byKey(const Key('track_detail_edit_btn')), findsOneWidget);
+        expect(
+          find.byKey(const Key('track_detail_delete_btn')),
+          findsOneWidget,
+        );
 
-      // Tap delete button
-      await tester.tap(find.byKey(const Key('track_detail_delete_btn')));
-      await tester.pumpAndSettle();
+        // Tap delete button
+        await tester.tap(find.byKey(const Key('track_detail_delete_btn')));
+        await tester.pumpAndSettle();
 
-      // Confirm delete dialog appears
-      expect(find.text('Xác nhận xóa bài hát'), findsOneWidget);
-      expect(find.byKey(const Key('confirm_delete_track_btn')), findsOneWidget);
+        // Confirm delete dialog appears
+        expect(find.text('Xác nhận xóa bài hát'), findsOneWidget);
+        expect(
+          find.byKey(const Key('confirm_delete_track_btn')),
+          findsOneWidget,
+        );
 
-      // Confirm delete
-      await tester.tap(find.byKey(const Key('confirm_delete_track_btn')));
-      await tester.pumpAndSettle();
+        // Confirm delete
+        await tester.tap(find.byKey(const Key('confirm_delete_track_btn')));
+        await tester.pumpAndSettle();
 
-      verify(() => mockTrackMgmtRepo.deleteTrack(101)).called(1);
-    });
+        verify(() => mockTrackMgmtRepo.deleteTrack(101)).called(1);
+      },
+    );
 
-    testWidgets('Non-owner listener does NOT see edit/delete buttons in AppBar', (tester) async {
-      await tester.pumpWidget(buildApp(authState: authenticated(10)));
-      await tester.pumpAndSettle();
+    testWidgets(
+      'Non-owner listener does NOT see edit/delete buttons in AppBar',
+      (tester) async {
+        await tester.pumpWidget(buildApp(authState: authenticated(10)));
+        await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('track_detail_edit_btn')), findsNothing);
-      expect(find.byKey(const Key('track_detail_delete_btn')), findsNothing);
-    });
+        expect(find.byKey(const Key('track_detail_edit_btn')), findsNothing);
+        expect(find.byKey(const Key('track_detail_delete_btn')), findsNothing);
+      },
+    );
   });
 }

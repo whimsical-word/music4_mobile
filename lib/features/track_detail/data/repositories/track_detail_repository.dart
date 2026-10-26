@@ -55,7 +55,9 @@ class TrackDetailRepository {
   /// Thêm hoặc xóa bài hát khỏi danh sách yêu thích (POST /api/favorites/toggle/{trackId})
   Future<bool> toggleFavorite(int trackId) async {
     try {
-      final response = await _dio.post('${ApiEndpoints.toggleFavorite}/$trackId');
+      final response = await _dio.post(
+        '${ApiEndpoints.toggleFavorite}/$trackId',
+      );
       final data = response.data;
       if (data is Map<String, dynamic> && data.containsKey('liked')) {
         return data['liked'] as bool;
@@ -111,7 +113,9 @@ class TrackDetailRepository {
   /// Lấy danh sách ID các bài hát trong playlist (GET /api/playlists/{playlistId}/tracks)
   Future<List<int>> getPlaylistTrackIds(int playlistId) async {
     try {
-      final response = await _dio.get('${ApiEndpoints.playlists}/$playlistId/tracks');
+      final response = await _dio.get(
+        '${ApiEndpoints.playlists}/$playlistId/tracks',
+      );
       final List<dynamic> data = response.data;
       return data
           .map((json) {
@@ -181,7 +185,9 @@ class TrackDetailRepository {
       final response = await _dio.get('${ApiEndpoints.trackComments}/$trackId');
       final List<dynamic> data = response.data;
       return data
-          .map((json) => TrackCommentModel.fromJson(json as Map<String, dynamic>))
+          .map(
+            (json) => TrackCommentModel.fromJson(json as Map<String, dynamic>),
+          )
           .toList();
     } catch (_) {
       return [];
@@ -213,7 +219,10 @@ class TrackDetailRepository {
   }
 
   /// Chỉnh sửa nội dung bình luận (PUT /api/comments/{commentId})
-  Future<void> updateComment({required int commentId, required String content}) async {
+  Future<void> updateComment({
+    required int commentId,
+    required String content,
+  }) async {
     try {
       await _dio.put(
         '${ApiEndpoints.comments}/$commentId',
@@ -264,6 +273,53 @@ class TrackDetailRepository {
         return 'Đã xảy ra lỗi từ máy chủ ($statusCode).';
       default:
         return 'Đã xảy ra lỗi kết nối, vui lòng thử lại.';
+    }
+  }
+
+  /// Báo cáo bình luận vi phạm (POST /api/comments/{commentId}/report)
+  Future<void> reportComment({
+    required int commentId,
+    required String reason,
+    String? description,
+    int? userId,
+  }) async {
+    try {
+      final effectiveUserId = await _resolveUserId(userId);
+      if (effectiveUserId == null) {
+        throw Exception('Vui lòng đăng nhập để báo cáo bình luận.');
+      }
+
+      await _dio.post(
+        '${ApiEndpoints.comments}/$commentId/report',
+        data: {
+          'userId': effectiveUserId,
+          'reason': reason,
+          if (description != null && description.isNotEmpty)
+            'description': description,
+        },
+      );
+    } on DioException catch (e) {
+      throw Exception(_handleDioError(e));
+    } catch (e) {
+      throw Exception('Không thể gửi báo cáo: $e');
+    }
+  }
+
+  /// Lấy danh sách commentId mà user hiện tại đã báo cáo từ DB (GET /api/comments/reported/user/{userId})
+  Future<Set<int>> getReportedCommentIds({int? userId}) async {
+    try {
+      final effectiveUserId = await _resolveUserId(userId);
+      if (effectiveUserId == null) return {};
+
+      final response = await _dio.get(
+        '${ApiEndpoints.comments}/reported/user/$effectiveUserId',
+      );
+      if (response.data is List) {
+        return (response.data as List).map((e) => (e as num).toInt()).toSet();
+      }
+      return {};
+    } catch (_) {
+      return {};
     }
   }
 }
