@@ -10,13 +10,15 @@ class TrackDetailState {
   final bool isLiked;
   final int userRating;
   final List<PlaylistModel> userPlaylists;
+  final Set<int> playlistsContainingTrack;
   final List<TrackCommentModel> comments;
 
   const TrackDetailState({
     required this.track,
     this.isLiked = false,
-    this.userRating = 5,
+    this.userRating = 0,
     this.userPlaylists = const [],
+    this.playlistsContainingTrack = const {},
     this.comments = const [],
   });
 
@@ -25,6 +27,7 @@ class TrackDetailState {
     bool? isLiked,
     int? userRating,
     List<PlaylistModel>? userPlaylists,
+    Set<int>? playlistsContainingTrack,
     List<TrackCommentModel>? comments,
   }) {
     return TrackDetailState(
@@ -32,6 +35,7 @@ class TrackDetailState {
       isLiked: isLiked ?? this.isLiked,
       userRating: userRating ?? this.userRating,
       userPlaylists: userPlaylists ?? this.userPlaylists,
+      playlistsContainingTrack: playlistsContainingTrack ?? this.playlistsContainingTrack,
       comments: comments ?? this.comments,
     );
   }
@@ -62,18 +66,38 @@ class TrackDetailController
         _repository.checkIsFavorite(_trackId),
         _repository.getUserPlaylists().catchError((_) => <PlaylistModel>[]),
         _repository.getComments(_trackId).catchError((_) => <TrackCommentModel>[]),
+        _repository.getUserRating(_trackId).catchError((_) => null),
       ]);
 
       final track = results[0] as TrackDetailModel;
       final isLiked = results[1] as bool;
-      final userPlaylists = results[2] as List<PlaylistModel>;
+      final rawPlaylists = results[2] as List<PlaylistModel>;
       final comments = results[3] as List<TrackCommentModel>;
+      final userRating = results[4] as int?;
+
+      // Tải số lượng bài hát và kiểm tra bài hiện tại đã có trong từng playlist chưa
+      final Set<int> containingTrack = {};
+      final List<PlaylistModel> updatedPlaylists = await Future.wait(
+        rawPlaylists.map((playlist) async {
+          try {
+            final trackIds = await _repository.getPlaylistTrackIds(playlist.id);
+            if (trackIds.contains(_trackId)) {
+              containingTrack.add(playlist.id);
+            }
+            return playlist.copyWith(trackCount: trackIds.length);
+          } catch (_) {
+            return playlist;
+          }
+        }),
+      );
 
       state = AsyncValue.data(
         TrackDetailState(
           track: track,
           isLiked: isLiked,
-          userPlaylists: userPlaylists,
+          userRating: userRating ?? 0,
+          userPlaylists: updatedPlaylists,
+          playlistsContainingTrack: containingTrack,
           comments: comments,
         ),
       );
@@ -144,15 +168,50 @@ class TrackDetailController
     }
   }
 
-  /// Cập nhật số sao đánh giá
-  void setRating(int rating) {
-    state.whenData((current) {
-      state = AsyncValue.data(current.copyWith(userRating: rating));
-    });
+  /// Cập nhật số sao đánh giá (lưu vào backend qua POST /api/ratings)
+  Future<void> setRating(int rating) async {
+    final previousState = state;
+    final currentState = state.value;
+    if (currentState == null) return;
+
+    // 1. Cập nhật UI ngay lập tức (Optimistic UI)
+    state = AsyncValue.data(currentState.copyWith(userRating: rating));
+
+    try {
+      // 2. Gửi API lưu đánh giá
+      await _repository.submitRating(
+        trackId: _trackId,
+        ratingValue: rating,
+      );
+    } catch (e) {
+      // 3. Hoàn tác nếu API thất bại
+      if (mounted) {
+        state = previousState;
+      }
+      rethrow;
+    }
   }
 
   /// Thêm bài hát này vào một playlist cụ thể
   Future<void> addTrackToPlaylist(int playlistId) async {
     await _repository.addTrackToPlaylist(playlistId, _trackId);
+    if (mounted) {
+      state.whenData((current) {
+        final updatedContaining = Set<int>.from(current.playlistsContainingTrack)
+          ..add(playlistId);
+        final updatedPlaylists = current.userPlaylists.map((p) {
+          if (p.id == playlistId) {
+            return p.copyWith(trackCount: p.trackCount + 1);
+          }
+          return p;
+        }).toList();
+        state = AsyncValue.data(
+          current.copyWith(
+            playlistsContainingTrack: updatedContaining,
+            userPlaylists: updatedPlaylists,
+          ),
+        );
+      });
+    }
   }
 }

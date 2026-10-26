@@ -78,19 +78,32 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
       if (!mounted) return;
       final isLikedNow =
           ref.read(trackDetailControllerProvider(_id)).value?.isLiked ?? false;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            isLikedNow
-                ? '❤️ Đã thêm vào bài hát yêu thích'
-                : 'Đã xóa khỏi bài hát yêu thích',
+          content: Row(
+            children: [
+              Icon(
+                isLikedNow ? Icons.favorite_rounded : Icons.favorite_border_rounded,
+                color: isLikedNow ? AppColors.error : AppColors.textSecondary,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isLikedNow
+                    ? 'Đã thêm vào bài hát yêu thích'
+                    : 'Đã xóa khỏi bài hát yêu thích',
+              ),
+            ],
           ),
+          duration: const Duration(seconds: 2),
           behavior: SnackBarBehavior.floating,
         ),
       );
       ref.invalidate(userProfileProvider);
     } catch (e) {
       if (!mounted) return;
+      ScaffoldMessenger.of(context).hideCurrentSnackBar();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -103,10 +116,14 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
     }
   }
 
-  void _addToPlaylist(List<PlaylistModel> playlists) {
+  void _addToPlaylist(
+    List<PlaylistModel> playlists,
+    Set<int> playlistsContainingTrack,
+  ) {
     SelectPlaylistModal.show(
       context,
       playlists: playlists,
+      playlistsContainingTrack: playlistsContainingTrack,
       onSelected: (playlist) async {
         try {
           await ref
@@ -122,11 +139,14 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
           ref.invalidate(userProfileProvider);
         } catch (e) {
           if (!mounted) return;
+          final errorText = e.toString();
+          final message = errorText.contains('đã tồn tại') ||
+                  errorText.contains('Duplicate')
+              ? 'Bài hát này đã có trong "${playlist.name}" rồi.'
+              : 'Thêm vào playlist thất bại: ${errorText.replaceAll("Exception: ", "")}';
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(
-                'Thêm vào playlist thất bại: ${e.toString().replaceAll("Exception: ", "")}',
-              ),
+              content: Text(message),
               backgroundColor: AppColors.error,
               behavior: SnackBarBehavior.floating,
             ),
@@ -463,18 +483,44 @@ class _TrackDetailScreenState extends ConsumerState<TrackDetailScreen> {
                   isLiked: state.isLiked,
                   rating: state.userRating,
                   onLikeToggle: _toggleLike,
-                  onAddToPlaylist: () => _addToPlaylist(state.userPlaylists),
+                  onAddToPlaylist: () => _addToPlaylist(
+                    state.userPlaylists,
+                    state.playlistsContainingTrack,
+                  ),
                   onShare: _shareTrack,
-                  onRatingChanged: (newRating) {
-                    ref
-                        .read(trackDetailControllerProvider(_id).notifier)
-                        .setRating(newRating);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('⭐ Đã đánh giá $newRating sao'),
-                        behavior: SnackBarBehavior.floating,
-                      ),
-                    );
+                  onRatingChanged: (newRating) async {
+                    try {
+                      await ref
+                          .read(trackDetailControllerProvider(_id).notifier)
+                          .setRating(newRating);
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: AppColors.warning, size: 20),
+                              const SizedBox(width: 8),
+                              Text('Đã đánh giá $newRating/5 sao thành công!'),
+                            ],
+                          ),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    } catch (e) {
+                      if (!context.mounted) return;
+                      ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            'Không thể lưu đánh giá: ${e.toString().replaceAll("Exception: ", "")}',
+                          ),
+                          backgroundColor: AppColors.error,
+                          behavior: SnackBarBehavior.floating,
+                        ),
+                      );
+                    }
                   },
                 ),
                 const SizedBox(height: 16),

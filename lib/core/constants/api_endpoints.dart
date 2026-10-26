@@ -92,6 +92,9 @@ class ApiEndpoints {
   static const String follows = '/api/follows';
   static const String analytics = '/api/analytics';
 
+  // Ratings
+  static const String ratings = '/api/ratings';
+
   // Comments
   static const String comments = '/api/comments';
   static const String trackComments = '/api/comments/track'; // + /{trackId}

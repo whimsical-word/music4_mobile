@@ -542,7 +542,7 @@ void main() {
       );
     });
 
-    testWidgets('12. A signed-in user can follow and the button updates', (tester) async {
+    testWidgets('12. A signed-in user can follow and the button updates #UC16', (tester) async {
       useTallView(tester);
       stubSuccess();
       when(
@@ -559,6 +559,7 @@ void main() {
 
       expect(find.text('Đang theo dõi'), findsOneWidget);
       expect(find.text('43 Người theo dõi'), findsOneWidget);
+      expect(find.text('Đã theo dõi Ngọt'), findsOneWidget);
       verify(() => repository.toggleFollow(userId: 7, artistId: 3)).called(1);
     });
   });

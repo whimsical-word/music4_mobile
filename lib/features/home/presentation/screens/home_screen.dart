@@ -20,6 +20,7 @@ import '../../../auth/presentation/state/auth_state.dart';
 import '../widgets/artist_studio_quick_banner.dart';
 import '../widgets/home_shimmer_skeleton.dart';
 import '../widgets/home_album_section.dart';
+import '../widgets/home_artist_section.dart';
 import '../widgets/home_albums_full_list.dart';
 import '../widgets/home_track_list_section.dart';
 import '../widgets/trending_section.dart';
@@ -32,7 +33,10 @@ class HomeScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.listen<AsyncValue<PlayerStateData>>(playerNotifierProvider, (previous, next) {
+    ref.listen<AsyncValue<PlayerStateData>>(playerNotifierProvider, (
+      previous,
+      next,
+    ) {
       if (next is AsyncData &&
           next.value!.showLoginPrompt &&
           !(previous?.value?.showLoginPrompt ?? false)) {
@@ -75,9 +79,8 @@ class HomeScreen extends ConsumerWidget {
           const NotificationBellButton(),
           IconButton(
             icon: const Icon(Icons.person_outline),
-            onPressed: () => context.push(
-              profileRouteFor(ref.read(authNotifierProvider)),
-            ),
+            onPressed: () =>
+                context.push(profileRouteFor(ref.read(authNotifierProvider))),
           ),
         ],
       ),
@@ -180,6 +183,8 @@ class HomeScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           HomeAlbumSection(onSeeAll: () => select(HomeFilter.albums)),
+          const SizedBox(height: 16),
+          const HomeArtistSection(),
         ];
 
       case HomeFilter.recommended:
@@ -219,9 +224,8 @@ class _FilterEmptyMessage extends StatelessWidget {
         child: Text(
           message,
           textAlign: TextAlign.center,
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
+          style: Theme.of(context).textTheme.bodyMedium
+              ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
         ),
       ),
     );
