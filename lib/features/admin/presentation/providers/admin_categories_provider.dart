@@ -43,6 +43,7 @@ class AdminCategoriesNotifier extends AsyncNotifier<List<AdminCategoryModel>> {
     );
   }
 
+  /// Xóa thể loại nhạc (#UC60)
   Future<void> deleteCategory(int id) async {
     final previousState = state.value;
     if (previousState != null) {
