@@ -57,6 +57,13 @@ class HomeScreen extends ConsumerWidget {
           style: TextStyle(fontWeight: FontWeight.bold, fontSize: 24),
         ),
         actions: [
+          if (isAdmin)
+            IconButton(
+              key: const Key('home_appbar_admin_btn'),
+              icon: const Icon(Icons.admin_panel_settings_outlined),
+              tooltip: 'Quản trị hệ thống',
+              onPressed: () => context.push(RouteNames.admin),
+            ),
           if (isArtist) ...[
             IconButton(
               key: const Key('home_appbar_upload_btn'),
@@ -77,13 +84,6 @@ class HomeScreen extends ConsumerWidget {
               onPressed: () => context.push(RouteNames.albumManagement),
             ),
           ],
-          if (isAdmin)
-            IconButton(
-              key: const Key('home_appbar_admin_btn'),
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-              tooltip: 'Quản trị',
-              onPressed: () => context.push(RouteNames.admin),
-            ),
           const NotificationBellButton(),
           IconButton(
             icon: const Icon(Icons.person_outline),

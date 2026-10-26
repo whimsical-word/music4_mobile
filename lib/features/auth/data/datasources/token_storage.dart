@@ -65,6 +65,9 @@ class TokenStorage {
       final decoded = jsonDecode(userJson);
       if (decoded is! Map<String, dynamic>) return null;
 
+      final role = decoded['role'] as String? ?? (decoded['isAdmin'] == true ? 'ROLE_ADMIN' : '');
+      final isAdmin = decoded['isAdmin'] as bool? ?? role.toUpperCase().contains('ADMIN');
+
       return UserEntity(
         id: decoded['id'] as int,
         displayName: decoded['displayName'] as String,
@@ -72,7 +75,8 @@ class TokenStorage {
         email: decoded['email'] as String? ?? '',
         imageUrl: decoded['imageUrl'] as String?,
         isArtist: decoded['isArtist'] as bool? ?? false,
-        isAdmin: decoded['isAdmin'] as bool? ?? false,
+        role: role,
+        isAdmin: isAdmin,
       );
     } catch (_) {
       return null;
@@ -87,6 +91,7 @@ class TokenStorage {
       'email': user.email,
       'imageUrl': user.imageUrl,
       'isArtist': user.isArtist,
+      'role': user.role,
       'isAdmin': user.isAdmin,
     });
     await _storage.write(key: _keyCachedUser, value: userJson);
