@@ -56,6 +56,7 @@ class AdminArtistsNotifier extends AsyncNotifier<List<AdminArtistModel>> {
     }
   }
 
+  /// Khôi phục nghệ sĩ đã vô hiệu hóa (#UC65)
   Future<bool> reactivateArtist(int id) async {
     final previousState = state.value;
     if (previousState != null) {
