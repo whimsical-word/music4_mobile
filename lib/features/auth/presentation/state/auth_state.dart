@@ -25,6 +25,19 @@ class AuthUnauthenticated extends AuthState {
   const AuthUnauthenticated();
 }
 
+/// Yêu cầu xác thực OTP email sau khi login (tài khoản chưa active)
+class AuthRequiresVerification extends AuthState {
+  final String email;
+  final String? role;
+  final String message;
+
+  const AuthRequiresVerification({
+    required this.email,
+    this.role,
+    required this.message,
+  });
+}
+
 /// Đăng nhập thất bại với thông báo lỗi.
 class AuthError extends AuthState {
   final String message;

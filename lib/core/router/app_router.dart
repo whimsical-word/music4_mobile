@@ -9,6 +9,7 @@ import 'route_names.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
+import '../../features/auth/presentation/screens/verify_email_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/artist_profile/presentation/screens/artist_profile_screen.dart';
@@ -73,6 +74,16 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.register,
       name: 'register',
       builder: (context, state) => const RegisterScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.verifyEmail,
+      name: 'verifyEmail',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final email = extra?['email'] as String? ?? '';
+        final role = extra?['role'] as String?;
+        return VerifyEmailScreen(email: email, role: role);
+      },
     ),
     GoRoute(
       path: RouteNames.userProfile,

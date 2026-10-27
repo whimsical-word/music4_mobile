@@ -7,6 +7,8 @@ import 'package:music4_mobile/features/auth/domain/repositories/auth_repository.
 import 'package:music4_mobile/features/auth/domain/usecases/login_use_case.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/login_with_google_use_case.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/logout_use_case.dart';
+import 'package:music4_mobile/features/auth/domain/usecases/verify_otp_use_case.dart';
+import 'package:music4_mobile/features/auth/domain/usecases/resend_otp_use_case.dart';
 import 'package:music4_mobile/core/network/dio_client.dart';
 
 import '../state/auth_state.dart';
@@ -49,6 +51,14 @@ final logoutUseCaseProvider = Provider<LogoutUseCase>((ref) {
   return LogoutUseCase(ref.read(authRepositoryProvider));
 });
 
+final verifyOtpUseCaseProvider = Provider<VerifyOtpUseCase>((ref) {
+  return VerifyOtpUseCase(ref.read(authRepositoryProvider));
+});
+
+final resendOtpUseCaseProvider = Provider<ResendOtpUseCase>((ref) {
+  return ResendOtpUseCase(ref.read(authRepositoryProvider));
+});
+
 class AuthNotifier extends StateNotifier<AuthState> {
   final LoginUseCase loginUseCase;
   final LogoutUseCase logoutUseCase;
@@ -83,8 +93,24 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
     state = switch (result) {
       Success<UserEntity>(:final data) => AuthAuthenticated(data),
-      Error<UserEntity>(:final failure) => AuthError(failure.message),
+      Error<UserEntity>(:final failure) => switch (failure) {
+          RequiresEmailVerificationFailure(
+            :final email,
+            :final role,
+            :final message,
+          ) =>
+            AuthRequiresVerification(
+              email: email,
+              role: role,
+              message: message,
+            ),
+          _ => AuthError(failure.message),
+        },
     };
+  }
+
+  void resetState() {
+    state = const AuthUnauthenticated();
   }
 
   Future<void> logout() async {

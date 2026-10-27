@@ -22,4 +22,13 @@ abstract class AuthRepository {
   });
   Future<Result<bool>> checkCanChangePassword();
   Future<Result<UserEntity>> loginWithGoogle();
+  Future<Result<void>> verifyOtp({
+    required String email,
+    required String otp,
+    String? role,
+  });
+  Future<Result<void>> resendVerificationOtp({
+    required String email,
+    String? role,
+  });
 }

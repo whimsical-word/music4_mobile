@@ -47,6 +47,7 @@ class UserEntity {
 
 sealed class Failure {
   final String message;
+
   const Failure(this.message);
 }
 
@@ -66,16 +67,30 @@ class ServerFailure extends Failure {
   const ServerFailure([super.message = 'Lỗi máy chủ, vui lòng thử lại']);
 }
 
+class RequiresEmailVerificationFailure extends Failure {
+  final String email;
+  final String? role;
+
+  const RequiresEmailVerificationFailure({
+    required this.email,
+    this.role,
+    String message =
+        'Tài khoản chưa được kích hoạt. Mã OTP xác thực đã được gửi đến email của bạn.',
+  }) : super(message);
+}
+
 sealed class Result<T> {
   const Result();
 }
 
 class Success<T> extends Result<T> {
   final T data;
+
   const Success(this.data);
 }
 
 class Error<T> extends Result<T> {
   final Failure failure;
+
   const Error(this.failure);
 }

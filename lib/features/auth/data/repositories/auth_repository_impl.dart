@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:music4_mobile/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:music4_mobile/features/auth/data/datasources/google_sign_in_data_source.dart';
 import 'package:music4_mobile/features/auth/data/datasources/token_storage.dart';
+import 'package:music4_mobile/features/auth/data/exceptions/auth_exceptions.dart';
 import 'package:music4_mobile/features/auth/data/models/auth_response_model.dart';
 import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
@@ -33,8 +34,14 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
       await tokenStorage.saveUser(entity);
 
       return Success(entity);
+    } on RequiresVerificationException catch (e) {
+      return Error(RequiresEmailVerificationFailure(
+        email: e.email,
+        role: e.role,
+        message: e.message,
+      ));
     } on DioException catch (e) {
-      if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
+      if (e.response?.statusCode == 401) {
         return const Error(InvalidCredentialsFailure());
       }
       if (e.type == DioExceptionType.connectionTimeout ||
@@ -43,7 +50,14 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
       }
       return Error(ServerFailure(e.message ?? 'Lỗi không xác định'));
     } catch (e) {
-      return Error(ServerFailure(e.toString()));
+      if (e is RequiresVerificationException) {
+        return Error(RequiresEmailVerificationFailure(
+          email: e.email,
+          role: e.role,
+          message: e.message,
+        ));
+      }
+      return Error(ServerFailure(e.toString().replaceAll('Exception: ', '')));
     }
   }
 
@@ -167,4 +181,35 @@ class AuthRemoteRepositoryImpl implements AuthRepository {
     return ServerFailure(message ?? 'Đăng nhập Google không thành công');
   }
 
+
+  @override
+  Future<Result<void>> verifyOtp({
+    required String email,
+    required String otp,
+    String? role,
+  }) async {
+    try {
+      await remoteDataSource.verifyOtp(email: email, otp: otp, role: role);
+      return const Success(null);
+    } catch (e) {
+      return Error(
+        ServerFailure(e.toString().replaceAll('Exception: ', '')),
+      );
+    }
+  }
+
+  @override
+  Future<Result<void>> resendVerificationOtp({
+    required String email,
+    String? role,
+  }) async {
+    try {
+      await remoteDataSource.resendVerificationOtp(email: email, role: role);
+      return const Success(null);
+    } catch (e) {
+      return Error(
+        ServerFailure(e.toString().replaceAll('Exception: ', '')),
+      );
+    }
+  }
 }

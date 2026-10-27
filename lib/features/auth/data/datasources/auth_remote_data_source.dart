@@ -3,6 +3,7 @@ import 'package:music4_mobile/core/constants/api_endpoints.dart';
 import 'package:music4_mobile/core/network/dio_client.dart';
 import 'package:music4_mobile/features/auth/domain/entities/register_request.dart';
 
+import '../exceptions/auth_exceptions.dart';
 import '../models/auth_response_model.dart';
 
 abstract class AuthRemoteDataSource {
@@ -25,6 +26,15 @@ abstract class AuthRemoteDataSource {
   });
 
   Future<bool> checkCanChangePassword();
+  Future<void> verifyOtp({
+    required String email,
+    required String otp,
+    String? role,
+  });
+  Future<void> resendVerificationOtp({
+    required String email,
+    String? role,
+  });
 }
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
@@ -42,8 +52,18 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       return AuthResponseModel.fromJson(response.data);
     } on DioException catch (e) {
+      if (e.response?.statusCode == 403 &&
+          (e.response?.data?['requiresVerification'] == true ||
+              e.response?.data?['email'] != null)) {
+        throw RequiresVerificationException(
+          email: e.response?.data?['email']?.toString() ?? '',
+          role: e.response?.data?['role']?.toString(),
+          message: e.response?.data?['message']?.toString() ??
+              'Tài khoản chưa được kích hoạt. Mã OTP xác thực đã được gửi đến email của bạn.',
+        );
+      }
       final message =
-          e.response?.data['message'] ?? 'Đăng nhập không thành công';
+          e.response?.data?['message'] ?? 'Đăng nhập không thành công';
       throw Exception(message);
     }
   }
@@ -57,7 +77,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
     } on DioException catch (e) {
       final message =
-          e.response?.data['message'] ?? 'Đăng xuất không thành công';
+          e.response?.data?['message'] ?? 'Đăng xuất không thành công';
       throw Exception(message);
     }
   }
@@ -84,9 +104,50 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       );
     } on DioException catch (e) {
       final message =
-          e.response?.data['message'] ??
+          e.response?.data?['message'] ??
           e.response?.data?['error'] ??
           'Đăng ký không thành công';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> verifyOtp({
+    required String email,
+    required String otp,
+    String? role,
+  }) async {
+    try {
+      await dioClient.dio.post(
+        '/api/auth/verify-otp',
+        data: {
+          'email': email,
+          'otp': otp,
+          'role': ?role,
+        },
+      );
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Xác thực OTP thất bại';
+      throw Exception(message);
+    }
+  }
+
+  @override
+  Future<void> resendVerificationOtp({
+    required String email,
+    String? role,
+  }) async {
+    try {
+      await dioClient.dio.post(
+        '/api/auth/resend-verification',
+        data: {
+          'email': email,
+          'role': ?role,
+          'verificationMethod': 'OTP',
+        },
+      );
+    } on DioException catch (e) {
+      final message = e.response?.data?['message'] ?? 'Gửi lại mã OTP thất bại';
       throw Exception(message);
     }
   }
