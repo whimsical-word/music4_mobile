@@ -49,6 +49,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           } else {
             context.go(RouteNames.home);
           }
+        case AuthRequiresVerification(:final email, :final role, :final message):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.amber.shade800,
+            ),
+          );
+          context.push(
+            RouteNames.verifyEmail,
+            extra: {'email': email, 'role': role},
+          );
         case AuthError(:final message):
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
