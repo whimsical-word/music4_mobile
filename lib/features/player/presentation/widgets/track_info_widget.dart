@@ -6,6 +6,7 @@ class TrackInfoWidget extends StatelessWidget {
   final String title;
   final String artist;
   final bool isLiked;
+  final bool isOfflineCached;
   final VoidCallback onFavoriteTap;
 
   const TrackInfoWidget({
@@ -13,6 +14,7 @@ class TrackInfoWidget extends StatelessWidget {
     required this.title,
     required this.artist,
     required this.isLiked,
+    this.isOfflineCached = false,
     required this.onFavoriteTap,
   });
 
@@ -27,7 +29,44 @@ class TrackInfoWidget extends StatelessWidget {
             children: [
               Text(title, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold), maxLines: 1),
               const SizedBox(height: 8),
-              Text(artist, style: const TextStyle(fontSize: 16, color: AppColors.textSecondary), maxLines: 1),
+              Row(
+                children: [
+                  Flexible(
+                    child: Text(
+                      artist,
+                      style: const TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (isOfflineCached) ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: AppColors.primary, width: 0.8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.wifi_off_rounded, size: 12, color: AppColors.primary),
+                          SizedBox(width: 4),
+                          Text(
+                            'Offline',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: AppColors.primary,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ],
           ),
         ),

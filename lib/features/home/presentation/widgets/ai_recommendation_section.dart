@@ -6,7 +6,11 @@ import 'ai_recommendation_card.dart';
 class AiRecommendationSection extends StatelessWidget {
   final List<HomeTrackItem> tracks;
 
-  const AiRecommendationSection({super.key, required this.tracks});
+  /// Tapping the header (with its ">") opens just this section. Null hides the
+  /// ">" (the feed is already filtered to this section).
+  final VoidCallback? onSeeAll;
+
+  const AiRecommendationSection({super.key, required this.tracks, this.onSeeAll});
 
   @override
   Widget build(BuildContext context) {
@@ -17,28 +21,33 @@ class AiRecommendationSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Gợi ý cho bạn',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+        InkWell(
+          onTap: onSeeAll,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Gợi ý cho bạn',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              const Icon(
-                Icons.chevron_right,
-                color: AppColors.textSecondary,
-                size: 20,
-              ),
-            ],
+                if (onSeeAll != null) ...[
+                  const SizedBox(width: 8),
+                  const Icon(
+                    Icons.chevron_right,
+                    color: AppColors.textSecondary,
+                    size: 20,
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
         SizedBox(

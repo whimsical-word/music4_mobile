@@ -1,20 +1,20 @@
-﻿import 'dart:async';
+import 'dart:async';
 
-import '../../../../core/network/dio_client.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/repositories/search_repository.dart';
+import '../../../../core/network/dio_client.dart';
 import '../../data/models/search_models.dart';
+import '../../data/repositories/search_repository.dart';
 
-// Provider quáº£n lÃ½ loáº¡i tÃ¬m kiáº¿m Ä‘ang Ä‘Æ°á»£c chá»n (Tab/Chip)
+/// Provider quản lý loại tìm kiếm đang được chọn trên FilterChip (all, track, artist, album, category)
 final searchTypeProvider = StateProvider<String>((ref) => 'all');
 
-// Provider cung cáº¥p Repository
+/// Provider cung cấp SearchRepository dùng DioClient nội bộ
 final searchRepositoryProvider = Provider<SearchRepository>((ref) {
   return SearchRepository(DioClient().dio);
 });
 
-// Provider quáº£n lÃ½ State báº±ng AsyncValue
+/// Provider quản lý trạng thái tìm kiếm bằng AsyncValue
 final searchProvider =
     StateNotifierProvider<SearchNotifier, AsyncValue<SearchResponse?>>((ref) {
       return SearchNotifier(ref.watch(searchRepositoryProvider), ref);
@@ -28,11 +28,12 @@ class SearchNotifier extends StateNotifier<AsyncValue<SearchResponse?>> {
 
   SearchNotifier(this._repository, this._ref) : super(const AsyncData(null));
 
-  void onSearchChanged(String query) {
+  void onSearchChanged(String query, {int page = 0, int size = 20}) {
     _currentQuery = query;
     if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
 
-    if (query.trim().isEmpty) {
+    final trimmed = query.trim();
+    if (trimmed.isEmpty) {
       state = const AsyncData(null);
       return;
     }
@@ -42,7 +43,12 @@ class SearchNotifier extends StateNotifier<AsyncValue<SearchResponse?>> {
     _debounceTimer = Timer(const Duration(milliseconds: 300), () async {
       try {
         final currentType = _ref.read(searchTypeProvider);
-        final result = await _repository.search(query, type: currentType);
+        final result = await _repository.search(
+          trimmed,
+          type: currentType,
+          page: page,
+          size: size,
+        );
         if (mounted) {
           state = AsyncData(result);
         }
@@ -66,4 +72,3 @@ class SearchNotifier extends StateNotifier<AsyncValue<SearchResponse?>> {
     super.dispose();
   }
 }
-

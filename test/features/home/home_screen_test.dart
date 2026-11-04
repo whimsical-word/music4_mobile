@@ -18,11 +18,17 @@ import 'package:music4_mobile/features/player/presentation/providers/player_prov
 
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_controller.dart';
 import 'package:music4_mobile/features/home/presentation/controllers/home_feed_state.dart';
+import 'package:music4_mobile/features/home/presentation/controllers/home_filter.dart';
 import 'package:music4_mobile/features/home/presentation/screens/home_screen.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/ai_recommendation_banner.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/ai_recommendation_section.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/home_empty_state.dart';
+import 'package:music4_mobile/features/album/data/models/album_model.dart';
+import 'package:music4_mobile/features/home/presentation/widgets/home_album_list_tile.dart';
+import 'package:music4_mobile/features/home/presentation/widgets/home_album_section.dart';
+import 'package:music4_mobile/features/home/presentation/widgets/home_track_list_section.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/home_error_state.dart';
+import 'package:music4_mobile/features/home/presentation/widgets/home_header_greeting.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/home_shimmer_skeleton.dart';
 import 'package:music4_mobile/features/home/presentation/widgets/trending_section.dart';
 
@@ -71,6 +77,46 @@ class MockHomeFeedController extends HomeFeedController {
     state = const AsyncValue.loading();
 
     state = await AsyncValue.guard(_mockHomeFeed);
+  }
+}
+
+/// Serves album pages from memory and records which pages were requested.
+class FakeAlbumsRepository extends HomeRepository {
+  final List<List<AlbumModel>> pages;
+  final List<int> requestedPages = [];
+  int failures;
+
+  FakeAlbumsRepository(this.pages, {this.failures = 0}) : super(DioClient());
+
+  @override
+  Future<List<AlbumModel>> getAlbumsPage({int page = 0, int size = 10}) async {
+    requestedPages.add(page);
+    if (failures > 0) {
+      failures--;
+      throw const HomeException('Mạng quá yếu, thử lại sau');
+    }
+    return page < pages.length ? pages[page] : [];
+  }
+}
+
+AlbumModel albumNamed(int i) => AlbumModel(
+  id: '$i',
+  title: 'Album $i',
+  artistId: '1',
+  artistName: 'Artist',
+  releaseDate: DateTime(2026, 1, 1),
+  trackCount: 3,
+);
+
+/// Feed with recommendations but no trending tracks.
+class NoTrendingHomeFeedController extends HomeFeedController {
+  @override
+  Future<HomeFeedState> build() async {
+    return const HomeFeedState(
+      featuredAiTrack: HomeMockData.featuredAiTrack,
+      aiRecommendations: HomeMockData.aiRecommendations,
+      trendingTracks: [],
+    );
   }
 }
 
@@ -349,5 +395,198 @@ void main() {
         expect(finalState.isLoading, isFalse);
       },
     );
+
+    group('filter chips and section headers', () {
+      /// The album section would call the real album API (and fall back to
+      /// hard-coded albums), so it is replaced by an empty list here.
+      Widget createFilterTestWidget({List<Override> overrides = const []}) {
+        return createTestWidget(
+          overrides: [
+            homeAlbumListProvider.overrideWith((ref) async => <AlbumModel>[]),
+            ...overrides,
+          ],
+        );
+      }
+
+      Finder chip(String label) => find.descendant(
+        of: find.byType(HomeHeaderGreeting),
+        matching: find.text(label),
+      );
+
+      HomeFilter selectedFilter(WidgetTester tester) {
+        final container = ProviderScope.containerOf(
+          tester.element(find.byType(HomeScreen)),
+        );
+        return container.read(homeFilterProvider);
+      }
+
+      testWidgets('starts on Tất cả with every section visible', (tester) async {
+        await tester.pumpWidget(createFilterTestWidget());
+        await tester.pump();
+
+        expect(selectedFilter(tester), HomeFilter.all);
+        expect(find.byType(AiRecommendationBanner), findsOneWidget);
+        expect(find.byType(AiRecommendationSection), findsOneWidget);
+        expect(find.byType(TrendingSection, skipOffstage: false), findsOneWidget);
+
+        // The album section is the last child of a lazy list: scroll to it.
+        await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+        await tester.pump();
+        expect(find.byType(HomeAlbumSection), findsOneWidget);
+      });
+
+      testWidgets('Thịnh hành shows only the trending section', (tester) async {
+        await tester.pumpWidget(createFilterTestWidget());
+        await tester.pump();
+
+        await tester.tap(chip('Thịnh hành'));
+        await tester.pump();
+
+        expect(selectedFilter(tester), HomeFilter.trending);
+        expect(find.byType(TrendingSection, skipOffstage: false), findsOneWidget);
+        expect(find.byType(AiRecommendationSection), findsNothing);
+        expect(find.byType(AiRecommendationBanner), findsNothing);
+        expect(find.byType(HomeAlbumSection), findsNothing);
+      });
+
+      testWidgets('Gợi ý shows the full vertical recommendation list only', (tester) async {
+        await tester.pumpWidget(createFilterTestWidget());
+        await tester.pump();
+
+        await tester.tap(chip('Gợi ý'));
+        await tester.pump();
+
+        expect(selectedFilter(tester), HomeFilter.recommended);
+        // One vertical list with the featured track first.
+        expect(find.byType(HomeTrackListSection), findsOneWidget);
+        expect(find.byType(AiRecommendationBanner), findsNothing);
+        expect(find.byType(AiRecommendationSection), findsNothing);
+        expect(find.byType(TrendingSection, skipOffstage: false), findsNothing);
+        expect(find.byType(HomeAlbumSection), findsNothing);
+      });
+
+      testWidgets('Tất cả brings every section back', (tester) async {
+        await tester.pumpWidget(createFilterTestWidget());
+        await tester.pump();
+
+        await tester.tap(chip('Thịnh hành'));
+        await tester.pump();
+        await tester.tap(chip('Tất cả'));
+        await tester.pump();
+
+        expect(selectedFilter(tester), HomeFilter.all);
+        expect(find.byType(AiRecommendationSection), findsOneWidget);
+        expect(find.byType(TrendingSection, skipOffstage: false), findsOneWidget);
+      });
+
+      testWidgets('the ">" on a header opens just that section', (tester) async {
+        await tester.pumpWidget(createFilterTestWidget());
+        await tester.pump();
+
+        // Unfiltered feed: both headers have a ">".
+        expect(find.byIcon(Icons.chevron_right), findsNWidgets(2));
+
+        await tester.tap(find.text('Gợi ý cho bạn'));
+        await tester.pump();
+
+        expect(selectedFilter(tester), HomeFilter.recommended);
+        expect(find.byType(TrendingSection, skipOffstage: false), findsNothing);
+        // Already filtered: the ">" is gone.
+        expect(find.byIcon(Icons.chevron_right), findsNothing);
+      });
+
+      testWidgets('an empty selected section shows a message', (tester) async {
+        await tester.pumpWidget(
+          createFilterTestWidget(
+            overrides: [
+              homeFeedControllerProvider.overrideWith(
+                NoTrendingHomeFeedController.new,
+              ),
+            ],
+          ),
+        );
+        await tester.pump();
+
+        await tester.tap(chip('Thịnh hành'));
+        await tester.pump();
+
+        expect(find.text('Chưa có bài hát thịnh hành.'), findsOneWidget);
+      });
+
+      group('Album nổi bật tab', () {
+        Future<FakeAlbumsRepository> openAlbumsTab(
+          WidgetTester tester,
+          List<List<AlbumModel>> pages, {
+          int failures = 0,
+        }) async {
+          final fake = FakeAlbumsRepository(pages, failures: failures);
+          await tester.pumpWidget(
+            createFilterTestWidget(
+              overrides: [homeRepositoryProvider.overrideWithValue(fake)],
+            ),
+          );
+          await tester.pump();
+
+          await tester.tap(chip('Album nổi bật'));
+          await tester.pump();
+          await tester.pump();
+          return fake;
+        }
+
+        List<AlbumModel> albums(int count, {int start = 0}) => [
+          for (var i = 0; i < count; i++) albumNamed(start + i),
+        ];
+
+        testWidgets('has its own chip and shows only the albums', (tester) async {
+          await openAlbumsTab(tester, [albums(3)]);
+
+          expect(selectedFilter(tester), HomeFilter.albums);
+          expect(find.text('Album 0'), findsOneWidget);
+          expect(find.text('Album 2'), findsOneWidget);
+          expect(find.byType(HomeAlbumListTile), findsNWidgets(3));
+          expect(find.byType(AiRecommendationSection), findsNothing);
+          expect(find.byType(TrendingSection, skipOffstage: false), findsNothing);
+        });
+
+        testWidgets('scrolling to the bottom loads the next page (infinite scroll)', (tester) async {
+          final fake = await openAlbumsTab(tester, [albums(10), albums(3, start: 10)]);
+
+          expect(fake.requestedPages, [0]);
+
+          await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+          await tester.pump();
+          await tester.pump();
+
+          expect(fake.requestedPages, [0, 1]);
+
+          // The last page was short: scrolling further asks for nothing more.
+          await tester.drag(find.byType(ListView).first, const Offset(0, -3000));
+          await tester.pump();
+          await tester.pump();
+
+          expect(fake.requestedPages, [0, 1]);
+          expect(find.text('Album 12'), findsOneWidget);
+        });
+
+        testWidgets('an empty list shows a message', (tester) async {
+          await openAlbumsTab(tester, [<AlbumModel>[]]);
+
+          expect(find.text('Chưa có album nào.'), findsOneWidget);
+        });
+
+        testWidgets('an error shows the message and Thử lại loads again', (tester) async {
+          final fake = await openAlbumsTab(tester, [albums(2)], failures: 1);
+
+          expect(find.text('Mạng quá yếu, thử lại sau'), findsOneWidget);
+
+          await tester.tap(find.text('Thử lại'));
+          await tester.pump();
+          await tester.pump();
+
+          expect(fake.requestedPages, [0, 0]);
+          expect(find.text('Album 0'), findsOneWidget);
+        });
+      });
+    });
   });
 }

@@ -1,9 +1,11 @@
 import 'dart:math' as math;
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:music4_mobile/features/user_profile/presentation/providers/user_profile_provider.dart';
 
-import '../../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/notifiers/auth_notifier.dart'
+    hide dioClientProvider;
+import '../../../auth/presentation/state/auth_state.dart';
 import '../../../home/data/models/track_detail_model.dart';
 import '../../data/mappers/artist_profile_mapper.dart';
 import '../../data/models/artist_response.dart';
@@ -37,9 +39,11 @@ class ArtistProfileParams {
 enum FollowResult { success, needsLogin, notSupported, failed }
 
 class ArtistProfileNotifier
-    extends AutoDisposeFamilyAsyncNotifier<ArtistProfileData, ArtistProfileParams> {
+    extends
+        AutoDisposeFamilyAsyncNotifier<ArtistProfileData, ArtistProfileParams> {
   @override
-  Future<ArtistProfileData> build(ArtistProfileParams arg) => _fetchArtistData();
+  Future<ArtistProfileData> build(ArtistProfileParams arg) =>
+      _fetchArtistData();
 
   int? get _artistId => int.tryParse(arg.artistId ?? '');
 
@@ -48,7 +52,9 @@ class ArtistProfileNotifier
   /// would read (or change) another user's followings.
   int? get _currentUserId {
     final auth = ref.read(authNotifierProvider);
-    return auth is AuthAuthenticated && !auth.user.isArtist ? auth.user.id : null;
+    return auth is AuthAuthenticated && !auth.user.isArtist
+        ? auth.user.id
+        : null;
   }
 
   bool get _isArtistAccount {

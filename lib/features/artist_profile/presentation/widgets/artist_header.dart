@@ -1,3 +1,4 @@
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/models/artist.dart';
@@ -114,7 +115,10 @@ class ArtistHeader extends StatelessWidget {
                       backgroundColor: isFollowing ? AppColors.surface : AppColors.primary,
                       foregroundColor: isFollowing ? AppColors.textPrimary : Colors.black,
                     ),
-                    onPressed: onToggleFollow,
+                    onPressed: () {
+                      HapticFeedback.lightImpact();
+                      onToggleFollow();
+                    },
                     icon: Icon(isFollowing ? Icons.check : Icons.person_add),
                     label: Text(isFollowing ? 'Đang theo dõi' : 'Theo dõi'),
                   ),

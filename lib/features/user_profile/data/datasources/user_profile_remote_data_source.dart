@@ -13,6 +13,7 @@ abstract class UserProfileRemoteDataSource {
     String? avatarUrl,
     bool? gender,
   });
+  Future<List<Map<String, dynamic>>> getUserFollows(int userId);
 }
 
 class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
@@ -60,5 +61,15 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     );
     final responseModel = UserProfileResponse.fromJson(response.data);
     return responseModel.toDomain();
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> getUserFollows(int userId) async {
+    final response = await dioClient.dio.get(
+      '${ApiEndpoints.follows}/user/$userId',
+    );
+    final List<Map<String, dynamic>> followsList =
+        List<Map<String, dynamic>>.from(response.data);
+    return followsList;
   }
 }

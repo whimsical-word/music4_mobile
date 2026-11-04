@@ -10,7 +10,7 @@ import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../domain/entities/register_request.dart';
 import '../notifiers/register_notifier.dart';
-import '../notifiers/register_state.dart';
+import '../state/register_state.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -141,12 +141,12 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         case RegisterSuccess(:final message):
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text(message),
+              content: Text('$message. Vui lòng đăng nhập để nhận mã OTP xác thực email.'),
               backgroundColor: Colors.green.shade700,
             ),
           );
           ref.read(registerNotifierProvider.notifier).reset();
-          // Chuyển về login theo yêu cầu (tạm thời bỏ qua step verify email)
+          // Chuyển về màn hình login để đăng nhập và nhận OTP xác thực
           context.go(RouteNames.login);
         case RegisterError(:final message):
           ScaffoldMessenger.of(context).showSnackBar(

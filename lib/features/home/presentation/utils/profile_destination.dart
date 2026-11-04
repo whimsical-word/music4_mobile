@@ -1,5 +1,5 @@
 import '../../../../core/router/route_names.dart';
-import '../../../auth/presentation/notifiers/auth_state.dart';
+import '../../../auth/presentation/state/auth_state.dart';
 
 /// Where the profile icon of the Home app bar leads.
 ///

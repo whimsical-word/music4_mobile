@@ -16,7 +16,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$NotificationModel {
 
- String get id; String get title; String get message; bool get isRead; DateTime get createdAt;
+ int get id; int? get trackId; String? get trackName; int? get albumId; String? get albumName; String? get artistName; String get content; bool get isRead;@JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson) DateTime get createdAt;
 /// Create a copy of NotificationModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -30,20 +30,20 @@ $NotificationModelCopyWith<NotificationModel> get copyWith => _$NotificationMode
 @override
 bool operator ==(Object other) {
   final _this = this as NotificationModel;
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationModel&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.title, _this.title) || other.title == _this.title)&&(identical(other.message, _this.message) || other.message == _this.message)&&(identical(other.isRead, _this.isRead) || other.isRead == _this.isRead)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is NotificationModel&&(identical(other.id, _this.id) || other.id == _this.id)&&(identical(other.trackId, _this.trackId) || other.trackId == _this.trackId)&&(identical(other.trackName, _this.trackName) || other.trackName == _this.trackName)&&(identical(other.albumId, _this.albumId) || other.albumId == _this.albumId)&&(identical(other.albumName, _this.albumName) || other.albumName == _this.albumName)&&(identical(other.artistName, _this.artistName) || other.artistName == _this.artistName)&&(identical(other.content, _this.content) || other.content == _this.content)&&(identical(other.isRead, _this.isRead) || other.isRead == _this.isRead)&&(identical(other.createdAt, _this.createdAt) || other.createdAt == _this.createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
   final _this = this as NotificationModel;
-  return Object.hash(runtimeType,_this.id,_this.title,_this.message,_this.isRead,_this.createdAt);
+  return Object.hash(runtimeType,_this.id,_this.trackId,_this.trackName,_this.albumId,_this.albumName,_this.artistName,_this.content,_this.isRead,_this.createdAt);
 }
 
 @override
 String toString() {
   final _this = this as NotificationModel;
-  return 'NotificationModel(id: ${_this.id}, title: ${_this.title}, message: ${_this.message}, isRead: ${_this.isRead}, createdAt: ${_this.createdAt})';
+  return 'NotificationModel(id: ${_this.id}, trackId: ${_this.trackId}, trackName: ${_this.trackName}, albumId: ${_this.albumId}, albumName: ${_this.albumName}, artistName: ${_this.artistName}, content: ${_this.content}, isRead: ${_this.isRead}, createdAt: ${_this.createdAt})';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $NotificationModelCopyWith<$Res>  {
   factory $NotificationModelCopyWith(NotificationModel value, $Res Function(NotificationModel) _then) = _$NotificationModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String title, String message, bool isRead, DateTime createdAt
+ int id, int? trackId, String? trackName, int? albumId, String? albumName, String? artistName, String content, bool isRead,@JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson) DateTime createdAt
 });
 
 
@@ -71,11 +71,15 @@ class _$NotificationModelCopyWithImpl<$Res>
 
 /// Create a copy of NotificationModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? title = null,Object? message = null,Object? isRead = null,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? trackId = freezed,Object? trackName = freezed,Object? albumId = freezed,Object? albumName = freezed,Object? artistName = freezed,Object? content = null,Object? isRead = null,Object? createdAt = null,}) {
   return _then(NotificationModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as int,trackId: freezed == trackId ? _self.trackId : trackId // ignore: cast_nullable_to_non_nullable
+as int?,trackName: freezed == trackName ? _self.trackName : trackName // ignore: cast_nullable_to_non_nullable
+as String?,albumId: freezed == albumId ? _self.albumId : albumId // ignore: cast_nullable_to_non_nullable
+as int?,albumName: freezed == albumName ? _self.albumName : albumName // ignore: cast_nullable_to_non_nullable
+as String?,artistName: freezed == artistName ? _self.artistName : artistName // ignore: cast_nullable_to_non_nullable
+as String?,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,isRead: null == isRead ? _self.isRead : isRead // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
@@ -163,10 +167,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String title,  String message,  bool isRead,  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( int id,  int? trackId,  String? trackName,  int? albumId,  String? albumName,  String? artistName,  String content,  bool isRead, @JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson)  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _NotificationModel() when $default != null:
-return $default(_that.id,_that.title,_that.message,_that.isRead,_that.createdAt);case _:
+return $default(_that.id,_that.trackId,_that.trackName,_that.albumId,_that.albumName,_that.artistName,_that.content,_that.isRead,_that.createdAt);case _:
   return orElse();
 
 }
@@ -184,10 +188,10 @@ return $default(_that.id,_that.title,_that.message,_that.isRead,_that.createdAt)
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String title,  String message,  bool isRead,  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( int id,  int? trackId,  String? trackName,  int? albumId,  String? albumName,  String? artistName,  String content,  bool isRead, @JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson)  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _NotificationModel():
-return $default(_that.id,_that.title,_that.message,_that.isRead,_that.createdAt);case _:
+return $default(_that.id,_that.trackId,_that.trackName,_that.albumId,_that.albumName,_that.artistName,_that.content,_that.isRead,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -204,10 +208,10 @@ return $default(_that.id,_that.title,_that.message,_that.isRead,_that.createdAt)
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String title,  String message,  bool isRead,  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( int id,  int? trackId,  String? trackName,  int? albumId,  String? albumName,  String? artistName,  String content,  bool isRead, @JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson)  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _NotificationModel() when $default != null:
-return $default(_that.id,_that.title,_that.message,_that.isRead,_that.createdAt);case _:
+return $default(_that.id,_that.trackId,_that.trackName,_that.albumId,_that.albumName,_that.artistName,_that.content,_that.isRead,_that.createdAt);case _:
   return null;
 
 }
@@ -218,15 +222,19 @@ return $default(_that.id,_that.title,_that.message,_that.isRead,_that.createdAt)
 /// @nodoc
 @JsonSerializable()
 
-class _NotificationModel implements NotificationModel {
-  const _NotificationModel({required this.id, required this.title, required this.message, this.isRead = false, required this.createdAt});
+class _NotificationModel extends NotificationModel {
+  const _NotificationModel({required this.id, this.trackId, this.trackName, this.albumId, this.albumName, this.artistName, this.content = '', this.isRead = false, @JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson) required this.createdAt}): super._();
   factory _NotificationModel.fromJson(Map<String, dynamic> json) => _$NotificationModelFromJson(json);
 
-@override final  String id;
-@override final  String title;
-@override final  String message;
+@override final  int id;
+@override final  int? trackId;
+@override final  String? trackName;
+@override final  int? albumId;
+@override final  String? albumName;
+@override final  String? artistName;
+@override@JsonKey() final  String content;
 @override@JsonKey() final  bool isRead;
-@override final  DateTime createdAt;
+@override@JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson) final  DateTime createdAt;
 
 /// Create a copy of NotificationModel
 /// with the given fields replaced by the non-null parameter values.
@@ -241,18 +249,18 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-    return identical(this, other) || (other.runtimeType == runtimeType&&other is _NotificationModel&&(identical(other.id, id) || other.id == id)&&(identical(other.title, title) || other.title == title)&&(identical(other.message, message) || other.message == message)&&(identical(other.isRead, isRead) || other.isRead == isRead)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+    return identical(this, other) || (other.runtimeType == runtimeType&&other is _NotificationModel&&(identical(other.id, id) || other.id == id)&&(identical(other.trackId, trackId) || other.trackId == trackId)&&(identical(other.trackName, trackName) || other.trackName == trackName)&&(identical(other.albumId, albumId) || other.albumId == albumId)&&(identical(other.albumName, albumName) || other.albumName == albumName)&&(identical(other.artistName, artistName) || other.artistName == artistName)&&(identical(other.content, content) || other.content == content)&&(identical(other.isRead, isRead) || other.isRead == isRead)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
 int get hashCode {
-    return Object.hash(runtimeType,id,title,message,isRead,createdAt);
+    return Object.hash(runtimeType,id,trackId,trackName,albumId,albumName,artistName,content,isRead,createdAt);
 }
 
 @override
 String toString() {
-    return 'NotificationModel(id: $id, title: $title, message: $message, isRead: $isRead, createdAt: $createdAt)';
+    return 'NotificationModel(id: $id, trackId: $trackId, trackName: $trackName, albumId: $albumId, albumName: $albumName, artistName: $artistName, content: $content, isRead: $isRead, createdAt: $createdAt)';
 }
 
 
@@ -263,7 +271,7 @@ abstract mixin class _$NotificationModelCopyWith<$Res> implements $NotificationM
   factory _$NotificationModelCopyWith(_NotificationModel value, $Res Function(_NotificationModel) _then) = __$NotificationModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String title, String message, bool isRead, DateTime createdAt
+ int id, int? trackId, String? trackName, int? albumId, String? albumName, String? artistName, String content, bool isRead,@JsonKey(fromJson: parseNotificationDate, toJson: _dateToJson) DateTime createdAt
 });
 
 
@@ -280,11 +288,15 @@ class __$NotificationModelCopyWithImpl<$Res>
 
 /// Create a copy of NotificationModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? title = null,Object? message = null,Object? isRead = null,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? trackId = freezed,Object? trackName = freezed,Object? albumId = freezed,Object? albumName = freezed,Object? artistName = freezed,Object? content = null,Object? isRead = null,Object? createdAt = null,}) {
   return _then(_NotificationModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
-as String,title: null == title ? _self.title : title // ignore: cast_nullable_to_non_nullable
-as String,message: null == message ? _self.message : message // ignore: cast_nullable_to_non_nullable
+as int,trackId: freezed == trackId ? _self.trackId : trackId // ignore: cast_nullable_to_non_nullable
+as int?,trackName: freezed == trackName ? _self.trackName : trackName // ignore: cast_nullable_to_non_nullable
+as String?,albumId: freezed == albumId ? _self.albumId : albumId // ignore: cast_nullable_to_non_nullable
+as int?,albumName: freezed == albumName ? _self.albumName : albumName // ignore: cast_nullable_to_non_nullable
+as String?,artistName: freezed == artistName ? _self.artistName : artistName // ignore: cast_nullable_to_non_nullable
+as String?,content: null == content ? _self.content : content // ignore: cast_nullable_to_non_nullable
 as String,isRead: null == isRead ? _self.isRead : isRead // ignore: cast_nullable_to_non_nullable
 as bool,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,

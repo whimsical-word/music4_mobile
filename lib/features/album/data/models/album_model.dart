@@ -39,11 +39,18 @@ sealed class AlbumModel with _$AlbumModel {
       }
     }
 
+    String resolvedArtistId = '0';
+    if (json['artistId'] != null) {
+      resolvedArtistId = json['artistId'].toString();
+    } else if (json['artist'] is Map && json['artist']['id'] != null) {
+      resolvedArtistId = json['artist']['id'].toString();
+    }
+
     return AlbumModel(
       id: json['id']?.toString() ?? '0',
       title: json['name'] as String? ?? json['title'] as String? ?? 'Album',
       coverUrl: json['img'] as String? ?? json['coverUrl'] as String?,
-      artistId: json['artistId']?.toString() ?? '0',
+      artistId: resolvedArtistId,
       artistName: resolvedArtistName,
       trackCount: (json['trackTotal'] as num?)?.toInt() ??
           (json['trackCount'] as num?)?.toInt() ??

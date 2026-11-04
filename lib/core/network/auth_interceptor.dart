@@ -22,9 +22,13 @@ class AuthInterceptor extends QueuedInterceptor {
     RequestOptions options,
     RequestInterceptorHandler handler,
   ) async {
-    final token = await tokenStorage.getAccessToken();
-    if (token != null && token.isNotEmpty) {
-      options.headers['Authorization'] = 'Bearer $token';
+    final uri = Uri.tryParse(options.path);
+    final isExternal = uri != null && uri.hasScheme && !options.path.startsWith(ApiEndpoints.baseUrl);
+    if (!isExternal) {
+      final token = await tokenStorage.getAccessToken();
+      if (token != null && token.isNotEmpty) {
+        options.headers['Authorization'] = 'Bearer $token';
+      }
     }
     handler.next(options);
   }

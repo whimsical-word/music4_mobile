@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../auth/presentation/notifiers/auth_notifier.dart';
-import '../../auth/presentation/notifiers/auth_state.dart';
+import '../../auth/presentation/state/auth_state.dart';
 import '../data/repositories/favorites_repository.dart';
 import '../domain/models/favorite_track.dart';
 

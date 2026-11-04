@@ -123,9 +123,10 @@ void main() {
       expect(feed.trendingTracks[0].title, 'Trend 7');
       expect(feed.trendingTracks[0].artist, 'Solo');
       expect(feed.trendingTracks[0].artistId, '1');
-      expect(feed.trendingTracks[0].playsCount, '1500');
+      expect(feed.trendingTracks[0].playsCount, '1.5K'); // 1500 -> 1.5K
       expect(feed.trendingTracks[0].duration, '3:05');
       expect(feed.trendingTracks[1].duration, '0:00');
+      expect(feed.trendingTracks[1].playsCount, '0');
       expect(feed.trendingTracks[1].durationSeconds, 0);
     });
 

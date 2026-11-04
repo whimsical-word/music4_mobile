@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/router/route_names.dart';
+import '../../../../core/shared/widgets/change_password_action.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'profile_menu_item.dart';
 import 'section_label.dart';
 
-class SettingsSection extends StatelessWidget {
+class SettingsSection extends ConsumerWidget {
   const SettingsSection({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -21,9 +23,7 @@ class SettingsSection extends StatelessWidget {
           iconColor: AppColors.textSecondary,
           title: 'Đổi mật khẩu',
           subtitle: 'Cập nhật mật khẩu của bạn',
-          onTap: () {
-            // TODO: Navigate to ChangePasswordScreen
-          },
+          onTap: () => handleOpenChangePassword(context, ref),
         ),
         ProfileMenuItem(
           icon: Icons.notifications_outlined,

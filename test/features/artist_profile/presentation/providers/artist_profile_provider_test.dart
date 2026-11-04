@@ -7,7 +7,7 @@ import 'package:music4_mobile/features/artist_profile/data/repositories/artist_p
 import 'package:music4_mobile/features/artist_profile/domain/models/artist_profile_data.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/providers/artist_profile_provider.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/home/data/models/track_detail_model.dart';
 
 import '../../artist_profile_test_helpers.dart';
@@ -252,7 +252,7 @@ void main() {
       );
     });
 
-    test('following updates the state and the follower count', () async {
+    test('following updates the state and the follower count #UC16', () async {
       stubSuccess();
       when(
         () => repository.toggleFollow(userId: 7, artistId: 3),
@@ -268,7 +268,7 @@ void main() {
       expect(data.artist.followersCount, 43);
     });
 
-    test('unfollowing lowers the follower count', () async {
+    test('unfollowing lowers the follower count #UC16', () async {
       stubSuccess();
       when(
         () => repository.isFollowing(userId: 7, artistId: 3),

@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
+import '../../../album/data/models/album_model.dart';
 import '../models/track_detail_model.dart';
 import '../models/track_suggest_model.dart';
 
@@ -68,6 +69,33 @@ class HomeRepository {
       }
 
       return [];
+    } on DioException catch (e) {
+      throw HomeException(_handleError(e));
+    }
+  }
+
+  /// One page of `GET /api/albums/all?page=&size=` (a Spring Data page whose
+  /// `content` items are AlbumDetailResponseDTO: id, name, img, uploadDate,
+  /// trackTotal, a nested `artist` and the album's `tracks`).
+  Future<List<AlbumModel>> getAlbumsPage({int page = 0, int size = 10}) async {
+    try {
+      final response = await _dioClient.dio.get(
+        '${ApiEndpoints.albums}/all',
+        queryParameters: {'page': page, 'size': size},
+      );
+
+      final data = response.data;
+      final content = data is Map<String, dynamic> ? data['content'] : null;
+      if (content is! List) return [];
+
+      return content.whereType<Map<String, dynamic>>().map((json) {
+        final artist = json['artist'];
+        return AlbumModel.fromJson({
+          ...json,
+          if (artist is Map<String, dynamic> && artist['id'] != null)
+            'artistId': artist['id'],
+        });
+      }).toList();
     } on DioException catch (e) {
       throw HomeException(_handleError(e));
     }

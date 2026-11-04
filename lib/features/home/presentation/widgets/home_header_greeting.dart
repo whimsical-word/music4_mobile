@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/theme/app_colors.dart';
+import '../controllers/home_filter.dart';
 
-class HomeHeaderGreeting extends StatelessWidget {
+class HomeHeaderGreeting extends ConsumerWidget {
   const HomeHeaderGreeting({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final textTheme = Theme.of(context).textTheme;
+    final selected = ref.watch(homeFilterProvider);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
@@ -33,11 +36,37 @@ class HomeHeaderGreeting extends StatelessWidget {
             scrollDirection: Axis.horizontal,
             child: Row(
               children: [
-                _buildFilterChip(context, 'Tất cả', isSelected: true),
+                _buildFilterChip(
+                  context,
+                  ref,
+                  'Tất cả',
+                  filter: HomeFilter.all,
+                  selected: selected,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip(context, 'Gợi ý', isSelected: false),
+                _buildFilterChip(
+                  context,
+                  ref,
+                  'Gợi ý',
+                  filter: HomeFilter.recommended,
+                  selected: selected,
+                ),
                 const SizedBox(width: 8),
-                _buildFilterChip(context, 'Thịnh hành', isSelected: false),
+                _buildFilterChip(
+                  context,
+                  ref,
+                  'Thịnh hành',
+                  filter: HomeFilter.trending,
+                  selected: selected,
+                ),
+                const SizedBox(width: 8),
+                _buildFilterChip(
+                  context,
+                  ref,
+                  'Album nổi bật',
+                  filter: HomeFilter.albums,
+                  selected: selected,
+                ),
               ],
             ),
           ),
@@ -48,14 +77,20 @@ class HomeHeaderGreeting extends StatelessWidget {
 
   Widget _buildFilterChip(
     BuildContext context,
+    WidgetRef ref,
     String label, {
-    required bool isSelected,
+    required HomeFilter filter,
+    required HomeFilter selected,
   }) {
     final colorScheme = Theme.of(context).colorScheme;
+    final isSelected = filter == selected;
 
     return InkWell(
       borderRadius: BorderRadius.circular(20),
-      onTap: () => HapticFeedback.lightImpact(),
+      onTap: () {
+        HapticFeedback.lightImpact();
+        ref.read(homeFilterProvider.notifier).state = filter;
+      },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         decoration: BoxDecoration(

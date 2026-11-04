@@ -47,8 +47,14 @@ void main() {
     'state phải chuyển từ AsyncLoading sang AsyncData chứa SearchResponse',
     () async {
       // ARRANGE: Giả lập Repository trả về dữ liệu thành công
-      when(() => mockRepo.search('Sơn Tùng', type: 'all'))
-          .thenAnswer((_) async => fakeResponse);
+      when(
+        () => mockRepo.search(
+          'Sơn Tùng',
+          type: 'all',
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => fakeResponse);
 
       // Lấy SearchNotifier từ container
       final notifier = container.read(searchProvider.notifier);
@@ -71,8 +77,10 @@ void main() {
       expect(data!.tracks!.content.length, equals(1));
       expect(data.tracks!.content.first.name, equals('Chạy Ngay Đi'));
 
-      // Xác nhận Repository được gọi đúng 1 lần
-      verify(() => mockRepo.search('Sơn Tùng', type: 'all')).called(1);
+      // Xác nhận Repository được gọi đúng 1 lần với page=0, size=20
+      verify(
+        () => mockRepo.search('Sơn Tùng', type: 'all', page: 0, size: 20),
+      ).called(1);
     },
   );
 
@@ -84,8 +92,14 @@ void main() {
     'state phải chuyển từ AsyncLoading sang AsyncError',
     () async {
       // ARRANGE: Giả lập Repository ném lỗi
-      when(() => mockRepo.search('xyz', type: 'all'))
-          .thenThrow(Exception('Không có kết nối đến máy chủ backend.'));
+      when(
+        () => mockRepo.search(
+          'xyz',
+          type: 'all',
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenThrow(Exception('Không có kết nối đến máy chủ backend.'));
 
       final notifier = container.read(searchProvider.notifier);
 
@@ -108,12 +122,14 @@ void main() {
         equals('Không có kết nối đến máy chủ backend.'),
       );
 
-      verify(() => mockRepo.search('xyz', type: 'all')).called(1);
+      verify(
+        () => mockRepo.search('xyz', type: 'all', page: 0, size: 20),
+      ).called(1);
     },
   );
 
   // ============================================================
-  // TEST CASE 3 (Bonus): Query rỗng → State trả về null (không gọi API)
+  // TEST CASE 3: Query rỗng → State trả về null (không gọi API)
   // ============================================================
   test(
     'onSearchChanged() — khi query rỗng, '
@@ -133,7 +149,55 @@ void main() {
       expect(state.value, isNull);
 
       // Repository KHÔNG ĐƯỢC gọi
-      verifyNever(() => mockRepo.search(any(), type: any(named: 'type')));
+      verifyNever(
+        () => mockRepo.search(
+          any(),
+          type: any(named: 'type'),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      );
+    },
+  );
+
+  // ============================================================
+  // TEST CASE 4: Đổi FilterChip (searchTypeProvider) + refreshSearch()
+  // ============================================================
+  test(
+    'refreshSearch() — khi người dùng chọn FilterChip (ví dụ: track), '
+    'phải gọi lại API với type mới tương ứng',
+    () async {
+      when(
+        () => mockRepo.search(
+          'chayj ngay di',
+          type: any(named: 'type'),
+          page: any(named: 'page'),
+          size: any(named: 'size'),
+        ),
+      ).thenAnswer((_) async => fakeResponse);
+
+      final notifier = container.read(searchProvider.notifier);
+
+      // Bước 1: Tìm với type mặc định 'all'
+      notifier.onSearchChanged('chayj ngay di');
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Bước 2: Người dùng bấm chọn FilterChip 'track'
+      container.read(searchTypeProvider.notifier).state = 'track';
+      notifier.refreshSearch();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      verify(
+        () => mockRepo.search('chayj ngay di', type: 'all', page: 0, size: 20),
+      ).called(1);
+      verify(
+        () => mockRepo.search(
+          'chayj ngay di',
+          type: 'track',
+          page: 0,
+          size: 20,
+        ),
+      ).called(1);
     },
   );
 }

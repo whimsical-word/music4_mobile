@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/router/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../notifiers/auth_notifier.dart';
-import '../notifiers/auth_state.dart';
+import '../state/auth_state.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   const LoginScreen({super.key});
@@ -35,12 +35,31 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         .login(_usernameController.text.trim(), _passwordController.text);
   }
 
+  Future<void> _onGoogleLogin() async {
+    await ref.read(authNotifierProvider.notifier).loginWithGoogle();
+  }
+
   @override
   Widget build(BuildContext context) {
     ref.listen<AuthState>(authNotifierProvider, (previous, next) {
       switch (next) {
-        case AuthAuthenticated():
-          context.go(RouteNames.home);
+        case AuthAuthenticated(:final user):
+          if (user.isAdmin) {
+            context.go(RouteNames.admin);
+          } else {
+            context.go(RouteNames.home);
+          }
+        case AuthRequiresVerification(:final email, :final role, :final message):
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(message),
+              backgroundColor: Colors.amber.shade800,
+            ),
+          );
+          context.push(
+            RouteNames.verifyEmail,
+            extra: {'email': email, 'role': role},
+          );
         case AuthError(:final message):
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -62,7 +81,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
           tooltip: 'Quay lại Trang chủ',
-          onPressed: () => context.go(RouteNames.home),
+          onPressed: () async {
+            await ref.read(authNotifierProvider.notifier).continueAsGuest();
+            if (context.mounted) {
+              context.go(RouteNames.home);
+            }
+          },
         ),
       ),
       body: SafeArea(
@@ -176,7 +200,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        context.push(RouteNames.forgotPassword);
+                      },
                       style: TextButton.styleFrom(
                         padding: EdgeInsets.zero,
                         minimumSize: Size.zero,
@@ -237,7 +263,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   const SizedBox(height: 32),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
-                    children: [_buildSocialButton('G', null, () {})],
+                    children: [_buildSocialButton('G', null, isLoading ?  () {} : _onGoogleLogin)],
                   ),
                   const SizedBox(height: 48),
                   Row(

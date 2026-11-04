@@ -43,7 +43,10 @@ final homeAlbumListProvider = FutureProvider.autoDispose<List<AlbumModel>>((ref)
 });
 
 class HomeAlbumSection extends ConsumerWidget {
-  const HomeAlbumSection({super.key});
+  /// Tapping the header opens the "Album nổi bật" tab. Null hides the ">".
+  final VoidCallback? onSeeAll;
+
+  const HomeAlbumSection({super.key, this.onSeeAll});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -59,23 +62,33 @@ class HomeAlbumSection extends ConsumerWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Album nổi bật',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+            InkWell(
+              onTap: onSeeAll,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'Album nổi bật',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
-                  ),
-                  const Icon(Icons.album_outlined, color: AppColors.primary, size: 20),
-                ],
+                    if (onSeeAll != null)
+                      const Icon(
+                        Icons.chevron_right,
+                        color: AppColors.textSecondary,
+                        size: 20,
+                      )
+                    else
+                      const Icon(Icons.album_outlined, color: AppColors.primary, size: 20),
+                  ],
+                ),
               ),
             ),
             SizedBox(

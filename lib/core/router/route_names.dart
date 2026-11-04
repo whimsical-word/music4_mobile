@@ -4,6 +4,7 @@ class RouteNames {
   static const String home = '/';
   static const String login = '/login';
   static const String register = '/register';
+  static const String verifyEmail = '/verify-email';
 
   static const String search = '/search';
   static const String playlist = '/playlist';
@@ -14,10 +15,13 @@ class RouteNames {
   static const String albumDetail = '/album/:id';
   static const String upload = '/upload';
   static const String albumManagement = '/album-management';
+  static const String trackManagement = '/track-management';
   static const String history = '/history';
   static const String artistProfile = '/artist/:id';
   static const String notifications = '/notifications';
   static const String categoryDetail = '/category/:id';
   static const String admin = '/admin';
   static const String userProfile = '/users/:id';
+  static const String forgotPassword = '/forgot-password';
+  static const String changePassword = '/change-password';
 }

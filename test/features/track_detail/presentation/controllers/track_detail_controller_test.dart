@@ -16,6 +16,10 @@ void main() {
     mockRepository = MockTrackDetailRepository();
     when(() => mockRepository.getComments(any()))
         .thenAnswer((_) async => <TrackCommentModel>[]);
+    when(() => mockRepository.getUserRating(any()))
+        .thenAnswer((_) async => null);
+    when(() => mockRepository.getPlaylistTrackIds(any()))
+        .thenAnswer((_) async => <int>[]);
   });
 
   ProviderContainer makeProviderContainer(MockTrackDetailRepository repo) {
@@ -60,7 +64,9 @@ void main() {
       expect(state, isA<AsyncData<TrackDetailState>>());
       expect(state.value?.track.name, 'Bài hát Test');
       expect(state.value?.isLiked, true);
+      expect(state.value?.userRating, 0);
       expect(state.value?.userPlaylists.length, 1);
+      expect(state.value?.playlistsContainingTrack, isEmpty);
     });
 
     test('Tải thông tin thất bại -> State chuyển thành AsyncError', () async {
@@ -82,7 +88,7 @@ void main() {
       expect(state.hasError, true);
     });
 
-    test('toggleFavorite cập nhật isLiked thành công', () async {
+    test('toggleFavorite cập nhật isLiked thành công #UC44', () async {
       when(() => mockRepository.getTrackDetail(trackId))
           .thenAnswer((_) async => mockTrack);
       when(() => mockRepository.checkIsFavorite(trackId))
@@ -104,7 +110,7 @@ void main() {
       verify(() => mockRepository.toggleFavorite(trackId)).called(1);
     });
 
-    test('toggleFavorite gặp lỗi -> Hoàn tác lại isLiked ban đầu (Rollback)', () async {
+    test('toggleFavorite gặp lỗi -> Hoàn tác lại isLiked ban đầu (Rollback) #UC44', () async {
       when(() => mockRepository.getTrackDetail(trackId))
           .thenAnswer((_) async => mockTrack);
       when(() => mockRepository.checkIsFavorite(trackId))
@@ -129,23 +135,35 @@ void main() {
       expect(state.value?.isLiked, false);
     });
 
-    test('setRating cập nhật userRating trong state', () async {
+    test('setRating cập nhật userRating trong state và gọi submitRating #UC45', () async {
       when(() => mockRepository.getTrackDetail(trackId))
           .thenAnswer((_) async => mockTrack);
       when(() => mockRepository.checkIsFavorite(trackId))
           .thenAnswer((_) async => false);
       when(() => mockRepository.getUserPlaylists())
           .thenAnswer((_) async => mockPlaylists);
+      when(
+        () => mockRepository.submitRating(
+          trackId: trackId,
+          ratingValue: 4,
+        ),
+      ).thenAnswer((_) async {});
 
       final container = makeProviderContainer(mockRepository);
       final controller =
           container.read(trackDetailControllerProvider(trackId).notifier);
 
       await controller.loadTrackDetail();
-      controller.setRating(4);
+      await controller.setRating(4);
 
       final state = container.read(trackDetailControllerProvider(trackId));
       expect(state.value?.userRating, 4);
+      verify(
+        () => mockRepository.submitRating(
+          trackId: trackId,
+          ratingValue: 4,
+        ),
+      ).called(1);
     });
 
     test('addTrackToPlaylist gọi đúng repository', () async {
@@ -166,6 +184,7 @@ void main() {
       await controller.addTrackToPlaylist(10);
 
       verify(() => mockRepository.addTrackToPlaylist(10, trackId)).called(1);
+      expect(controller.state.value?.playlistsContainingTrack.contains(10), true);
     });
 
     test('addComment gọi repository và cập nhật danh sách comments trong state', () async {

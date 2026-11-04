@@ -1,3 +1,5 @@
+import 'package:music4_mobile/features/user_profile/domain/models/user_profile_stats.dart';
+
 class UserProfile {
   final String id;
   final String displayName;
@@ -5,9 +7,7 @@ class UserProfile {
   final String avatarUrl;
   final String bio;
   final bool? gender;
-  final int followingCount;
-  final int playlistCount;
-  final int likedTracksCount;
+  final UserProfileStats stats;
 
   const UserProfile({
     required this.id,
@@ -16,9 +16,7 @@ class UserProfile {
     required this.avatarUrl,
     required this.bio,
     this.gender,
-    required this.followingCount,
-    required this.playlistCount,
-    required this.likedTracksCount,
+    required this.stats,
   });
 
   factory UserProfile.fromJson(Map<String, dynamic> json) {
@@ -29,9 +27,31 @@ class UserProfile {
       avatarUrl: json['avatarUrl'] as String? ?? '',
       bio: json['bio'] as String? ?? '',
       gender: json['gender'] as bool?,
-      followingCount: json['followingCount'] as int? ?? 0,
-      playlistCount: json['playlistCount'] as int? ?? 0,
-      likedTracksCount: json['likedTracksCount'] as int? ?? 0,
+      stats: UserProfileStats(
+        followingCount: json['followingCount'] as int? ?? 0,
+        playlistCount: json['playlistCount'] as int? ?? 0,
+        likedTracksCount: json['likedTracksCount'] as int? ?? 0,
+      ),
+    );
+  }
+
+  UserProfile copyWith({
+    String? id,
+    String? displayName,
+    String? email,
+    String? avatarUrl,
+    String? bio,
+    bool? gender,
+    UserProfileStats? stats,
+  }) {
+    return UserProfile(
+      id: id ?? this.id,
+      displayName: displayName ?? this.displayName,
+      email: email ?? this.email,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
+      bio: bio ?? this.bio,
+      gender: gender ?? this.gender,
+      stats: stats ?? this.stats,
     );
   }
 }

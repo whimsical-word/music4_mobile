@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import '../../domain/models/player_state_data.dart';
 import 'player_controls_widget.dart';
 import 'progress_bar_widget.dart';
@@ -49,6 +49,7 @@ class MusicPlayerBody extends StatelessWidget {
             title: state.title,
             artist: state.artist,
             isLiked: state.isLiked,
+            isOfflineCached: state.isOfflineCached,
             onFavoriteTap: onFavoriteTap,
           ),
           ProgressBarWidget(

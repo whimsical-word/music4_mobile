@@ -4,7 +4,7 @@ import 'package:music4_mobile/features/auth/domain/entities/register_request.dar
 import 'package:music4_mobile/features/auth/domain/entities/user_entity.dart';
 import 'package:music4_mobile/features/auth/domain/usecases/register_use_case.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/register_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/register_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/register_state.dart';
 
 class MockRegisterUseCase extends Mock implements RegisterUseCase {}
 

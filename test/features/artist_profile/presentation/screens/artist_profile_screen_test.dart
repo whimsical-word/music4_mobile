@@ -18,7 +18,7 @@ import 'package:music4_mobile/features/artist_profile/presentation/widgets/artis
 import 'package:music4_mobile/features/artist_profile/presentation/widgets/artist_profile_shimmer.dart';
 import 'package:music4_mobile/features/artist_profile/presentation/widgets/track_list_item.dart';
 import 'package:music4_mobile/features/auth/presentation/notifiers/auth_notifier.dart';
-import 'package:music4_mobile/features/auth/presentation/notifiers/auth_state.dart';
+import 'package:music4_mobile/features/auth/presentation/state/auth_state.dart';
 import 'package:music4_mobile/features/home/data/models/track_detail_model.dart';
 import 'package:music4_mobile/features/player/data/services/app_audio_handler.dart';
 import 'package:music4_mobile/features/player/domain/models/player_state_data.dart';
@@ -542,7 +542,7 @@ void main() {
       );
     });
 
-    testWidgets('12. A signed-in user can follow and the button updates', (tester) async {
+    testWidgets('12. A signed-in user can follow and the button updates #UC16', (tester) async {
       useTallView(tester);
       stubSuccess();
       when(
@@ -559,6 +559,7 @@ void main() {
 
       expect(find.text('Đang theo dõi'), findsOneWidget);
       expect(find.text('43 Người theo dõi'), findsOneWidget);
+      expect(find.text('Đã theo dõi Ngọt'), findsOneWidget);
       verify(() => repository.toggleFollow(userId: 7, artistId: 3)).called(1);
     });
   });
