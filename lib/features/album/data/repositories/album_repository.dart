@@ -1,7 +1,10 @@
 import 'package:dio/dio.dart';
+
 import '../../../../core/constants/api_endpoints.dart';
 import '../../../../core/network/dio_client.dart';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../models/album_detail_model.dart';
 import '../models/album_model.dart';
 
@@ -27,8 +30,12 @@ class AlbumRepository {
         final artistsResponse = await _dio.get('${ApiEndpoints.artists}/all');
         if (artistsResponse.data is List) {
           for (final a in artistsResponse.data as List) {
-            if (a is Map<String, dynamic> && a['id'] != null && a['name'] != null) {
-              final id = a['id'] is int ? a['id'] as int : int.tryParse(a['id'].toString());
+            if (a is Map<String, dynamic> &&
+                a['id'] != null &&
+                a['name'] != null) {
+              final id = a['id'] is int
+                  ? a['id'] as int
+                  : int.tryParse(a['id'].toString());
               if (id != null) {
                 artistNamesMap[id] = a['name'].toString();
               }
@@ -53,16 +60,80 @@ class AlbumRepository {
     }
   }
 
-  /// UC4: Lấy danh sách Album của một ca sĩ cụ thể
-  Future<List<AlbumModel>> getAlbumsByArtist(int artistId, {String? artistName}) async {
+  /// UC2: Tạo Album mới kèm ảnh bìa đã upload qua S3
+  Future<AlbumModel> createAlbum({
+    required String title,
+    required int artistId,
+    String? coverFilePath,
+    String? artistName,
+  }) async {
     try {
-      final response = await _dio.get('${ApiEndpoints.albums}/artist/$artistId');
+      String? coverImageKey;
+      if (coverFilePath != null && coverFilePath.isNotEmpty) {
+        final fileName = coverFilePath.split(RegExp(r'[/\\]')).last;
+        final uploadFormData = FormData.fromMap({
+          'file': await MultipartFile.fromFile(
+            coverFilePath,
+            filename: fileName,
+          ),
+        });
+        final uploadRes = await _dio.post(
+          ApiEndpoints.uploadTemp,
+          data: uploadFormData,
+          queryParameters: {'type': 'images'},
+        );
+        if (uploadRes.data is Map && uploadRes.data['s3Key'] != null) {
+          coverImageKey = uploadRes.data['s3Key'].toString();
+        }
+      }
+
+      final Map<String, dynamic> formMap = {
+        'albumTitle': title,
+        'artistId': artistId,
+      };
+      if (coverImageKey != null && coverImageKey.isNotEmpty) {
+        formMap['coverImageKey'] = coverImageKey;
+      }
+
+      final response = await _dio.post(
+        ApiEndpoints.albums,
+        data: FormData.fromMap(formMap),
+      );
+
+      if (response.data is Map<String, dynamic>) {
+        return AlbumModel.fromJson(
+          response.data as Map<String, dynamic>,
+          artistNameOverride: artistName,
+        );
+      }
+      throw Exception('Dữ liệu trả về từ máy chủ không hợp lệ.');
+    } on DioException catch (e) {
+      _handleError(e);
+      rethrow;
+    } catch (e) {
+      if (e is Exception) rethrow;
+      throw Exception('Không thể tạo Album: $e');
+    }
+  }
+
+  /// UC4: Lấy danh sách Album của một ca sĩ cụ thể
+  Future<List<AlbumModel>> getAlbumsByArtist(
+    int artistId, {
+    String? artistName,
+  }) async {
+    try {
+      final response = await _dio.get(
+        '${ApiEndpoints.albums}/artist/$artistId',
+      );
       final List data = response.data is List ? response.data as List : [];
       return data.map((json) {
         if (json is Map<String, dynamic>) {
           return AlbumModel.fromJson(json, artistNameOverride: artistName);
         }
-        return AlbumModel.fromJson(json as Map<String, dynamic>, artistNameOverride: artistName);
+        return AlbumModel.fromJson(
+          json as Map<String, dynamic>,
+          artistNameOverride: artistName,
+        );
       }).toList();
     } on DioException catch (e) {
       _handleError(e);
@@ -76,8 +147,9 @@ class AlbumRepository {
       // 1. Lấy danh sách bài hát trong Album từ GET /api/tracks/album/{albumId}
       List<AlbumTrackModel> tracks = [];
       try {
-        final tracksResponse =
-            await _dio.get('${ApiEndpoints.trackDetail}/album/$albumId');
+        final tracksResponse = await _dio.get(
+          '${ApiEndpoints.trackDetail}/album/$albumId',
+        );
         if (tracksResponse.data is List) {
           tracks = (tracksResponse.data as List)
               .whereType<Map<String, dynamic>>()
@@ -150,10 +222,7 @@ class AlbumRepository {
           }
         }
 
-        final model = AlbumDetailModel.fromJson(
-          albumJson,
-          tracks: tracks,
-        );
+        final model = AlbumDetailModel.fromJson(albumJson, tracks: tracks);
 
         if (resolvedArtistName != null && resolvedArtistName.isNotEmpty) {
           return model.copyWith(artistName: resolvedArtistName);
@@ -184,59 +253,6 @@ class AlbumRepository {
     }
   }
 
-  /// UC2: Tạo Album mới kèm ảnh bìa đã upload qua S3
-  Future<AlbumModel> createAlbum({
-    required String title,
-    required int artistId,
-    String? coverFilePath,
-    String? artistName,
-  }) async {
-    try {
-      String? coverImageKey;
-      if (coverFilePath != null && coverFilePath.isNotEmpty) {
-        final fileName = coverFilePath.split(RegExp(r'[/\\]')).last;
-        final uploadFormData = FormData.fromMap({
-          'file': await MultipartFile.fromFile(coverFilePath, filename: fileName),
-        });
-        final uploadRes = await _dio.post(
-          ApiEndpoints.uploadTemp,
-          data: uploadFormData,
-          queryParameters: {'type': 'images'},
-        );
-        if (uploadRes.data is Map && uploadRes.data['s3Key'] != null) {
-          coverImageKey = uploadRes.data['s3Key'].toString();
-        }
-      }
-
-      final Map<String, dynamic> formMap = {
-        'albumTitle': title,
-        'artistId': artistId,
-      };
-      if (coverImageKey != null && coverImageKey.isNotEmpty) {
-        formMap['coverImageKey'] = coverImageKey;
-      }
-
-      final response = await _dio.post(
-        ApiEndpoints.albums,
-        data: FormData.fromMap(formMap),
-      );
-
-      if (response.data is Map<String, dynamic>) {
-        return AlbumModel.fromJson(
-          response.data as Map<String, dynamic>,
-          artistNameOverride: artistName,
-        );
-      }
-      throw Exception('Dữ liệu trả về từ máy chủ không hợp lệ.');
-    } on DioException catch (e) {
-      _handleError(e);
-      rethrow;
-    } catch (e) {
-      if (e is Exception) rethrow;
-      throw Exception('Không thể tạo Album: $e');
-    }
-  }
-
   Future<void> deleteAlbum(String albumId) async {
     try {
       await _dio.delete('${ApiEndpoints.albums}/$albumId');
@@ -249,7 +265,9 @@ class AlbumRepository {
   /// Lấy toàn bộ danh sách bài hát của một nghệ sĩ
   Future<List<Map<String, dynamic>>> getArtistTracks(int artistId) async {
     try {
-      final response = await _dio.get('${ApiEndpoints.trackDetail}/artist/$artistId');
+      final response = await _dio.get(
+        '${ApiEndpoints.trackDetail}/artist/$artistId',
+      );
       if (response.data is List) {
         return List<Map<String, dynamic>>.from(response.data);
       }
@@ -261,11 +279,12 @@ class AlbumRepository {
   }
 
   /// Gán một bài hát có sẵn vào Album
-  Future<void> assignTrackToAlbum({required int trackId, required int albumId}) async {
+  Future<void> assignTrackToAlbum({
+    required int trackId,
+    required int albumId,
+  }) async {
     try {
-      final formData = FormData.fromMap({
-        'albumId': albumId,
-      });
+      final formData = FormData.fromMap({'albumId': albumId});
       await _dio.post(
         '${ApiEndpoints.trackDetail}/update/$trackId',
         data: formData,
@@ -279,9 +298,7 @@ class AlbumRepository {
   /// Gỡ bài hát ra khỏi Album (chuyển thành bài Single độc lập)
   Future<void> removeTrackFromAlbum({required int trackId}) async {
     try {
-      final formData = FormData.fromMap({
-        'albumId': -1,
-      });
+      final formData = FormData.fromMap({'albumId': -1});
       await _dio.post(
         '${ApiEndpoints.trackDetail}/update/$trackId',
         data: formData,

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+
 import '../../data/models/album_detail_model.dart';
 import '../../data/repositories/album_repository.dart';
 
@@ -6,15 +7,9 @@ class AlbumDetailState {
   final AlbumDetailModel album;
   final bool isFavorite;
 
-  const AlbumDetailState({
-    required this.album,
-    this.isFavorite = false,
-  });
+  const AlbumDetailState({required this.album, this.isFavorite = false});
 
-  AlbumDetailState copyWith({
-    AlbumDetailModel? album,
-    bool? isFavorite,
-  }) {
+  AlbumDetailState copyWith({AlbumDetailModel? album, bool? isFavorite}) {
     return AlbumDetailState(
       album: album ?? this.album,
       isFavorite: isFavorite ?? this.isFavorite,
@@ -37,8 +32,16 @@ class AlbumDetailController
   final int albumId;
 
   AlbumDetailController(this._repository, this.albumId)
-      : super(const AsyncValue.loading()) {
+    : super(const AsyncValue.loading()) {
     loadAlbumDetail();
+  }
+
+  void toggleFavorite() {
+    state.whenData((currentState) {
+      state = AsyncValue.data(
+        currentState.copyWith(isFavorite: !currentState.isFavorite),
+      );
+    });
   }
 
   Future<void> loadAlbumDetail() async {
@@ -51,13 +54,5 @@ class AlbumDetailController
     } catch (e, st) {
       state = AsyncValue.error(e, st);
     }
-  }
-
-  void toggleFavorite() {
-    state.whenData((currentState) {
-      state = AsyncValue.data(
-        currentState.copyWith(isFavorite: !currentState.isFavorite),
-      );
-    });
   }
 }
