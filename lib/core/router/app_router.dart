@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:music4_mobile/features/auth/presentation/screens/change_password_screen.dart';
+import 'package:music4_mobile/features/auth/presentation/screens/forgot_password_email_page.dart';
+
+import '../../features/user_profile/presentation/screens/user_profile_screen.dart';
+
 import 'route_names.dart';
 
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/register_screen.dart';
-import '../../features/auth/presentation/screens/user_profile_screen.dart';
+import '../../features/auth/presentation/screens/verify_email_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/history/presentation/screens/history_screen.dart';
 import '../../features/artist_profile/presentation/screens/artist_profile_screen.dart';
 import '../../features/player/presentation/screens/music_player_screen.dart';
 import '../../features/upload/presentation/screens/upload_track_screen.dart';
+import '../../features/album/presentation/screens/album_management_screen.dart';
+import '../../features/track_management/presentation/screens/artist_track_management_screen.dart';
 import '../../features/playlist/presentation/screens/playlist_screen.dart';
 import '../../features/playlist/presentation/screens/playlist_detail_screen.dart';
 import '../../features/favorites/presentation/screens/favorites_screen.dart';
@@ -22,9 +29,17 @@ import '../../features/admin/presentation/screens/admin_dashboard_screen.dart';
 
 final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
 
+final RouteObserver<ModalRoute<dynamic>> appRouteObserver =
+    RouteObserver<ModalRoute<dynamic>>();
+
+/// Dùng để hiện SnackBar/banner toàn cục (VD: thông báo real-time qua SSE).
+final GlobalKey<ScaffoldMessengerState> rootScaffoldMessengerKey =
+    GlobalKey<ScaffoldMessengerState>();
+
 final GoRouter appRouter = GoRouter(
   navigatorKey: rootNavigatorKey,
-  initialLocation: RouteNames.home,
+  observers: [appRouteObserver],
+  initialLocation: RouteNames.login,
   routes: [
     // ─── T3: Discovery & AI (CE190284 - Nguyễn Hữu Tài) ────────────────
     GoRoute(
@@ -61,21 +76,73 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => const RegisterScreen(),
     ),
     GoRoute(
-      path: RouteNames.profile,
-      name: 'profile',
+      path: RouteNames.verifyEmail,
+      name: 'verifyEmail',
+      builder: (context, state) {
+        final extra = state.extra as Map<String, dynamic>?;
+        final email = extra?['email'] as String? ?? '';
+        final role = extra?['role'] as String?;
+        return VerifyEmailScreen(email: email, role: role);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.userProfile,
+      name: 'user-profile',
       builder: (context, state) => const UserProfileScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.forgotPassword,
+      name: 'forgot-password',
+      builder: (context, state) => const ForgotPasswordEmailPage(),
+    ),
+    GoRoute(
+      path: RouteNames.changePassword,
+      name: 'change-password',
+      builder: (context, state) => const ChangePasswordScreen(),
     ),
 
     // ─── T1: Media & Streaming (CE190036 - Nguyễn Trung Kiên) ─────────
     GoRoute(
       path: RouteNames.player,
       name: 'player',
-      builder: (context, state) => const MusicPlayerScreen(),
+      pageBuilder: (context, state) {
+        return CustomTransitionPage(
+          key: state.pageKey,
+          child: const MusicPlayerScreen(),
+          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+            const begin = Offset(0.0, 1.0);
+            const end = Offset.zero;
+            const curve = Curves.easeInOutCubic;
+            var tween = Tween(
+              begin: begin,
+              end: end,
+            ).chain(CurveTween(curve: curve));
+            return SlideTransition(
+              position: animation.drive(tween),
+              child: child,
+            );
+          },
+        );
+      },
     ),
     GoRoute(
       path: RouteNames.upload,
       name: 'upload',
-      builder: (context, state) => const UploadTrackScreen(),
+      builder: (context, state) {
+        final albumId =
+            state.uri.queryParameters['albumId'] ?? (state.extra as String?);
+        return UploadTrackScreen(initialAlbumId: albumId);
+      },
+    ),
+    GoRoute(
+      path: RouteNames.albumManagement,
+      name: 'albumManagement',
+      builder: (context, state) => const AlbumManagementScreen(),
+    ),
+    GoRoute(
+      path: RouteNames.trackManagement,
+      name: 'trackManagement',
+      builder: (context, state) => const ArtistTrackManagementScreen(),
     ),
 
     // ─── T4: Content & Engagement (CE191634 - Nguyễn Việt Đan Quỳnh) ───
@@ -118,7 +185,7 @@ final GoRouter appRouter = GoRouter(
       path: RouteNames.categoryDetail,
       name: 'categoryDetail',
       builder: (context, state) =>
-          CategoryDetailScreen(categoryId: state.pathParameters['id']),
+          CategoryDetailScreen(categoryId: state.pathParameters['id'] ?? '1'),
     ),
     GoRoute(
       path: RouteNames.admin,

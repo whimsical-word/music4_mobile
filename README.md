@@ -1,10 +1,9 @@
 # 🎵 Music4 Mobile — PRM393 (Music Streaming Application)
 
 > **Môn học**: PRM393 — Mobile Programming / Mobile Application Development (Flutter)  
-> **Học viện**: Đại học FPT (FPT University)  
+> **Trường Đại học**: Đại học FPT (FPT University)  
 > **Kiến trúc ứng dụng**: Lean Architecture (Feature-First) + Riverpod 2.6 + GoRouter 14 + Dio 5  
-> **Hạ tầng Backend**: Spring Boot 3.5 Microservices + Microsoft SQL Server + AWS S3 + FastAPI (SBERT Vector AI)  
-> **Quy chuẩn đồ án**: Đạt chuẩn đặc tả kỹ thuật PRM393 Final Project Specification (Thang điểm 10.0 + 0.5 Bonus)  
+> **Hạ tầng Backend**: Spring Boot 3.5 N-Layer Architecture + Microsoft SQL Server + AWS S3 + FastAPI (SBERT Vector AI)  
 
 ---
 
@@ -40,17 +39,18 @@
 
 | TV | MSSV | Họ và tên | Domain chính | Màn hình sở hữu (Vertical Slice) | Tính năng Nâng cao (Bonus +0.5đ) |
 |---|---|---|---|---|---|
-| **T1** | `CE190036` | **Nguyễn Trung Kiên** | Media & Streaming Core | `MusicPlayerScreen`, `UploadTrackScreen` | **Offline-first Audio**: Cache nhạc mp3 an toàn với `LockCachingAudioSource` (`just_audio`) hỗ trợ byte-range streaming |
+| **T1** | `CE190036` | **Nguyễn Trung Kiên** | Media & Streaming Core | `MusicPlayerScreen`, `UploadTrackScreen`, `AlbumManagementScreen` *(Artist Studio CRUD)* | **Offline-first Audio**: Cache nhạc mp3 an toàn với `LockCachingAudioSource` (`just_audio`) hỗ trợ byte-range streaming |
 | **T2** | `CE190737` | **Lê Minh Nhựt** | Auth & User Security | `LoginScreen`, `RegisterScreen`, `UserProfileScreen` | **Device / Deep Link**: Xử lý Google OAuth2 Redirect Callback qua `app_links` |
 | **T3** | `CE190284` | **Nguyễn Hữu Tài** | Discovery & AI Analytics | `HomeScreen`, `HistoryScreen`, `ArtistProfileScreen`, `FavoritesScreen` | **Real-time Data**: Tự động reload feed gợi ý AI tức thì sau khi nghe xong bài hát |
-| **T4** | `CE191634` | **Nguyễn Việt Đan Quỳnh** | Content & Playlist Engagement | `AlbumDetailScreen`, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Device Share**: Tạo link share bài hát chia sẻ trực tiếp qua Zalo/Facebook/SMS (`share_plus`) |
-| **T5 (Lead)** | `CE190614` | **Nguyễn Tấn Quốc** | Core, Search & Admin | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **CI/CD Pipeline**: GitHub Actions auto-test PR vào `develop` và auto-build APK khi merge `main` |
+| **T4** | `CE191634` | **Nguyễn Việt Đan Quỳnh** | Content & Playlist Engagement | `AlbumDetailScreen` *(Listener view)*, `TrackDetailScreen`, `PlaylistScreen`, `PlaylistDetailScreen` | **Device Share**: Tạo link share bài hát chia sẻ trực tiếp qua Zalo/Facebook/SMS (`share_plus`) |
+| **T5 (Lead)** | `CE190614` | **Nguyễn Tấn Quốc** | Core, Search & Admin | `SearchScreen`, `NotificationScreen`, `CategoryDetailScreen`, `AdminDashboardScreen`, App Core | **Voice Search**: Tích hợp Microphone phần cứng, xử lý cấp quyền runtime `RECORD_AUDIO`, package `speech_to_text` (vi_VN) → trigger Elasticsearch |
 
 ### 🗺️ Sơ đồ phân vùng kiến trúc theo Domain
 ```
 T1 — Media Core (S3 & Streaming)
  └── MusicPlayerScreen (just_audio + audio_service)
  └── UploadTrackScreen (Multipart S3 upload & Progress)
+ └── AlbumManagementScreen (Artist Studio CRUD: Tạo/sửa album, gán track)
 
 T2 — Auth & Security (JWT + Spring Security)
  └── LoginScreen (Form validation + Google OAuth2)
@@ -64,13 +64,13 @@ T3 — AI & Analytics (Recommendation + History + Favorites)
  └── FavoritesScreen (Bộ sưu tập bài hát đã thích)
 
 T4 — Content Manager & Playlist Engagement
- └── AlbumDetailScreen (Chi tiết album & tracks)
+ └── AlbumDetailScreen (Chi tiết album dành cho Listener)
  └── TrackDetailScreen (Like, Add to playlist, Comments, Rating)
  └── PlaylistScreen (Quản lý và tạo mới Playlist)
  └── PlaylistDetailScreen (CRUD bài hát trong playlist)
 
 T5 — Search, Admin & Core Infrastructure (Leader)
- └── SearchScreen (Debounce 300ms, bộ lọc All/Track/Artist/Album)
+ └── SearchScreen (Elasticsearch + Voice Search speech_to_text)
  └── NotificationScreen (SSE real-time stream notification)
  └── CategoryDetailScreen (Khám phá bài hát theo thể loại)
  └── AdminDashboardScreen (Thống kê số liệu & quản trị tài khoản)
@@ -108,7 +108,7 @@ T5 — Search, Admin & Core Infrastructure (Leader)
 Dự án Mobile Client kết nối trực tiếp với hệ sinh thái Backend hoàn chỉnh đã được cấu hình sẵn:
 
 ### 4.1 Nguồn mã nguồn Backend
-- **Repository Backend**: [https://github.com/whimsical-word/music4_microservice.git](https://github.com/whimsical-word/music4_microservice.git)
+- **Repository Backend**: [https://github.com/whimsical-word/Music4-Backend.git](https://github.com/whimsical-word/Music4-Backend.git)
 - **Repository AI Service**: [https://github.com/whimsical-word/Music4-AI.git](https://github.com/whimsical-word/Music4-AI.git)
 
 ### 4.2 Thiết lập Cơ sở dữ liệu & Chạy Dịch vụ
@@ -196,31 +196,13 @@ flutter analyze
 
 ## 🔐 7. DANH SÁCH TÀI KHOẢN THỬ NGHIỆM (DEMO ACCOUNTS & SEED DATA)
 
-Hội đồng chấm thi và Giảng viên có thể sử dụng các tài khoản mẫu sau để kiểm thử toàn diện các luồng phân quyền (Role-based access):
-
-| Vai trò (Role) | Tên đăng nhập / Email | Mật khẩu (Password) | Quyền hạn & Mục đích kiểm thử |
-|---|---|---|---|
-| **Người nghe (Listener)** | `listener@music4.com` | `Password@123` | Nghe nhạc full stream, thả tim, tạo playlist, nhận gợi ý AI |
-| **Nghệ sĩ (Artist)** | `artist@music4.com` | `Password@123` | Upload nhạc S3, tạo Album, xem biểu đồ Artist Dashboard |
-| **Quản trị viên (Admin)** | `admin@music4.com` | `Password@123` | Quản lý người dùng, duyệt danh mục, khóa/mở khóa tài khoản |
-| **Khách vãng lai (Guest)** | *(Không cần đăng nhập)* | *(None)* | Bấm trực tiếp nút "Khám phá" để nghe thử preview 30s |
-
-> *[Ghi chú dành cho nhóm: Dữ liệu tài khoản trên đã được nạp sẵn qua file seed `DemoDB.sql`. Nếu có cập nhật tài khoản mới trong quá trình làm, hãy cập nhật bảng này ở Tuần 2/Tuần 3]*
+> [TODO: Team sẽ cập nhật nội dung phần này sau vào các tuần cuối.]
 
 ---
 
 ## ⚠️ 8. CÁC HẠN CHẾ ĐÃ BIẾT & HƯỚNG PHÁT TRIỂN (KNOWN LIMITATIONS — C9 & C10)
 
-> Trình bày trung thực các giới hạn kỹ thuật để thể hiện tính khách quan và tư duy phản biện của kỹ sư phần mềm trước Hội đồng bảo vệ:
-
-1. **Thanh toán dịch vụ (Payment Gateway)**:
-   - *Hiện trạng*: Tính năng nâng cấp gói tài khoản VIP đang sử dụng dữ liệu giả lập (mock confirmation), chưa kết nối trực tiếp cổng thanh toán tiền thật (như VNPAY hay MoMo) do giới hạn về giấy phép kinh doanh của đồ án sinh viên.
-2. **Khả năng Offline-first khi nghe nhạc**:
-   - *Hiện trạng*: Bộ nhớ đệm `LockCachingAudioSource` chỉ lưu trữ cục bộ các bài hát người dùng đã nghe trọn vẹn ít nhất 1 lần khi có kết nối mạng. Tính năng tải xuống hàng loạt (Batch Download) toàn bộ playlist về máy đang được lên kế hoạch cho phiên bản v2.0.
-3. **Cơ chế đồng bộ thông báo thời gian thực (SSE Notifications)**:
-   - *Hiện trạng*: Cơ chế Server-Sent Events (SSE) hoạt động hoàn hảo khi ứng dụng đang mở (Foreground). Do chính sách tiết kiệm pin khắt khe của Android 13+, việc nhận thông báo khi tắt hẳn ứng dụng cần được nâng cấp qua Firebase Cloud Messaging (FCM) ở giai đoạn tiếp theo.
-4. **Nhận diện giai điệu (Audio Fingerprinting)**:
-   - *Hiện trạng*: Ứng dụng hiện tìm kiếm qua text và gợi ý vector tương đồng, chưa hỗ trợ nhận diện bài hát qua mic ghi âm ngoài môi trường (như Shazam).
+> [TODO: Team sẽ cập nhật nội dung phần này sau vào các tuần cuối.]
 
 ---
 
@@ -244,7 +226,7 @@ Xem chi tiết đầy đủ tại: [TEAM_RULES.md](./TEAM_RULES.md)
 ### 9.2 Quy tắc Phân nhánh & Tích hợp (Branching & PR Review):
 - Nhánh `main`: Ổn định, chỉ chứa bản release sẵn sàng nộp bài / demo.
 - Nhánh `develop`: Nhánh tích hợp chung, mọi PR đều phải chạy qua CI/CD test xanh trước khi merge.
-- Nhánh cá nhân: `feature/[MSSV]-[ten-tinh-nang]`.
+- Nhánh cá nhân: `feature/[MSSV]-[usecase]`.
 - **Ma trận Review chéo Vòng tròn kép (Dual-ring Peer Review)**:
   - T1 review T2 & T3 | T2 review T3 & T4 | T3 review T4 & T5 | T4 review T5 & T1 | T5 review T1 & T2.
 

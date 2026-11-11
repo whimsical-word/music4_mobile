@@ -1,0 +1,19 @@
+# 🤖 AI Assistance Log — T2
+- **Họ và tên**: Lê Minh Nhựt
+- **Mã sinh viên**: `CE190737`
+- **Vai trò**: Thành viên 2 (Auth & User Security)
+- **Domain phụ trách**: Authentication Flow (`LoginScreen`, `RegisterScreen`, `Forget Password Screen, Reset Password Screen), User Profile (`UserProfileScreen`), JWT Token Rotation (Dio `AuthInterceptor`), Google OAuth2 Deep Link (`app_links`)
+
+---
+
+## 📋 Bảng Nhật ký Sử dụng AI Chi tiết (Tuần 1 — Sprint 1)
+
+Đây là bảng báo cáo đã được bổ sung thêm dòng ngày 26/09 (Tuần 1) cho giao diện User Profile:
+
+| Ngày | Feature / Module | Prompt chi tiết gửi AI | Kết quả AI sinh ra | Bạn đã chỉnh sửa, tối ưu & test lại như thế nào? | Kết quả & Commit SHA |
+|---|---|---|---|---|---|
+| **25/09/2026** | **Auth / Login UI** | "Viết giao diện LoginScreen Flutter, có input username, password (ẩn/hiện) và nút Login." | UI form cơ bản dùng `StatefulWidget`, style hardcode, chưa bắt validation form. | Áp dụng `AppColors.primary`, đưa input vào `Form` và viết logic validator cơ bản. | **Done**<br>(Tuần 1) |
+| **26/09/2026** | **Auth / User Profile UI** | "Tạo giao diện UserProfileScreen hiển thị avatar, tên user, email và danh sách tùy chọn (Settings, Logout)." | Layout cơ bản với `CircleAvatar` và `ListTile`. Code các menu item bị lặp lại nhiều. | Tách các item menu thành widget con dùng chung. Thêm `CachedNetworkImage` để xử lý load ảnh avatar mượt hơn. | **Done**<br>(Tuần 1) |
+| **30/09/2026** | **Auth / Login Logic** | "Review code feature Login triển khai Clean Architecture, cấu trúc lại theo hướng hiện đại dùng Riverpod (Notifier) và sealed AuthState." | Phát hiện vi phạm Clean Architecture. Sinh code `AuthState` (sealed class) và `AuthNotifier` chuẩn. | Xóa thư mục `providers/` cũ. Đổi `LoginScreen` sang `ConsumerStatefulWidget`, dùng `ref.listen` (chuyển trang) và `ref.watch` (hiện loading). | **Done**<br>(Tuần 2) |
+| **03/10/2026** | **Auth / User Profile Logic & Test** | "Review tính năng user profile và hoàn thiện theo team_rules.md, gồm Data Source, Repository, API Integration và Unit/Widget Test." | Tạo `UserProfileRepository`, `UserProfileRemoteDataSource` và update `UserProfileNotifier`. Sinh Unit Test (Mocktail) và Widget Test. | Chỉnh sửa `ApiEndpoints` thêm '/api/users/me', fix lỗi compile của Test (ép kiểu Mocktail `any(that: ...)`), đảm bảo code pass 100% test case và 0 lỗi linter. | **Done**<br>(Tuần 2) |
+| **11/10/2026** | **Auth / Register Flow & UI Integration** | "Lên plan và implement function register cho PRM393: API POST /api/auth/register?role=, multipart/form-data ảnh, kết nối Riverpod và xử lý UI chuyển về login." | Sinh RegisterRequest entity, cập nhật AuthRemoteDataSource/AuthRepository, RegisterUseCase, RegisterNotifier và UI RegisterScreen. | Thêm avatar picker với ImagePicker, form validation chi tiết (email regex, min length password, confirm password match), test Mocktail đạt 100% pass, flutter analyze 0 lỗi. | **Done**<br>(Sprint 3) |

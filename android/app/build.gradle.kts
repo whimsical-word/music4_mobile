@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "vn.edu.fpt.music4.music4_mobile"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
